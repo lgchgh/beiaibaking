@@ -1,4 +1,7 @@
 {
+  "buildCommand": "echo 'Static site'",
+  "outputDirectory": ".",
+  "installCommand": "npm install --omit=optional",
   "rewrites": [
     { "source": "/admin", "destination": "/admin/index.html" }
   ]

@@ -1,5 +1,16 @@
 # 后台部署说明
 
+## 0. 部署前准备（若构建失败）
+
+若 Vercel 在 "Installing dependencies" 阶段失败，可尝试：
+
+1. **本地生成 lock 文件**：在项目根目录运行 `npm install`，将生成的 `package-lock.json` 提交并推送
+2. **Vercel 项目设置**：
+   - Framework Preset 选 **Other**
+   - Root Directory 保持 `./`
+   - 在 **Settings → General** 中确认 Node.js 版本为 **20.x**
+3. **环境变量**：若设置了 `NODE_ENV=production`，可暂时移除，避免影响依赖安装
+
 ## 1. 在 Vercel 添加服务
 
 1. 打开 Vercel 项目 → **Storage** → **Create Database**
