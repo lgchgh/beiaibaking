@@ -1,0 +1,928 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Colors (match reference site) */
+  --primary-color: #d4816f;
+  --primary-dark: #b86856;
+  --primary-light: #e5a294;
+  --secondary-color: #f4e4d7;
+  --accent-color: #8b4513;
+
+  --text-dark: #2c2c2c;
+  --text-light: #666666;
+  --text-muted: #999999;
+  --white: #ffffff;
+  --background: #fefefe;
+  --background-alt: #f9f6f3;
+  --border-color: #e8e8e8;
+
+  /* Typography */
+  --font-heading: 'Playfair Display', serif;
+  --font-body: 'Poppins', sans-serif;
+
+  /* Layout */
+  --container-width: 1200px;
+  --border-radius: 12px;
+  --transition: all 0.3s ease;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+  /* Backward-compatible aliases for existing sections */
+  --bg: var(--background);
+  --text: var(--text-dark);
+  --muted: var(--text-light);
+  --accent: var(--primary-color);
+  --border: var(--border-color);
+  --max-width: var(--container-width);
+  --radius: var(--border-radius);
+}
+  
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+  
+  body {
+    margin: 0;
+  font-family: var(--font-body);
+  font-weight: 400;
+    background-color: var(--bg);
+    color: var(--text);
+  line-height: 1.7;
+  }
+  
+  a {
+  color: inherit;
+    text-decoration: none;
+  transition: var(--transition);
+  }
+  
+  a:hover {
+  text-decoration: none;
+  }
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--text-dark);
+  margin-bottom: 1rem;
+}
+  
+  .container {
+  max-width: var(--max-width);
+  padding: 0 2rem;
+  margin: 0 auto;
+  }
+  
+  /* 头部导航 */
+  .site-header {
+  background: var(--white);
+  box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 0;
+  z-index: 1000;
+  }
+  
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  padding: 1rem 0;
+  }
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+  
+  .logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-heading);
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  }
+
+.logo:hover {
+  text-decoration: none;
+}
+  
+/* Match reference site logo image size */
+.logo-img {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+/* Gradient text like reference site logo-text */
+.logo-text {
+  /* 渐变颜色向 logo 深褐色靠拢一点 */
+  background: linear-gradient(135deg, #8b3b24, #c97a5b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+  .main-nav a {
+  margin-left: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-dark);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  transition: var(--transition);
+  }
+  
+  .main-nav a.active,
+  .main-nav a:hover {
+  /* 选中/悬停时文字颜色略偏向 logo 的棕色 */
+  color: #8b3b24;
+  background-color: var(--secondary-color);
+  }
+
+/* 顶部社媒图标（参考 shortstackkitchen 布局，简化为圆形图标） */
+.nav-social {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.social-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-color);
+  background-color: #ffece4;
+  border: 1px solid rgba(212, 129, 111, 0.25);
+}
+
+.social-icon:hover {
+  background-color: var(--primary-color);
+  color: #ffffff;
+}
+
+.social-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.7;
+}
+
+.social-icon.yt svg polygon {
+  fill: currentColor;
+}
+
+.social-icon.insta svg rect,
+.social-icon.pin svg circle,
+.social-icon.mail svg rect {
+  /* 更圆润一些 */
+  stroke-linejoin: round;
+}
+
+.social-icon.insta {
+  /* 可以稍微偏粉一点 */
+}
+
+.social-icon.pin {
+  /* 留空，保持统一配色，后期可细分 */
+}
+
+.social-icon.yt {
+  /* YouTube 可稍微偏红，将来可单独调整 */
+}
+
+.social-icon.mail {
+  /* 邮件图标保持同色系即可 */
+}
+  
+/* 顶部标题区（导航与第一行缩略图之间的轻分隔） */
+.hero {
+  padding: 32px 0 12px;
+}
+
+.hero-inner {
+  text-align: left;
+}
+
+.hero-label {
+  display: inline-block;
+  padding: 4px 10px;
+  margin-bottom: 10px;
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--primary-color);
+  background-color: #fff3ec;
+  border-radius: 999px;
+}
+
+.hero h1 {
+  margin: 0 0 6px;
+  font-size: 2.1rem;
+}
+
+.hero-text {
+  margin: 0;
+  color: var(--muted);
+  max-width: 640px;
+}
+
+/* 桌面端时强制一行显示介绍文字 */
+@media (min-width: 1024px) {
+    .hero-text {
+      white-space: nowrap;
+    }
+}
+
+.hero-divider {
+  margin-top: 18px;
+  width: 80px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+}
+
+/* 分类页面 */
+.category-hero {
+  padding: 28px 0 8px;
+}
+
+.category-hero-text {
+  max-width: 720px;
+}
+
+.gallery-hero-banner {
+  margin-top: 14px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.gallery-hero-banner img {
+  display: block;
+  width: 100%;
+  /* 压扁一些做横幅效果：高度固定，左右拉长 */
+  height: 220px;
+  object-fit: cover;
+}
+
+.category-section {
+  padding: 16px 0 32px;
+}
+
+.gallery-page .container {
+  /* Cake Gallery 页面内容两侧不留内边距，方便 1200px 匹配 6×200px */
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.gallery-page .category-grid {
+  display: grid;
+  /* Cake Gallery：6 张图 + 5 个间隙，刚好占满 1200px */
+  /* 6 × 190px + 5 × 12px = 1200px */
+  grid-template-columns: repeat(6, 190px);
+  justify-content: center;
+  column-gap: 12px; /* 清晰的分隔，但整体宽度仍为 1200px */
+  /* 行与行之间留更大的垂直间距 */
+  row-gap: 22px;
+}
+
+
+.category-item figcaption {
+  margin-top: 6px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* 去掉浏览器默认给 figure 的左右外边距，避免看起来空隙很大 */
+.category-item {
+  margin: 0;
+}
+.category-item img.thumb-image {
+  cursor: pointer;
+}
+
+.subcategory-title {
+  margin: 18px 0 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.gallery-page .subcategory-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  /* 再稍微拉大一点间距 */
+  gap: 32px;
+  /* 和第一行图片之间留更大的垂直间距 */
+  margin: 14px 0 18px;
+  /* 再向右 2 像素微调 */
+  padding-left: 37px;
+}
+
+.subcategory-tab {
+  padding: 0;
+  border-radius: 0;
+  font-size: 0.88rem;
+  color: var(--text-light);
+  border: none;
+  background: transparent;
+  position: relative;
+}
+
+.subcategory-tab.active,
+.subcategory-tab:hover {
+  color: var(--primary-color);
+}
+
+.subcategory-tab::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -4px;
+  height: 2px;
+  background-color: transparent;
+}
+
+.subcategory-tab.active::after {
+  background-color: var(--primary-color);
+}
+
+.subcategory-block {
+  display: none;
+}
+
+.subcategory-block.is-active {
+  display: block;
+}
+
+.subcategory-link {
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+}
+
+.subcategory-link a {
+  color: var(--primary-color);
+}
+
+/* Cake Gallery 顶部 5 个分类按钮 */
+.category-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0; /* 方块之间不留空隙，首尾刚好拼成一整条 */
+  margin: 16px 0 8px;
+  justify-content: space-between; /* 让整排大类按钮在横幅宽度内尽量铺满 */
+}
+
+.category-tab {
+  flex: 1 1 0;              /* 每个按钮等宽分配整行空间 */
+  padding: 10px 0;          /* 只做上下内边距，左右靠 flex 撑开 */
+  border-radius: 0;         /* 去掉圆角，变成长方形块 */
+  font-size: 0.95rem;
+  /* 大图标使用标题字体，和小图标区分开 */
+  font-family: var(--font-heading);
+  font-weight: 600;
+  text-align: center;       /* 文字居中 */
+  color: var(--text-dark);
+  border: 1px solid var(--border);
+  border-left-width: 0;     /* 中间块只画右边框，避免加粗 */
+  background-color: #ffffff;
+}
+
+.category-tab.active,
+.category-tab:hover {
+  border-color: var(--primary-color);
+  background-color: #fff3ec;
+  color: #8b3b24;
+}
+
+/* 第一块保留左边框，最后一块保留右边框 */
+.category-tab:first-child,
+.category-tabs .category-tab-wrap:first-child .category-tab {
+  border-left-width: 1px;
+  border-top-left-radius: var(--radius);
+  border-bottom-left-radius: var(--radius);
+}
+
+.category-tab:last-child {
+  border-top-right-radius: var(--radius);
+  border-bottom-right-radius: var(--radius);
+}
+
+/* Decorated Cakes 悬停下拉 */
+.category-tab-wrap {
+  flex: 1 1 0;
+  position: relative;
+}
+
+.category-tab-wrap .category-tab {
+  width: 100%;
+  cursor: pointer;
+}
+
+.category-tab-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 100%;
+  display: none;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+.category-tab-dropdown:hover .category-tab-dropdown-menu {
+  display: block;
+}
+
+.category-tab-dropdown-menu a {
+  display: block;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  color: var(--text-dark);
+  text-decoration: none;
+  border-bottom: 1px solid var(--border);
+}
+
+.category-tab-dropdown-menu a:last-child {
+  border-bottom: none;
+}
+
+.category-tab-dropdown-menu a:hover {
+  background: #fff3ec;
+  color: #8b3b24;
+}
+
+/* 只在 Cake Gallery 页面里，用按钮切换各分类区域显示 */
+.gallery-page .category-section {
+  display: none;
+}
+
+.gallery-page .category-section.is-active {
+  display: block;
+}
+  
+  /* 作品行公共样式 */
+  .gallery-row {
+    padding: 24px 0;
+    border-top: 1px solid var(--border);
+  }
+  
+  .row-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  
+  .row-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+  }
+  
+  .view-all-link {
+    font-size: 0.9rem;
+  color: var(--primary-color);
+  }
+
+.row-footer {
+  margin-top: 10px;
+  text-align: right;
+}
+  
+.home-thumb-grid {
+  /* 首页：严格 4 列网格布局，和其他页面完全隔离 */
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: 18px;
+  row-gap: 24px;
+}
+
+.home-thumb-item {
+  margin: 0;
+}
+
+.home-thumb-item .thumb-image {
+  cursor: pointer;
+}
+
+  .thumb-placeholder {
+    width: 100%;
+    padding-bottom: 70%;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+  background: linear-gradient(135deg, var(--background-alt), #f5f1ef);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+/* 首页缩略图实际图片样式 */
+.thumb-image {
+  width: 100%;
+  display: block;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  object-fit: cover;
+  /* 竖向长方形：上下长、左右短 */
+  aspect-ratio: 3 / 4;
+}
+  
+  .thumb-item figcaption {
+    margin-top: 6px;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  
+  /* 中间自我介绍条带 */
+  .about-strip {
+  background-color: var(--background-alt);
+    padding: 32px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  
+  .about-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr);
+    gap: 24px;
+    align-items: center;
+  }
+  
+  .photo-placeholder {
+    width: 100%;
+    padding-bottom: 100%;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+  background: linear-gradient(135deg, #fdf6f3, #f3e5df);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  
+  .about-text h2 {
+    margin-top: 0;
+    margin-bottom: 8px;
+  }
+  
+  .about-text p {
+    margin: 0 0 8px;
+    color: var(--muted);
+  }
+  
+  .about-text-more {
+    margin-top: 12px;
+    margin-bottom: 0;
+    text-align: right;
+  }
+  
+  /* 页脚：浅色背景与正文区分，左中右三栏 */
+  .site-footer {
+    border-top: 1px solid var(--border);
+    background-color: var(--background-alt);
+    padding: 24px 0 32px;
+    margin-top: 24px;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .footer-inner {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 24px;
+  }
+
+  /* 左右两列同宽；左边稍宽一点少换行，和右边一行更平衡 */
+  .footer-left,
+  .footer-right {
+    max-width: 300px;
+  }
+
+  .footer-left {
+    justify-self: end;
+    text-align: right;
+  }
+
+  .footer-right {
+    justify-self: start;
+    text-align: left;
+  }
+
+  .footer-left p {
+    margin: 2px 0;
+  }
+
+  .footer-center {
+    text-align: center;
+  }
+
+  .footer-logo {
+    display: inline-block;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .footer-logo:hover {
+    text-decoration: none;
+  }
+
+  .footer-logo-img {
+    width: 88px;
+    height: 88px;
+    object-fit: contain;
+  }
+
+  .footer-right {
+    text-align: right;
+  }
+
+  /* 小屏时取消“往中间靠”，改为居中 */
+  @media (max-width: 768px) {
+    .footer-left { justify-self: center; }
+    .footer-right { justify-self: center; }
+  }
+
+  .footer-line {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35em;
+  }
+
+  .footer-left .footer-line {
+    justify-content: flex-end;
+  }
+
+  .footer-right .footer-line {
+    justify-content: flex-start;
+  }
+
+  .footer-sep {
+    color: var(--muted);
+    user-select: none;
+  }
+
+  .footer-line a {
+    color: var(--muted);
+  }
+
+  .footer-line a:hover {
+    color: var(--primary-color);
+  }
+
+  .footer-right .footer-line-indent {
+    margin-left: 2.5em;
+    margin-top: 4px;
+  }
+  
+  /* 响应式：小屏幕优化 */
+  @media (max-width: 768px) {
+    .header-inner {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+  
+  .header-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+    .main-nav a {
+    padding: 0.8rem 1rem;
+    }
+  
+    .about-inner {
+      grid-template-columns: 1fr;
+    }
+
+    .footer-inner {
+      grid-template-columns: 1fr;
+      text-align: center;
+    }
+
+    .footer-left {
+      order: 1;
+    }
+
+    .footer-center {
+      order: 0;
+    }
+
+    .footer-left .footer-line {
+      justify-content: center;
+    }
+
+    .footer-right {
+      order: 2;
+      text-align: center;
+    }
+
+    .footer-right .footer-line {
+      justify-content: center;
+    }
+  }
+
+/* 图片放大预览（仅在 Cake Gallery 使用） */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  z-index: 1300;
+}
+
+.lightbox-overlay.is-open {
+  display: block;
+}
+
+.lightbox-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.lightbox-content {
+  position: absolute;
+  inset: 40px 5% 40px 5%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightbox-image {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: var(--radius);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  background: #ffffff;
+}
+
+.lightbox-close {
+  display: none; /* 目前不需要 X 按钮，隐藏 */
+}
+
+.lightbox-close:hover {
+  background: #ffffff;
+}
+
+.lightbox-open {
+  overflow: hidden;
+}
+
+/* Legal pages (Privacy Policy, Terms of Use) */
+.legal-content {
+  padding: 48px 2rem 64px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.legal-content h1 {
+  margin-bottom: 0.25em;
+}
+.legal-content .legal-updated {
+  color: var(--muted);
+  margin-bottom: 2em;
+}
+.legal-content h2 {
+  font-size: 1.1rem;
+  margin-top: 1.75em;
+  margin-bottom: 0.5em;
+}
+.legal-content p {
+  margin-bottom: 1em;
+  line-height: 1.6;
+}
+.legal-content a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.legal-content a:hover {
+  color: var(--accent-dark, #8b5a2b);
+}
+
+/* Contact form */
+.contact-section {
+  padding: 48px 2rem 64px;
+  max-width: 560px;
+  margin: 0 auto;
+}
+.contact-title {
+  font-family: var(--font-heading);
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-weight: 700;
+  color: var(--text-dark);
+  text-align: center;
+  margin: 0 0 2rem;
+}
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.contact-form .form-group {
+  margin-bottom: 1.25rem;
+}
+.contact-form label {
+  display: block;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text-dark);
+  margin-bottom: 0.35rem;
+}
+.contact-form .required {
+  color: inherit;
+}
+.contact-form input,
+.contact-form select,
+.contact-form textarea {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--text-dark);
+  background: var(--white);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+.contact-form select {
+  cursor: pointer;
+  appearance: auto;
+}
+.contact-form textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+.contact-submit {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--white);
+  background: linear-gradient(90deg, var(--primary-light), var(--primary-color));
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.contact-submit:hover {
+  background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+}
+
+/* About page */
+.about-hero {
+  background: #FAEFEA;
+  padding: 56px 0 72px;
+}
+.about-hero .container {
+  max-width: var(--max-width);
+  padding: 0 2rem;
+}
+.about-hero h1 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: clamp(2rem, 4vw, 2.6rem);
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-dark);
+}
+.about-body {
+  padding: 40px 2rem 72px;
+}
+.about-story {
+  max-width: 720px;
+  margin: 0 auto;
+}
+.about-story h2 {
+  font-family: var(--font-heading);
+  font-size: 1.6rem;
+  margin: 0 0 1rem;
+  color: var(--text-dark);
+}
+.about-story p {
+  margin: 0 0 1rem;
+  color: var(--text-light);
+  line-height: 1.7;
+}

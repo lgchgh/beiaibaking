@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cake Gallery | Beiai Baking</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Explore cake and pastry categories by Beiai Baking." />
+  <!-- Fonts (similar to reference site) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body class="gallery-page">
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="logo" href="index.html" aria-label="Beiai Baking home">
+        <img class="logo-img" src="assets/images/logo.png" alt="Beiai Baking logo" />
+        <span class="logo-text">Beiai Baking</span>
+      </a>
+      <div class="header-right">
+        <nav class="main-nav">
+          <a href="index.html">Home</a>
+          <a href="gallery.html" class="active">Cake Gallery</a>
+          <a href="blog.html">Blog</a>
+          <a href="about.html">About</a>
+          <a href="contact.html">Contact</a>
+        </nav>
+        <div class="nav-social" aria-label="Social media links">
+          <a href="#" data-href="site_instagram" aria-label="Instagram" title="Instagram" class="social-icon insta">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="5" ry="5"></rect>
+              <circle cx="12" cy="12" r="4.2"></circle>
+              <circle cx="17.2" cy="6.8" r="1.2"></circle>
+            </svg>
+          </a>
+          <a href="#" data-href="site_pinterest" aria-label="Pinterest" title="Pinterest" class="social-icon pin">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M12 7.5c-2 0-3.5 1.4-3.5 3.4 0 1.4.8 2.3 2 2.3.4 0 .8-.2.9-.6l.3-1.1c.1-.4.1-.5-.1-.8-.2-.2-.3-.5-.3-.9 0-.8.6-1.4 1.5-1.4 1 0 1.6.7 1.6 1.8 0 1.7-1 2.9-2.4 2.9-.4 0-.7-.1-1-.3l-.4 1.5-.1.4" fill="none" stroke-width="1.4"></path>
+            </svg>
+          </a>
+          <a href="#" data-href="site_youtube" aria-label="YouTube" title="YouTube" class="social-icon yt">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="7" width="18" height="10" rx="3" ry="3"></rect>
+              <polygon points="11 10 15 12 11 14"></polygon>
+            </svg>
+          </a>
+          <a href="mailto:contact@beiaibaking.com" data-mailto="site_email" aria-label="Email" title="Email" class="social-icon mail">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="6" width="18" height="12" rx="2" ry="2"></rect>
+              <polyline points="4 7 12 12 20 7" fill="none" stroke-width="1.6"></polyline>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="category-hero">
+      <div class="container">
+        <div class="gallery-hero-banner">
+          <img src="assets/images/french-pastries/fp-05.jpg" alt="Cake and pastry selection" />
+        </div>
+        <div class="category-tabs">
+          <div class="category-tab-wrap category-tab-dropdown">
+            <button type="button" class="category-tab active" data-category="decorated">Decorated Cakes</button>
+            <div class="category-tab-dropdown-menu" aria-hidden="true">
+              <a href="gallery.html?category=decorated&sub=decorated-floral">Floral Cakes</a>
+              <a href="gallery.html?category=decorated&sub=decorated-animal">Animal Cakes</a>
+              <a href="gallery.html?category=decorated&sub=decorated-character">Character Cakes</a>
+            </div>
+          </div>
+          <button type="button" class="category-tab" data-category="fondant">Fondant Cakes</button>
+          <button type="button" class="category-tab" data-category="french">French Pastries</button>
+          <button type="button" class="category-tab" data-category="cookies">Iced Cookies</button>
+          <button type="button" class="category-tab" data-category="chocolate">Chocolate</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 每个分类一块区域，通过按钮切换显示 -->
+    <section class="container category-section is-active" data-category-section="decorated">
+      <!-- 默认：全部 Decorated Cakes（floral + animal + character） -->
+      <div class="subcategory-block is-active" data-subcategory-block="decorated-all">
+        <div class="category-grid">
+          <figure class="category-item">
+            <img class="thumb-image" src="assets/images/decorated-cakes/floral/f-01.jpg" alt="Floral cake 1" />
+            <figcaption>Floral cake 1</figcaption>
+          </figure>
+          <figure class="category-item">
+            <img class="thumb-image" src="assets/images/decorated-cakes/floral/f-02.jpg" alt="Floral cake 2" />
+            <figcaption>Floral cake 2</figcaption>
+          </figure>
+          <figure class="category-item">
+            <img class="thumb-image" src="assets/images/decorated-cakes/floral/f-03.jpg" alt="Floral cake 3" />
+            <figcaption>Floral cake 3</figcaption>
+          </figure>
+          <figure class="category-item">
+            <img class="thumb-image" src="assets/images/decorated-cakes/floral/f-04.jpg" alt="Floral cake 4" />
+            <figcaption>Floral cake 4</figcaption>
+          </figure>
+          <figure class="category-item">
+            <img class="thumb-image" src="assets/images/decorated-cakes/animal/a-01.jpg" alt="Animal cake 1" />
+            <figcaption>Animal cake 1</figcaption>
+          </figure>
+          <figure class="category-item">
+            <img class="thumb-image" src="assets/images/decorated-cakes/animal/a-02.jpg" alt="Animal cake 2" />
+            <figcaption>Animal cake 2</figcaption>
+          </figure>
+          <figure class="category-item">
+            <img class="thumb-image" src="assets/images/decorated-cakes/animal/a-03.jpg" alt="Animal cake 3" />
+            <figcaption>Animal cake 3</figcaption>
+          </figure>
+          <figure class="category-item">
+            <img class="thumb-image" src="assets/images/decorated-cakes/animal/a-04.jpg" alt="Animal cake 4" />
+            <figcaption>Animal cake 4</figcaption>
+          </figure>
+          <figure class="category-item">
+            <img class="thumb-image" src="assets/images/decorated-cakes/character/c-01.jpg" alt="Character cake 1" />
+            <figcaption>Character cake 1</figcaption>
+          </figure>
+          <figure class="category-item">
+            <img class="thumb-image" src="assets/images/decorated-cakes/character/c-02.jpg" alt="Character cake 2" />
+            <figcaption>Character cake 2</figcaption>
+          </figure>
+          <figure class="category-item">
+            <img class="thumb-image" src="assets/images/decorated-cakes/character/c-03.jpg" alt="Character cake 3" />
+            <figcaption>Character cake 3</figcaption>
+          </figure>
+          <figure class="category-item">
+            <img class="thumb-image" src="assets/images/decorated-cakes/character/c-04.jpg" alt="Character cake 4" />
+            <figcaption>Character cake 4</figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <!-- Floral 子类 -->
+      <div class="subcategory-block" data-subcategory-block="decorated-floral">
+        <div class="category-grid">
+          <figure class="category-item">
+            <img class="thumb-image" src="assets/images/decorated-cakes/floral/f-01.jpg" alt="Floral cake 1" />
+            <figcaption>Floral cake 1</figcaption>
+          </figure>
+          <figure class="category-item">
+            <img class="thumb-image" src="assets/images/decorated-cakes/floral/f-02.jpg" alt="Floral cake 2" />
+            <figcaption>Floral cake 2</figcaption>
+          </figure>
+          <figure class="category-item">
+            <img class="thumb-image" src="assets/images/decorated-cakes/floral/f-03.jpg" alt="Floral cake 3" />
+            <figcaption>Floral cake 3</figcaption>
+          </figure>
+          <figure class="category-item">
+            <img class="thumb-image" src="assets/images/decorated-cakes/floral/f-04.jpg" alt="Floral cake 4" />
+            <figcaption>Floral cake 4</figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <!-- Animal 子类 -->
+      <div class="subcategory-block" data-subcategory-block="decorated-animal">
+        <div class="category-grid">
+          <figure class="category-item">
+            <img class="thumb-image" src="assets/images/decorated-cakes/animal/a-01.jpg" alt="Animal cake 1" />
+            <figcaption>Animal cake 1</figcaption>
+          </figure>
+          <figure class="category-item">
+            <img class="thumb-image" src="assets/images/decorated-cakes/animal/a-02.jpg" alt="Animal cake 2" />
+            <figcaption>Animal cake 2</figcaption>
+          </figure>
+          <figure class="category-item">
+            <img class="thumb-image" src="assets/images/decorated-cakes/animal/a-03.jpg" alt="Animal cake 3" />
+            <figcaption>Animal cake 3</figcaption>
+          </figure>
+          <figure class="category-item">
+            <img class="thumb-image" src="assets/images/decorated-cakes/animal/a-04.jpg" alt="Animal cake 4" />
+            <figcaption>Animal cake 4</figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <!-- Character 子类 -->
+      <div class="subcategory-block" data-subcategory-block="decorated-character">
+        <div class="category-grid">
+          <figure class="category-item">
+            <img class="thumb-image" src="assets/images/decorated-cakes/character/c-01.jpg" alt="Character cake 1" />
+            <figcaption>Character cake 1</figcaption>
+          </figure>
+          <figure class="category-item">
+            <img class="thumb-image" src="assets/images/decorated-cakes/character/c-02.jpg" alt="Character cake 2" />
+            <figcaption>Character cake 2</figcaption>
+          </figure>
+          <figure class="category-item">
+            <img class="thumb-image" src="assets/images/decorated-cakes/character/c-03.jpg" alt="Character cake 3" />
+            <figcaption>Character cake 3</figcaption>
+          </figure>
+          <figure class="category-item">
+            <img class="thumb-image" src="assets/images/decorated-cakes/character/c-04.jpg" alt="Character cake 4" />
+            <figcaption>Character cake 4</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="container category-section" data-category-section="fondant">
+      <div class="category-grid">
+        <figure class="category-item">
+          <img class="thumb-image" src="assets/images/fondant-cakes/fon-01.jpg" alt="Elegant fondant cake" />
+          <figcaption>Elegant fondant cake</figcaption>
+        </figure>
+        <figure class="category-item">
+          <img class="thumb-image" src="assets/images/fondant-cakes/fon-02.jpg" alt="Character fondant cake" />
+          <figcaption>Character fondant cake</figcaption>
+        </figure>
+        <figure class="category-item">
+          <img class="thumb-image" src="assets/images/fondant-cakes/fon-03.jpg" alt="Minimal fondant design" />
+          <figcaption>Minimal fondant design</figcaption>
+        </figure>
+        <figure class="category-item">
+          <img class="thumb-image" src="assets/images/fondant-cakes/fon-04.jpg" alt="White &amp; gold cake" />
+          <figcaption>White &amp; gold cake</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="container category-section" data-category-section="french">
+      <div class="category-grid">
+        <figure class="category-item">
+          <img class="thumb-image" src="assets/images/french-pastries/fp-01.jpg" alt="Macarons" />
+          <figcaption>Macarons</figcaption>
+        </figure>
+        <figure class="category-item">
+          <img class="thumb-image" src="assets/images/french-pastries/fp-02.jpg" alt="Éclairs" />
+          <figcaption>Éclairs</figcaption>
+        </figure>
+        <figure class="category-item">
+          <img class="thumb-image" src="assets/images/french-pastries/fp-03.jpg" alt="Entremets" />
+          <figcaption>Entremets</figcaption>
+        </figure>
+        <figure class="category-item">
+          <img class="thumb-image" src="assets/images/french-pastries/fp-04.jpg" alt="Tarts" />
+          <figcaption>Tarts</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="container category-section" data-category-section="cookies">
+      <div class="category-grid">
+        <figure class="category-item">
+          <img class="thumb-image" src="assets/images/iced-cookies/ic-01.jpg" alt="Iced cookies" />
+          <figcaption>Iced cookies</figcaption>
+        </figure>
+        <figure class="category-item">
+          <img class="thumb-image" src="assets/images/iced-cookies/ic-02.jpg" alt="Holiday cookies" />
+          <figcaption>Holiday cookies</figcaption>
+        </figure>
+        <figure class="category-item">
+          <img class="thumb-image" src="assets/images/iced-cookies/ic-03.jpg" alt="Butter cookies" />
+          <figcaption>Butter cookies</figcaption>
+        </figure>
+        <figure class="category-item">
+          <img class="thumb-image" src="assets/images/iced-cookies/ic-04.jpg" alt="Gift box set" />
+          <figcaption>Gift box set</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="container category-section" data-category-section="chocolate">
+      <div class="category-grid">
+        <figure class="category-item">
+          <img class="thumb-image" src="assets/images/chocolate/ch-01.jpg" alt="Chocolate bonbons" />
+          <figcaption>Chocolate bonbons</figcaption>
+        </figure>
+        <figure class="category-item">
+          <img class="thumb-image" src="assets/images/chocolate/ch-02.jpg" alt="Chocolate bars" />
+          <figcaption>Chocolate bars</figcaption>
+        </figure>
+        <figure class="category-item">
+          <img class="thumb-image" src="assets/images/chocolate/ch-03.jpg" alt="Chocolate flowers" />
+          <figcaption>Chocolate flowers</figcaption>
+        </figure>
+        <figure class="category-item">
+          <img class="thumb-image" src="assets/images/chocolate/ch-04.jpg" alt="Gift assortment" />
+          <figcaption>Gift assortment</figcaption>
+        </figure>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-left">
+        <p class="footer-line">
+          <a href="index.html">Home</a>
+          <span class="footer-sep">|</span>
+          <a href="gallery.html">Cake Gallery</a>
+          <span class="footer-sep">|</span>
+          <a href="about.html">About</a>
+          <span class="footer-sep">|</span>
+          <a href="contact.html">Contact</a>
+        </p>
+      </div>
+      <div class="footer-center">
+        <a class="footer-logo" href="index.html" aria-label="Beiai Baking home">
+          <img class="footer-logo-img" src="assets/images/logo.png" alt="Beiai Baking" />
+        </a>
+      </div>
+      <div class="footer-right">
+        <p class="footer-line">© <span id="year"></span> Beiai Baking. All rights reserved.</p>
+        <p class="footer-line footer-line-indent">
+          <a href="privacy-policy.html">Privacy Policy</a>
+          <span class="footer-sep">|</span>
+          <a href="terms-of-use.html">Terms of Use</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/cms.js"></script>
+</body>
+</html>

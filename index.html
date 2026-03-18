@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Beiaibaking | Cake & Pastry Portfolio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Beiaibaking - Cake and pastry portfolio featuring piped cakes, fondant cakes, French pastries, cookies and chocolate creations." />
+  <!-- Fonts (similar to reference site) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body class="home-page">
+  <!-- 头部导航 -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="logo" href="index.html" aria-label="Beiai Baking home">
+        <img class="logo-img" src="assets/images/logo.png" alt="Beiai Baking logo" />
+        <span class="logo-text">Beiai Baking</span>
+      </a>
+      <div class="header-right">
+        <nav class="main-nav">
+          <a href="index.html" class="active">Home</a>
+          <a href="gallery.html">Cake Gallery</a>
+          <a href="blog.html">Blog</a>
+          <a href="about.html">About</a>
+          <a href="contact.html">Contact</a>
+        </nav>
+        <div class="nav-social" aria-label="Social media links">
+          <!-- Instagram -->
+          <a href="#" data-href="site_instagram" aria-label="Instagram" title="Instagram" class="social-icon insta">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="5" ry="5"></rect>
+              <circle cx="12" cy="12" r="4.2"></circle>
+              <circle cx="17.2" cy="6.8" r="1.2"></circle>
+            </svg>
+          </a>
+          <!-- Pinterest -->
+          <a href="#" data-href="site_pinterest" aria-label="Pinterest" title="Pinterest" class="social-icon pin">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M12 7.5c-2 0-3.5 1.4-3.5 3.4 0 1.4.8 2.3 2 2.3.4 0 .8-.2.9-.6l.3-1.1c.1-.4.1-.5-.1-.8-.2-.2-.3-.5-.3-.9 0-.8.6-1.4 1.5-1.4 1 0 1.6.7 1.6 1.8 0 1.7-1 2.9-2.4 2.9-.4 0-.7-.1-1-.3l-.4 1.5-.1.4" fill="none" stroke-width="1.4"></path>
+            </svg>
+          </a>
+          <!-- YouTube -->
+          <a href="#" data-href="site_youtube" aria-label="YouTube" title="YouTube" class="social-icon yt">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="7" width="18" height="10" rx="3" ry="3"></rect>
+              <polygon points="11 10 15 12 11 14"></polygon>
+            </svg>
+          </a>
+          <!-- Email -->
+          <a href="mailto:contact@beiaibaking.com" data-mailto="site_email" aria-label="Email" title="Email" class="social-icon mail">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="6" width="18" height="12" rx="2" ry="2"></rect>
+              <polyline points="4 7 12 12 20 7" fill="none" stroke-width="1.6"></polyline>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container hero-inner">
+        <p class="hero-label" data-content="hero_label">Cake & Pastry Portfolio</p>
+        <h1 data-content="hero_title">Elegant Cake &amp; Pastry Art</h1>
+        <p class="hero-text" data-content="hero_subtitle">
+          A curated selection of piped cakes, fondant cakes, French pastries, cookies and chocolate pieces handcrafted with delicate details and balanced colors.
+        </p>
+        <div class="hero-divider"></div>
+      </div>
+    </section>
+
+    <!-- 行 1：裱花蛋糕 / Decorated Cake -->
+    <section class="gallery-row container" data-category="decorated">
+      <div class="row-header">
+        <h2 data-content="cat_decorated">Decorated Cakes</h2>
+      </div>
+      <div class="home-thumb-grid" data-home-thumbs>
+        <figure class="home-thumb-item">
+          <img class="thumb-image" src="assets/images/decorated-cakes/floral/f-01.jpg" alt="Floral buttercream cake" />
+          <figcaption>Floral buttercream cake</figcaption>
+        </figure>
+        <figure class="home-thumb-item">
+          <img class="thumb-image" src="assets/images/decorated-cakes/floral/f-02.jpg" alt="Pastel celebration cake" />
+          <figcaption>Pastel celebration cake</figcaption>
+        </figure>
+        <figure class="home-thumb-item">
+          <img class="thumb-image" src="assets/images/decorated-cakes/floral/f-03.jpg" alt="Romantic wedding cake" />
+          <figcaption>Romantic wedding cake</figcaption>
+        </figure>
+        <figure class="home-thumb-item">
+          <img class="thumb-image" src="assets/images/decorated-cakes/floral/f-04.jpg" alt="Rose bouquet cake" />
+          <figcaption>Rose bouquet cake</figcaption>
+        </figure>
+      </div>
+      <div class="row-footer">
+        <a href="gallery.html?category=decorated" class="view-all-link">More...</a>
+      </div>
+    </section>
+
+    <!-- 行 2：翻糖蛋糕 -->
+    <section class="gallery-row container" data-category="fondant">
+      <div class="row-header">
+        <h2 data-content="cat_fondant">Fondant Cakes</h2>
+      </div>
+      <div class="home-thumb-grid" data-home-thumbs>
+        <figure class="home-thumb-item">
+          <img class="thumb-image" src="assets/images/fondant-cakes/fon-01.jpg" alt="Elegant fondant cake" />
+          <figcaption>Elegant fondant cake</figcaption>
+        </figure>
+        <figure class="home-thumb-item">
+          <img class="thumb-image" src="assets/images/fondant-cakes/fon-02.jpg" alt="Character fondant cake" />
+          <figcaption>Character fondant cake</figcaption>
+        </figure>
+        <figure class="home-thumb-item">
+          <img class="thumb-image" src="assets/images/fondant-cakes/fon-03.jpg" alt="Minimal fondant design" />
+          <figcaption>Minimal fondant design</figcaption>
+        </figure>
+        <figure class="home-thumb-item">
+          <img class="thumb-image" src="assets/images/fondant-cakes/fon-04.jpg" alt="White and gold cake" />
+          <figcaption>White & gold cake</figcaption>
+        </figure>
+      </div>
+      <div class="row-footer">
+        <a href="gallery.html?category=fondant" class="view-all-link">More...</a>
+      </div>
+    </section>
+
+    <!-- 中间：自我介绍 -->
+    <section class="about-strip">
+      <div class="container about-inner">
+        <div class="about-photo">
+          <!-- 以后换成你的照片 -->
+          <div class="photo-placeholder">Your photo</div>
+        </div>
+        <div class="about-text">
+          <p data-content="intro_para1">Hi, I'm Nova.</p>
+          <p data-content="intro_para2">My baking journey began with a simple cookie for my children and evolved into a global pursuit of mastery. From studying in Paris and Seoul to being featured on national TV, I've dedicated my life to inspiring others through the art of baking. I invite you to join me on this wonderful adventure.</p>
+          <p class="about-text-more">
+            <a href="about.html" class="view-all-link">More...</a>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 行 3：法式西点 -->
+    <section class="gallery-row container" data-category="french">
+      <div class="row-header">
+        <h2 data-content="cat_french">French Pastries</h2>
+      </div>
+      <div class="home-thumb-grid" data-home-thumbs>
+        <figure class="home-thumb-item">
+          <img class="thumb-image" src="assets/images/french-pastries/fp-01.jpg" alt="Macarons" />
+          <figcaption>Macarons</figcaption>
+        </figure>
+        <figure class="home-thumb-item">
+          <img class="thumb-image" src="assets/images/french-pastries/fp-02.jpg" alt="Éclairs" />
+          <figcaption>Éclairs</figcaption>
+        </figure>
+        <figure class="home-thumb-item">
+          <img class="thumb-image" src="assets/images/french-pastries/fp-03.jpg" alt="Entremets" />
+          <figcaption>Entremets</figcaption>
+        </figure>
+        <figure class="home-thumb-item">
+          <img class="thumb-image" src="assets/images/french-pastries/fp-04.jpg" alt="Tarts" />
+          <figcaption>Tarts</figcaption>
+        </figure>
+      </div>
+      <div class="row-footer">
+        <a href="gallery.html?category=french" class="view-all-link">More...</a>
+      </div>
+    </section>
+
+    <!-- 行 4：饼干 / Iced Cookies -->
+    <section class="gallery-row container" data-category="cookies">
+      <div class="row-header">
+        <h2 data-content="cat_cookies">Iced Cookies</h2>
+      </div>
+      <div class="home-thumb-grid" data-home-thumbs>
+        <figure class="home-thumb-item">
+          <img class="thumb-image" src="assets/images/iced-cookies/ic-01.jpg" alt="Iced cookies" />
+          <figcaption>Iced cookies</figcaption>
+        </figure>
+        <figure class="home-thumb-item">
+          <img class="thumb-image" src="assets/images/iced-cookies/ic-02.jpg" alt="Holiday cookies" />
+          <figcaption>Holiday cookies</figcaption>
+        </figure>
+        <figure class="home-thumb-item">
+          <img class="thumb-image" src="assets/images/iced-cookies/ic-03.jpg" alt="Butter cookies" />
+          <figcaption>Butter cookies</figcaption>
+        </figure>
+        <figure class="home-thumb-item">
+          <img class="thumb-image" src="assets/images/iced-cookies/ic-04.jpg" alt="Gift box set" />
+          <figcaption>Gift box set</figcaption>
+        </figure>
+      </div>
+      <div class="row-footer">
+        <a href="gallery.html?category=cookies" class="view-all-link">More...</a>
+      </div>
+    </section>
+
+    <!-- 行 5：巧克力 -->
+    <section class="gallery-row container" data-category="chocolate">
+      <div class="row-header">
+        <h2 data-content="cat_chocolate">Chocolate</h2>
+      </div>
+      <div class="home-thumb-grid" data-home-thumbs>
+        <figure class="home-thumb-item">
+          <img class="thumb-image" src="assets/images/chocolate/ch-01.jpg" alt="Chocolate bonbons" />
+          <figcaption>Chocolate bonbons</figcaption>
+        </figure>
+        <figure class="home-thumb-item">
+          <img class="thumb-image" src="assets/images/chocolate/ch-02.jpg" alt="Chocolate bars" />
+          <figcaption>Chocolate bars</figcaption>
+        </figure>
+        <figure class="home-thumb-item">
+          <img class="thumb-image" src="assets/images/chocolate/ch-03.jpg" alt="Chocolate flowers" />
+          <figcaption>Chocolate flowers</figcaption>
+        </figure>
+        <figure class="home-thumb-item">
+          <img class="thumb-image" src="assets/images/chocolate/ch-04.jpg" alt="Gift assortment" />
+          <figcaption>Gift assortment</figcaption>
+        </figure>
+      </div>
+      <div class="row-footer">
+        <a href="gallery.html?category=chocolate" class="view-all-link">More...</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-left">
+        <p class="footer-line">
+          <a href="index.html">Home</a>
+          <span class="footer-sep">|</span>
+          <a href="gallery.html">Cake Gallery</a>
+          <span class="footer-sep">|</span>
+          <a href="about.html">About</a>
+          <span class="footer-sep">|</span>
+          <a href="contact.html">Contact</a>
+        </p>
+      </div>
+      <div class="footer-center">
+        <a class="footer-logo" href="index.html" aria-label="Beiai Baking home">
+          <img class="footer-logo-img" src="assets/images/logo.png" alt="Beiai Baking" />
+        </a>
+      </div>
+      <div class="footer-right">
+        <p class="footer-line">© <span id="year"></span> Beiai Baking. All rights reserved.</p>
+        <p class="footer-line footer-line-indent">
+          <a href="privacy-policy.html">Privacy Policy</a>
+          <span class="footer-sep">|</span>
+          <a href="terms-of-use.html">Terms of Use</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/cms.js"></script>
+</body>
+</html>

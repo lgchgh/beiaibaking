@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin | Beiai Baking</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <style>
+    .admin-wrap { max-width: 900px; margin: 0 auto; padding: 2rem; }
+    .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+    .admin-nav { display: flex; gap: 1rem; }
+    .admin-nav a { color: var(--primary-color); }
+    .admin-section { display: none; }
+    .admin-section.active { display: block; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-weight: 600; margin-bottom: 0.3rem; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.5rem; }
+    .btn { padding: 0.5rem 1rem; cursor: pointer; border: none; border-radius: 6px; }
+    .btn-primary { background: var(--primary-color); color: white; }
+    .btn-danger { background: #c44; color: white; }
+    .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.85rem; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 0.5rem; border-bottom: 1px solid #eee; text-align: left; }
+    .login-form { max-width: 320px; margin: 4rem auto; }
+    .login-form input { margin-bottom: 1rem; }
+    .msg { padding: 0.5rem; margin-bottom: 1rem; border-radius: 6px; }
+    .msg.err { background: #fdd; color: #c00; }
+    .msg.ok { background: #dfd; color: #060; }
+    #postContent { min-height: 200px; }
+  </style>
+</head>
+<body>
+  <div class="admin-wrap">
+    <div id="loginSection">
+      <form class="login-form" id="loginForm">
+        <h2>Admin Login</h2>
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" name="username" required />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" name="password" required />
+        </div>
+        <button type="submit" class="btn btn-primary">Login</button>
+        <div id="loginMsg"></div>
+      </form>
+    </div>
+
+    <div id="adminPanel" style="display:none">
+      <div class="admin-header">
+        <h1>Beiai Baking Admin</h1>
+        <div class="admin-nav">
+          <a href="#" data-tab="site">Site</a>
+          <a href="#" data-tab="pages">Pages</a>
+          <a href="#" data-tab="gallery">Gallery</a>
+          <a href="#" data-tab="posts">Posts</a>
+          <a href="#" data-tab="visitors">Visitors</a>
+          <button type="button" class="btn btn-sm" id="logoutBtn">Logout</button>
+        </div>
+      </div>
+
+      <div id="siteSection" class="admin-section">
+        <h2>Site Settings</h2>
+        <div class="form-group">
+          <label>Contact Email</label>
+          <input type="email" id="site_email" placeholder="contact@beiaibaking.com" />
+        </div>
+        <div class="form-group">
+          <label>Instagram URL</label>
+          <input type="url" id="site_instagram" placeholder="https://instagram.com/..." />
+        </div>
+        <div class="form-group">
+          <label>Pinterest URL</label>
+          <input type="url" id="site_pinterest" placeholder="https://pinterest.com/..." />
+        </div>
+        <div class="form-group">
+          <label>YouTube URL</label>
+          <input type="url" id="site_youtube" placeholder="https://youtube.com/..." />
+        </div>
+        <button type="button" class="btn btn-primary" id="saveSiteBtn">Save</button>
+        <div id="siteMsg"></div>
+      </div>
+
+      <div id="pagesSection" class="admin-section">
+        <h2>Page Content</h2>
+        <div class="form-group">
+          <label>Page</label>
+          <select id="contentPage">
+            <option value="home">Home</option>
+            <option value="about">About</option>
+            <option value="contact">Contact</option>
+            <option value="privacy">Privacy Policy</option>
+            <option value="terms">Terms of Use</option>
+          </select>
+        </div>
+        <div id="contentFields"></div>
+        <button type="button" class="btn btn-primary" id="saveContentBtn">Save</button>
+        <div id="contentMsg"></div>
+      </div>
+
+      <div id="gallerySection" class="admin-section">
+        <h2>Gallery Images</h2>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="galleryCategory">
+            <option value="decorated">decorated</option>
+            <option value="fondant">fondant</option>
+            <option value="french">french</option>
+            <option value="cookies">cookies</option>
+            <option value="chocolate">chocolate</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Subcategory</label>
+          <input type="text" id="gallerySub" placeholder="e.g. decorated-floral" />
+        </div>
+        <div class="form-group">
+          <label>Image URL (or upload)</label>
+          <input type="text" id="gallerySrc" placeholder="assets/images/..." />
+          <input type="file" id="galleryFile" accept="image/*" style="margin-top:0.5rem" />
+        </div>
+        <div class="form-group">
+          <label>Caption</label>
+          <input type="text" id="galleryCaption" />
+        </div>
+        <button type="button" class="btn btn-primary" id="addGalleryBtn">Add Image</button>
+        <div id="galleryMsg"></div>
+        <table id="galleryTable" style="margin-top:1.5rem">
+          <thead><tr><th>ID</th><th>Preview</th><th>Caption</th><th>Actions</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div id="postsSection" class="admin-section">
+        <h2>Blog Posts</h2>
+        <button type="button" class="btn btn-primary" id="newPostBtn">New Post</button>
+        <div id="postForm" style="display:none; margin-top:1rem; padding:1rem; border:1px solid #eee; border-radius:8px">
+          <input type="hidden" id="postId" />
+          <div class="form-group">
+            <label>Title</label>
+            <input type="text" id="postTitle" />
+          </div>
+          <div class="form-group">
+            <label>Slug</label>
+            <input type="text" id="postSlug" placeholder="auto-generated" />
+          </div>
+          <div class="form-group">
+            <label>Content (HTML)</label>
+            <textarea id="postContent"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Excerpt</label>
+            <input type="text" id="postExcerpt" />
+          </div>
+          <div class="form-group">
+            <label>Cover Image URL</label>
+            <input type="text" id="postCover" />
+          </div>
+          <div class="form-group">
+            <label><input type="checkbox" id="postPublished" /> Published</label>
+          </div>
+          <button type="button" class="btn btn-primary" id="savePostBtn">Save</button>
+          <button type="button" class="btn" id="cancelPostBtn">Cancel</button>
+        </div>
+        <div id="postsMsg"></div>
+        <table id="postsTable" style="margin-top:1.5rem">
+          <thead><tr><th>ID</th><th>Title</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div id="visitorsSection" class="admin-section">
+        <h2>Visitor Stats</h2>
+        <p><strong>Total visits:</strong> <span id="visitorTotal">0</span></p>
+        <h3>By Page</h3>
+        <table id="visitorsByPage"><thead><tr><th>Page</th><th>Count</th></tr></thead><tbody></tbody></table>
+        <h3>By Source (Referrer)</h3>
+        <table id="visitorsByRef"><thead><tr><th>Source</th><th>Count</th></tr></thead><tbody></tbody></table>
+        <h3>Recent</h3>
+        <table id="visitorsRecent"><thead><tr><th>Page</th><th>Source</th><th>Time</th></tr></thead><tbody></tbody></table>
+        <button type="button" class="btn btn-sm" id="refreshVisitorsBtn">Refresh</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = '/api';
+    function api(path, opts = {}) {
+      return fetch(API + path, { credentials: 'include', ...opts });
+    }
+
+    function showMsg(el, text, isErr) {
+      el.innerHTML = text ? `<div class="msg ${isErr ? 'err' : 'ok'}">${text}</div>` : '';
+    }
+
+    // Login
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const res = await api('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: fd.get('username'), password: fd.get('password') }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'block';
+        loadGallery();
+        showTab('gallery');
+      } else {
+        showMsg(document.getElementById('loginMsg'), data.error || 'Login failed', true);
+      }
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await api('/logout', { method: 'POST' });
+      document.getElementById('loginSection').style.display = 'block';
+      document.getElementById('adminPanel').style.display = 'none';
+    });
+
+    // Check auth
+    api('/auth/me').then(r => r.ok && r.json()).then(data => {
+      if (data?.user) {
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'block';
+        loadGallery();
+        showTab('gallery');
+      }
+    }).catch(() => {});
+
+    // Tabs
+    const contentFields = {
+      home: [
+        { key: 'hero_label', label: 'Hero Label' },
+        { key: 'hero_title', label: 'Hero Title' },
+        { key: 'hero_subtitle', label: 'Hero Subtitle' },
+        { key: 'intro_para1', label: 'Intro Para 1' },
+        { key: 'intro_para2', label: 'Intro Para 2' },
+        { key: 'cat_decorated', label: 'Category: Decorated Cakes' },
+        { key: 'cat_fondant', label: 'Category: Fondant Cakes' },
+        { key: 'cat_french', label: 'Category: French Pastries' },
+        { key: 'cat_cookies', label: 'Category: Iced Cookies' },
+        { key: 'cat_chocolate', label: 'Category: Chocolate' },
+      ],
+      about: [
+        { key: 'hero_title', label: 'Hero Title' },
+        { key: 'story_title', label: 'Story Title' },
+        { key: 'story_content', label: 'Story Content (paragraphs, \\n for new line)', textarea: true },
+      ],
+      contact: [
+        { key: 'title', label: 'Form Title' },
+      ],
+      privacy: [
+        { key: 'content', label: 'Full Content (HTML)', textarea: true },
+      ],
+      terms: [
+        { key: 'content', label: 'Full Content (HTML)', textarea: true },
+      ],
+    };
+    function showTab(name) {
+      document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+      document.getElementById(name + 'Section').classList.add('active');
+      if (name === 'posts') loadPosts();
+      if (name === 'pages') loadContentPage();
+      if (name === 'visitors') loadVisitors();
+      if (name === 'site') loadSite();
+    }
+    document.querySelectorAll('[data-tab]').forEach(a => {
+      a.addEventListener('click', (e) => { e.preventDefault(); showTab(a.dataset.tab); });
+    });
+
+    // Gallery
+    let galleryRows = [];
+    async function loadGallery() {
+      const res = await api('/gallery');
+      galleryRows = await res.json();
+      const rows = galleryRows;
+      const tbody = document.querySelector('#galleryTable tbody');
+      tbody.innerHTML = rows.map(r => `
+        <tr>
+          <td>${r.id}</td>
+          <td><img src="${r.src}" alt="" style="max-width:60px;max-height:60px;object-fit:cover" onerror="this.style.display='none'" /></td>
+          <td>${r.caption}</td>
+          <td>
+            <button class="btn btn-sm" data-edit="${r.id}">Edit</button>
+            <button class="btn btn-sm btn-danger" data-del="${r.id}">Del</button>
+          </td>
+        </tr>
+      `).join('');
+      tbody.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => editGallery(b.dataset.edit)));
+      tbody.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => delGallery(b.dataset.del)));
+    }
+
+    function editGallery(id) {
+      const r = galleryRows.find(x => x.id == id);
+      if (!r) return;
+      document.getElementById('galleryCategory').value = r.category;
+      document.getElementById('gallerySub').value = r.subcategory;
+      document.getElementById('gallerySrc').value = r.src;
+      document.getElementById('galleryCaption').value = r.caption;
+      document.getElementById('addGalleryBtn').textContent = 'Update';
+      document.getElementById('addGalleryBtn').dataset.editId = id;
+    }
+
+    async function delGallery(id) {
+      if (!confirm('Delete this image?')) return;
+      const res = await api('/gallery/' + id, { method: 'DELETE' });
+      if (res.ok) { loadGallery(); showMsg(document.getElementById('galleryMsg'), 'Deleted'); }
+    }
+
+    document.getElementById('addGalleryBtn').addEventListener('click', async () => {
+      const src = document.getElementById('gallerySrc').value.trim();
+      const caption = document.getElementById('galleryCaption').value.trim();
+      const category = document.getElementById('galleryCategory').value;
+      const sub = document.getElementById('gallerySub').value.trim() || category;
+      if (!src || !caption) return showMsg(document.getElementById('galleryMsg'), 'Src and caption required', true);
+      const editId = document.getElementById('addGalleryBtn').dataset.editId;
+      const body = { category, subcategory: sub, src, caption, alt: caption };
+      const res = editId
+        ? await api('/gallery/' + editId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+        : await api('/gallery', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const data = await res.json();
+      if (res.ok) {
+        loadGallery();
+        document.getElementById('gallerySrc').value = document.getElementById('galleryCaption').value = '';
+        document.getElementById('addGalleryBtn').textContent = 'Add Image';
+        delete document.getElementById('addGalleryBtn').dataset.editId;
+        showMsg(document.getElementById('galleryMsg'), 'Saved');
+      } else {
+        showMsg(document.getElementById('galleryMsg'), data.error || 'Failed', true);
+      }
+    });
+
+    document.getElementById('galleryFile').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const res = await api('/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: reader.result, filename: file.name, contentType: file.type }),
+        });
+        const data = await res.json();
+        if (res.ok) document.getElementById('gallerySrc').value = data.url;
+        else showMsg(document.getElementById('galleryMsg'), data.error || 'Upload failed', true);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Posts
+    async function loadPosts() {
+      const res = await api('/posts');
+      const rows = await res.json();
+      const tbody = document.querySelector('#postsTable tbody');
+      tbody.innerHTML = rows.map(r => `
+        <tr>
+          <td>${r.id}</td>
+          <td>${r.title}</td>
+          <td>${r.published ? 'Published' : 'Draft'}</td>
+          <td>
+            <button class="btn btn-sm" data-edit="${r.id}">Edit</button>
+            <button class="btn btn-sm btn-danger" data-del="${r.id}">Del</button>
+          </td>
+        </tr>
+      `).join('');
+      tbody.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => editPost(b.dataset.edit)));
+      tbody.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => delPost(b.dataset.del)));
+    }
+
+    async function editPost(id) {
+      const res = await api('/posts/' + id);
+      const r = await res.json();
+      if (!res.ok) return;
+      document.getElementById('postId').value = r.id;
+      document.getElementById('postTitle').value = r.title;
+      document.getElementById('postSlug').value = r.slug;
+      document.getElementById('postContent').value = r.content;
+      document.getElementById('postExcerpt').value = r.excerpt || '';
+      document.getElementById('postCover').value = r.cover_image || '';
+      document.getElementById('postPublished').checked = r.published;
+      document.getElementById('postForm').style.display = 'block';
+    }
+
+    async function delPost(id) {
+      if (!confirm('Delete this post?')) return;
+      const res = await api('/posts/' + id, { method: 'DELETE' });
+      if (res.ok) { loadPosts(); document.getElementById('postForm').style.display = 'none'; showMsg(document.getElementById('postsMsg'), 'Deleted'); }
+    }
+
+    document.getElementById('newPostBtn').addEventListener('click', () => {
+      document.getElementById('postId').value = '';
+      document.getElementById('postTitle').value = document.getElementById('postSlug').value = document.getElementById('postContent').value = document.getElementById('postExcerpt').value = document.getElementById('postCover').value = '';
+      document.getElementById('postPublished').checked = false;
+      document.getElementById('postForm').style.display = 'block';
+    });
+
+    document.getElementById('savePostBtn').addEventListener('click', async () => {
+      const id = document.getElementById('postId').value;
+      const body = {
+        title: document.getElementById('postTitle').value,
+        slug: document.getElementById('postSlug').value || undefined,
+        content: document.getElementById('postContent').value,
+        excerpt: document.getElementById('postExcerpt').value,
+        cover_image: document.getElementById('postCover').value || undefined,
+        published: document.getElementById('postPublished').checked,
+      };
+      const res = id
+        ? await api('/posts/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+        : await api('/posts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const data = await res.json();
+      if (res.ok) {
+        loadPosts();
+        document.getElementById('postForm').style.display = 'none';
+        showMsg(document.getElementById('postsMsg'), 'Saved');
+      } else {
+        showMsg(document.getElementById('postsMsg'), data.error || 'Failed', true);
+      }
+    });
+
+    document.getElementById('cancelPostBtn').addEventListener('click', () => {
+      document.getElementById('postForm').style.display = 'none';
+    });
+
+    // Site settings
+    async function loadSite() {
+      const res = await api('/content?page=site');
+      const data = await res.json();
+      document.getElementById('site_email').value = data.site_email || '';
+      document.getElementById('site_instagram').value = data.site_instagram || '';
+      document.getElementById('site_pinterest').value = data.site_pinterest || '';
+      document.getElementById('site_youtube').value = data.site_youtube || '';
+    }
+    document.getElementById('saveSiteBtn').addEventListener('click', async () => {
+      const content = {
+        site_email: document.getElementById('site_email').value,
+        site_instagram: document.getElementById('site_instagram').value,
+        site_pinterest: document.getElementById('site_pinterest').value,
+        site_youtube: document.getElementById('site_youtube').value,
+      };
+      const res = await api('/content', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ page: 'site', content }) });
+      if (res.ok) showMsg(document.getElementById('siteMsg'), 'Saved');
+      else showMsg(document.getElementById('siteMsg'), (await res.json()).error || 'Failed', true);
+    });
+
+    // Pages content
+    function renderContentFields(page) {
+      const fields = contentFields[page] || [];
+      const container = document.getElementById('contentFields');
+      container.innerHTML = fields.map(f => `
+        <div class="form-group">
+          <label>${f.label}</label>
+          ${f.textarea ? `<textarea id="cf_${f.key}" rows="4"></textarea>` : `<input type="text" id="cf_${f.key}" />`}
+        </div>
+      `).join('');
+    }
+    async function loadContentPage() {
+      const page = document.getElementById('contentPage').value;
+      renderContentFields(page);
+      const res = await api('/content?page=' + page);
+      const data = await res.json();
+      (contentFields[page] || []).forEach(f => {
+        const el = document.getElementById('cf_' + f.key);
+        if (el) el.value = data[f.key] || '';
+      });
+    }
+    document.getElementById('contentPage').addEventListener('change', loadContentPage);
+    document.getElementById('saveContentBtn').addEventListener('click', async () => {
+      const page = document.getElementById('contentPage').value;
+      const content = {};
+      (contentFields[page] || []).forEach(f => {
+        const el = document.getElementById('cf_' + f.key);
+        if (el) content[f.key] = el.value;
+      });
+      const res = await api('/content', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ page, content }) });
+      const data = await res.json();
+      if (res.ok) showMsg(document.getElementById('contentMsg'), 'Saved');
+      else showMsg(document.getElementById('contentMsg'), data.error || 'Failed', true);
+    });
+
+    // Visitors
+    async function loadVisitors() {
+      const res = await api('/visitors');
+      const data = await res.json();
+      document.getElementById('visitorTotal').textContent = data.total || 0;
+      const byPage = document.querySelector('#visitorsByPage tbody');
+      byPage.innerHTML = (data.byPage || []).map(r => `<tr><td>${r.page}</td><td>${r.c}</td></tr>`).join('');
+      const byRef = document.querySelector('#visitorsByRef tbody');
+      byRef.innerHTML = (data.byReferrer || []).map(r => `<tr><td>${(r.referrer || '(direct)').substring(0,60)}</td><td>${r.c}</td></tr>`).join('');
+      const recent = document.querySelector('#visitorsRecent tbody');
+      recent.innerHTML = (data.recent || []).map(r => `<tr><td>${r.page}</td><td>${(r.referrer || '-').substring(0,40)}</td><td>${new Date(r.created_at).toLocaleString()}</td></tr>`).join('');
+    }
+    document.getElementById('refreshVisitorsBtn').addEventListener('click', loadVisitors);
+  </script>
+</body>
+</html>
