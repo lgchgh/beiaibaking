@@ -2,7 +2,7 @@
  * One-time DB init. Call: GET /api/init-db?secret=YOUR_INIT_SECRET
  * Set INIT_SECRET in Vercel env. After init, remove or change the secret.
  */
-const { sql } = require('@vercel/postgres');
+const { sql } = require('../lib/db');
 
 module.exports = async (req, res) => {
   if (req.method !== 'GET') {

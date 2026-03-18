@@ -1,5 +1,5 @@
 const auth = require('../lib/auth');
-const { sql } = require('@vercel/postgres');
+const { sql } = require('../lib/db');
 
 async function handlePost(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

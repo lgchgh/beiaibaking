@@ -3,7 +3,7 @@
  * Or use: GET /api/init-db?secret=YOUR_INIT_SECRET (after deploy)
  */
 try { require('dotenv').config({ path: '.env.local' }); } catch (_) {}
-const { sql } = require('@vercel/postgres');
+const { sql } = require('../lib/db');
 
 async function init() {
   try {

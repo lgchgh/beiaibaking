@@ -1,5 +1,5 @@
 const auth = require('../../lib/auth');
-const { sql } = require('@vercel/postgres');
+const { sql } = require('../../lib/db');
 
 async function handlePut(req, res) {
   const user = auth.requireAuth(req);
