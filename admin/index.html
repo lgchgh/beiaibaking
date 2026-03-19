@@ -124,9 +124,10 @@
           <input type="text" id="galleryCaption" />
         </div>
         <button type="button" class="btn btn-primary" id="addGalleryBtn">Add Image</button>
+        <button type="button" class="btn btn-danger" id="batchDelGalleryBtn" style="margin-left:0.5rem; display:none">Delete Selected</button>
         <div id="galleryMsg"></div>
         <table id="galleryTable" style="margin-top:1.5rem">
-          <thead><tr><th>ID</th><th>Preview</th><th>Caption</th><th>Actions</th></tr></thead>
+          <thead><tr><th><input type="checkbox" id="gallerySelectAll" title="Select all" /></th><th>ID</th><th>Preview</th><th>Caption</th><th>Actions</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -307,6 +308,7 @@
       const tbody = document.querySelector('#galleryTable tbody');
       tbody.innerHTML = rows.map(r => `
         <tr>
+          <td><input type="checkbox" class="gallery-row-cb" data-id="${r.id}" /></td>
           <td>${r.id}</td>
           <td><img src="${r.src}" alt="" style="max-width:60px;max-height:60px;object-fit:cover" onerror="this.style.display='none'" /></td>
           <td>${r.caption}</td>
@@ -319,7 +321,43 @@
       tbody.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => editGallery(b.dataset.edit)));
       tbody.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => delGallery(b.dataset.del)));
       updateSubcategoryOptions();
+      bindGalleryCheckboxes();
     }
+
+    function bindGalleryCheckboxes() {
+      const selectAll = document.getElementById('gallerySelectAll');
+      const batchBtn = document.getElementById('batchDelGalleryBtn');
+      const cbs = document.querySelectorAll('.gallery-row-cb');
+      function updateUI() {
+        const checked = document.querySelectorAll('.gallery-row-cb:checked');
+        batchBtn.style.display = checked.length ? 'inline-block' : 'none';
+        batchBtn.textContent = checked.length ? 'Delete Selected (' + checked.length + ')' : 'Delete Selected';
+        if (selectAll) selectAll.checked = cbs.length > 0 && checked.length === cbs.length;
+      }
+      if (selectAll) {
+        selectAll.checked = false;
+        selectAll.onchange = () => {
+          cbs.forEach(cb => { cb.checked = selectAll.checked; });
+          updateUI();
+        };
+      }
+      cbs.forEach(cb => cb.addEventListener('change', updateUI));
+      updateUI();
+    }
+
+    document.getElementById('batchDelGalleryBtn').addEventListener('click', async () => {
+      const ids = Array.from(document.querySelectorAll('.gallery-row-cb:checked')).map(cb => cb.dataset.id);
+      if (!ids.length) return;
+      if (!confirm('Delete ' + ids.length + ' image(s)?')) return;
+      showMsg(document.getElementById('galleryMsg'), 'Deleting...');
+      let ok = 0, err = 0;
+      for (const id of ids) {
+        const res = await api('/gallery/' + id, { method: 'DELETE' });
+        res.ok ? ok++ : err++;
+      }
+      loadGallery();
+      showMsg(document.getElementById('galleryMsg'), ok + ' deleted' + (err ? ', ' + err + ' failed' : ''), !!err);
+    });
 
     function editGallery(id) {
       const r = galleryRows.find(x => x.id == id);
