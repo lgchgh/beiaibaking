@@ -54,8 +54,8 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // 点击带下拉的分类标签时跳到「全部」视图（去掉 ?sub=）
-  ["decorated", "fondant", "french"].forEach(function (cat) {
+  // 点击分类标签时更新 URL，刷新后能正确显示当前分类（cookies 无子类，也需更新 URL）
+  ["decorated", "fondant", "french", "cookies"].forEach(function (cat) {
     var tab = document.querySelector(".category-tab[data-category='" + cat + "']");
     if (tab) {
       tab.addEventListener("click", function () {
