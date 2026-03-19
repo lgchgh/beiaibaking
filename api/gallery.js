@@ -28,12 +28,13 @@ async function handlePost(req, res) {
   }
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-    const { category, subcategory, src, caption, alt } = body;
+    const { category, subcategory, src, caption, alt, sort_order } = body;
     if (!category || !subcategory || !src || !caption) {
       res.status(400).json({ error: 'category, subcategory, src, caption required' });
       return;
     }
-    const r = await sql`INSERT INTO gallery_images (category, subcategory, src, caption, alt) VALUES (${category}, ${subcategory || category}, ${src}, ${caption}, ${alt || caption}) RETURNING *`;
+    const so = sort_order !== undefined ? parseInt(sort_order) : 0;
+    const r = await sql`INSERT INTO gallery_images (category, subcategory, src, caption, alt, sort_order) VALUES (${category}, ${subcategory || category}, ${src}, ${caption}, ${alt || caption}, ${so}) RETURNING *`;
     res.status(201).json(r.rows[0]);
   } catch (e) {
     console.error(e);

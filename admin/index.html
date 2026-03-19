@@ -123,11 +123,15 @@
           <label>Caption</label>
           <input type="text" id="galleryCaption" />
         </div>
+        <div class="form-group">
+          <label>Sort Order</label>
+          <input type="number" id="gallerySortOrder" placeholder="0" style="width:80px" title="数字越小越靠前" />
+        </div>
         <button type="button" class="btn btn-primary" id="addGalleryBtn">Add Image</button>
         <button type="button" class="btn btn-danger" id="batchDelGalleryBtn" style="margin-left:0.5rem; display:none">Delete Selected</button>
         <div id="galleryMsg"></div>
         <table id="galleryTable" style="margin-top:1.5rem">
-          <thead><tr><th><input type="checkbox" id="gallerySelectAll" title="Select all" /></th><th>ID</th><th>Preview</th><th>Caption</th><th>Actions</th></tr></thead>
+          <thead><tr><th><input type="checkbox" id="gallerySelectAll" title="Select all" /></th><th>ID</th><th>Order</th><th>Preview</th><th>Caption</th><th>Actions</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -310,6 +314,7 @@
         <tr>
           <td><input type="checkbox" class="gallery-row-cb" data-id="${r.id}" /></td>
           <td>${r.id}</td>
+          <td>${r.sort_order ?? 0}</td>
           <td><img src="${r.src}" alt="" style="max-width:60px;max-height:60px;object-fit:cover" onerror="this.style.display='none'" /></td>
           <td>${r.caption}</td>
           <td>
@@ -367,6 +372,7 @@
       document.getElementById('gallerySub').value = r.subcategory;
       document.getElementById('gallerySrc').value = r.src;
       document.getElementById('galleryCaption').value = r.caption;
+      document.getElementById('gallerySortOrder').value = r.sort_order ?? 0;
       document.getElementById('addGalleryBtn').textContent = 'Update';
       document.getElementById('addGalleryBtn').dataset.editId = id;
     }
@@ -384,7 +390,8 @@
       const sub = document.getElementById('gallerySub').value || category;
       if (!src || !caption) return showMsg(document.getElementById('galleryMsg'), 'Src and caption required', true);
       const editId = document.getElementById('addGalleryBtn').dataset.editId;
-      const body = { category, subcategory: sub, src, caption, alt: caption };
+      const sortOrder = parseInt(document.getElementById('gallerySortOrder').value, 10);
+      const body = { category, subcategory: sub, src, caption, alt: caption, sort_order: isNaN(sortOrder) ? 0 : sortOrder };
       const res = editId
         ? await api('/gallery/' + editId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
         : await api('/gallery', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -392,6 +399,7 @@
       if (res.ok) {
         loadGallery();
         document.getElementById('gallerySrc').value = document.getElementById('galleryCaption').value = '';
+        document.getElementById('gallerySortOrder').value = '';
         document.getElementById('addGalleryBtn').textContent = 'Add Image';
         delete document.getElementById('addGalleryBtn').dataset.editId;
         showMsg(document.getElementById('galleryMsg'), 'Saved');
