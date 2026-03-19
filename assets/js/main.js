@@ -67,49 +67,41 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // 首页和 Cake Gallery 小图点击放大预览（共用一个 lightbox）
-  var thumbImages = document.querySelectorAll(
-    ".home-thumb-item img.thumb-image, .category-grid img.thumb-image"
-  );
-  if (thumbImages.length) {
-    var lightboxOverlay = document.createElement("div");
-    lightboxOverlay.className = "lightbox-overlay";
-    lightboxOverlay.innerHTML =
-      '<div class="lightbox-backdrop"></div>' +
-      '<div class="lightbox-content">' +
-      '  <img class="lightbox-image" src="" alt="Large view" />' +
-      '  <button type="button" class="lightbox-close" aria-label="Close">&times;</button>' +
-      "</div>";
-    document.body.appendChild(lightboxOverlay);
+  // 首页和 Cake Gallery 小图点击放大预览（共用一个 lightbox，事件委托支持动态加载的图片）
+  var lightboxOverlay = document.createElement("div");
+  lightboxOverlay.className = "lightbox-overlay";
+  lightboxOverlay.innerHTML =
+    '<div class="lightbox-backdrop"></div>' +
+    '<div class="lightbox-content">' +
+    '  <img class="lightbox-image" src="" alt="Large view" />' +
+    '  <button type="button" class="lightbox-close" aria-label="Close">&times;</button>' +
+    "</div>";
+  document.body.appendChild(lightboxOverlay);
 
-    var lightboxImg = lightboxOverlay.querySelector(".lightbox-image");
+  var lightboxImg = lightboxOverlay.querySelector(".lightbox-image");
 
-    function openLightbox(src, alt) {
-      lightboxImg.src = src;
-      lightboxImg.alt = alt || "";
-      lightboxOverlay.classList.add("is-open");
-      document.body.classList.add("lightbox-open");
-    }
-
-    function closeLightbox() {
-      lightboxOverlay.classList.remove("is-open");
-      document.body.classList.remove("lightbox-open");
-    }
-
-    lightboxOverlay.addEventListener("click", closeLightbox);
-    document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape") closeLightbox();
-    });
-
-    document.body.addEventListener("click", function (e) {
-      var img = e.target.closest(".home-thumb-item img.thumb-image, .category-item img.thumb-image");
-      if (img) {
-        e.preventDefault();
-        openLightbox(img.src, img.alt);
-      }
-    });
-    thumbImages.forEach(function (img) {
-      img.style.cursor = "pointer";
-    });
+  function openLightbox(src, alt) {
+    lightboxImg.src = src;
+    lightboxImg.alt = alt || "";
+    lightboxOverlay.classList.add("is-open");
+    document.body.classList.add("lightbox-open");
   }
+
+  function closeLightbox() {
+    lightboxOverlay.classList.remove("is-open");
+    document.body.classList.remove("lightbox-open");
+  }
+
+  lightboxOverlay.addEventListener("click", closeLightbox);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeLightbox();
+  });
+
+  document.body.addEventListener("click", function (e) {
+    var img = e.target.closest(".home-thumb-item img.thumb-image, .category-item img.thumb-image");
+    if (img) {
+      e.preventDefault();
+      openLightbox(img.src, img.alt);
+    }
+  });
 });
