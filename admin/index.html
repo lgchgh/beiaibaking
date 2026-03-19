@@ -322,7 +322,7 @@
         <tr>
           <td><input type="checkbox" class="gallery-row-cb" data-id="${r.id}" /></td>
           <td>${r.id}</td>
-          <td>${r.sort_order ?? 0}</td>
+          <td class="gallery-order-cell" data-id="${r.id}" data-order="${r.sort_order ?? 0}" style="cursor:pointer; min-width:36px" title="Click to edit">${r.sort_order ?? 0}</td>
           <td><img src="${r.src}" alt="" style="max-width:60px;max-height:60px;object-fit:cover" onerror="this.style.display='none'" /></td>
           <td>${r.caption}</td>
           <td>
@@ -331,6 +331,7 @@
           </td>
         </tr>
       `).join('');
+      tbody.querySelectorAll('.gallery-order-cell').forEach(td => td.addEventListener('click', (e) => inlineEditOrder(td)));
       tbody.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => editGallery(b.dataset.edit)));
       tbody.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => delGallery(b.dataset.del)));
       updateSubcategoryOptions();
@@ -375,6 +376,36 @@
       loadGallery();
       showMsg(document.getElementById('galleryMsg'), ok + ' deleted' + (err ? ', ' + err + ' failed' : ''), !!err);
     });
+
+    async function inlineEditOrder(td) {
+      const id = td.dataset.id;
+      const oldVal = td.dataset.order || '0';
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.value = oldVal;
+      input.style = 'width:48px; padding:2px 4px';
+      input.min = 0;
+      td.textContent = '';
+      td.appendChild(input);
+      input.focus();
+      input.select();
+      const save = async () => {
+        const val = parseInt(input.value, 10);
+        const sortOrder = isNaN(val) ? 0 : val;
+        const r = galleryRows.find(x => x.id == id);
+        if (!r) return;
+        const body = { category: r.category, subcategory: r.subcategory, src: r.src, caption: r.caption, alt: r.alt || r.caption, sort_order: sortOrder };
+        const res = await api('/gallery/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        if (res.ok) {
+          td.removeChild(input);
+          td.textContent = sortOrder;
+          td.dataset.order = sortOrder;
+          r.sort_order = sortOrder;
+        }
+      };
+      input.addEventListener('blur', save);
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { input.blur(); } });
+    }
 
     function editGallery(id) {
       const r = galleryRows.find(x => x.id == id);
