@@ -39,28 +39,33 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // Cake Gallery：无 ?sub= 时显示全部 Decorated，有 ?sub= 时显示对应子类
-  var initialSub = params.get("sub") || "decorated-all";
+  // Cake Gallery：无 ?sub= 时显示当前分类的「全部」，有 ?sub= 时显示对应子类
+  var category = params.get("category") || "decorated";
+  var defaultSub = category + "-all";
+  var initialSub = params.get("sub") || defaultSub;
   var subBlocks = document.querySelectorAll("[data-subcategory-block]");
   if (subBlocks.length) {
     subBlocks.forEach(function (block) {
+      var blockSub = block.getAttribute("data-subcategory-block");
       block.classList.toggle(
         "is-active",
-        block.getAttribute("data-subcategory-block") === initialSub
+        blockSub === initialSub
       );
     });
   }
 
-  // 点击 Decorated Cakes 标签时跳到「全部」视图（去掉 ?sub=）
-  var decoratedTab = document.querySelector(".category-tab[data-category='decorated']");
-  if (decoratedTab) {
-    decoratedTab.addEventListener("click", function () {
-      var url = window.location.pathname + "?category=decorated";
-      if (window.location.search !== "?category=decorated") {
-        window.location.href = url;
-      }
-    });
-  }
+  // 点击带下拉的分类标签时跳到「全部」视图（去掉 ?sub=）
+  ["decorated", "fondant", "french"].forEach(function (cat) {
+    var tab = document.querySelector(".category-tab[data-category='" + cat + "']");
+    if (tab) {
+      tab.addEventListener("click", function () {
+        var url = window.location.pathname + "?category=" + cat;
+        if (window.location.search !== "?category=" + cat) {
+          window.location.href = url;
+        }
+      });
+    }
+  });
 
   // 首页和 Cake Gallery 小图点击放大预览（共用一个 lightbox）
   var thumbImages = document.querySelectorAll(

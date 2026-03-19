@@ -78,7 +78,26 @@
     });
   }
 
+  function loadGalleryThumbs() {
+    document.querySelectorAll('[data-gallery-api]').forEach(function (grid) {
+      var cat = grid.getAttribute('data-gallery-api');
+      var sub = grid.getAttribute('data-gallery-sub');
+      var url = '/api/gallery?category=' + encodeURIComponent(cat);
+      if (sub) url += '&sub=' + encodeURIComponent(sub);
+      fetch(url)
+        .then(function (r) { return r.ok ? r.json() : []; })
+        .then(function (rows) {
+          var items = rows || [];
+          grid.innerHTML = items.map(function (r) {
+            return '<figure class="category-item"><img class="thumb-image" src="' + (r.src || '') + '" alt="' + (r.alt || r.caption || '') + '" /><figcaption>' + (r.caption || '') + '</figcaption></figure>';
+          }).join('');
+        })
+        .catch(function () {});
+    });
+  }
+
   logVisit();
   loadContent();
   if (page === 'home') loadHomeThumbs();
+  if (page === 'gallery') loadGalleryThumbs();
 })();

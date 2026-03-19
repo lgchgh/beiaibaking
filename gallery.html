@@ -72,8 +72,21 @@
               <a href="gallery.html?category=decorated&sub=decorated-character">Character Cakes</a>
             </div>
           </div>
-          <button type="button" class="category-tab" data-category="fondant">Fondant Cakes</button>
-          <button type="button" class="category-tab" data-category="french">French Pastries</button>
+          <div class="category-tab-wrap category-tab-dropdown">
+            <button type="button" class="category-tab" data-category="fondant">Fondant Cakes</button>
+            <div class="category-tab-dropdown-menu" aria-hidden="true">
+              <a href="gallery.html?category=fondant&sub=wedding">Wedding Cakes</a>
+              <a href="gallery.html?category=fondant&sub=character">Character Cakes</a>
+            </div>
+          </div>
+          <div class="category-tab-wrap category-tab-dropdown">
+            <button type="button" class="category-tab" data-category="french">French Pastries</button>
+            <div class="category-tab-dropdown-menu" aria-hidden="true">
+              <a href="gallery.html?category=french&sub=mirror">Mirror Glaze Cakes</a>
+              <a href="gallery.html?category=french&sub=macarons">Macarons</a>
+              <a href="gallery.html?category=french&sub=assorted">Assorted</a>
+            </div>
+          </div>
           <button type="button" class="category-tab" data-category="cookies">Iced Cookies</button>
         </div>
       </div>
@@ -83,186 +96,48 @@
     <section class="container category-section is-active" data-category-section="decorated">
       <!-- 默认：全部 Decorated Cakes（floral + animal + character） -->
       <div class="subcategory-block is-active" data-subcategory-block="decorated-all">
-        <div class="category-grid">
-          <figure class="category-item">
-            <img class="thumb-image" src="assets/images/decorated-cakes/floral/f-01.jpg" alt="Floral cake 1" />
-            <figcaption>Floral cake 1</figcaption>
-          </figure>
-          <figure class="category-item">
-            <img class="thumb-image" src="assets/images/decorated-cakes/floral/f-02.jpg" alt="Floral cake 2" />
-            <figcaption>Floral cake 2</figcaption>
-          </figure>
-          <figure class="category-item">
-            <img class="thumb-image" src="assets/images/decorated-cakes/floral/f-03.jpg" alt="Floral cake 3" />
-            <figcaption>Floral cake 3</figcaption>
-          </figure>
-          <figure class="category-item">
-            <img class="thumb-image" src="assets/images/decorated-cakes/floral/f-04.jpg" alt="Floral cake 4" />
-            <figcaption>Floral cake 4</figcaption>
-          </figure>
-          <figure class="category-item">
-            <img class="thumb-image" src="assets/images/decorated-cakes/animal/a-01.jpg" alt="Animal cake 1" />
-            <figcaption>Animal cake 1</figcaption>
-          </figure>
-          <figure class="category-item">
-            <img class="thumb-image" src="assets/images/decorated-cakes/animal/a-02.jpg" alt="Animal cake 2" />
-            <figcaption>Animal cake 2</figcaption>
-          </figure>
-          <figure class="category-item">
-            <img class="thumb-image" src="assets/images/decorated-cakes/animal/a-03.jpg" alt="Animal cake 3" />
-            <figcaption>Animal cake 3</figcaption>
-          </figure>
-          <figure class="category-item">
-            <img class="thumb-image" src="assets/images/decorated-cakes/animal/a-04.jpg" alt="Animal cake 4" />
-            <figcaption>Animal cake 4</figcaption>
-          </figure>
-          <figure class="category-item">
-            <img class="thumb-image" src="assets/images/decorated-cakes/character/c-01.jpg" alt="Character cake 1" />
-            <figcaption>Character cake 1</figcaption>
-          </figure>
-          <figure class="category-item">
-            <img class="thumb-image" src="assets/images/decorated-cakes/character/c-02.jpg" alt="Character cake 2" />
-            <figcaption>Character cake 2</figcaption>
-          </figure>
-          <figure class="category-item">
-            <img class="thumb-image" src="assets/images/decorated-cakes/character/c-03.jpg" alt="Character cake 3" />
-            <figcaption>Character cake 3</figcaption>
-          </figure>
-          <figure class="category-item">
-            <img class="thumb-image" src="assets/images/decorated-cakes/character/c-04.jpg" alt="Character cake 4" />
-            <figcaption>Character cake 4</figcaption>
-          </figure>
-        </div>
+        <div class="category-grid" data-gallery-api="decorated"></div>
       </div>
-
-      <!-- Floral 子类 -->
       <div class="subcategory-block" data-subcategory-block="decorated-floral">
-        <div class="category-grid">
-          <figure class="category-item">
-            <img class="thumb-image" src="assets/images/decorated-cakes/floral/f-01.jpg" alt="Floral cake 1" />
-            <figcaption>Floral cake 1</figcaption>
-          </figure>
-          <figure class="category-item">
-            <img class="thumb-image" src="assets/images/decorated-cakes/floral/f-02.jpg" alt="Floral cake 2" />
-            <figcaption>Floral cake 2</figcaption>
-          </figure>
-          <figure class="category-item">
-            <img class="thumb-image" src="assets/images/decorated-cakes/floral/f-03.jpg" alt="Floral cake 3" />
-            <figcaption>Floral cake 3</figcaption>
-          </figure>
-          <figure class="category-item">
-            <img class="thumb-image" src="assets/images/decorated-cakes/floral/f-04.jpg" alt="Floral cake 4" />
-            <figcaption>Floral cake 4</figcaption>
-          </figure>
-        </div>
+        <div class="category-grid" data-gallery-api="decorated" data-gallery-sub="decorated-floral"></div>
       </div>
-
-      <!-- Animal 子类 -->
       <div class="subcategory-block" data-subcategory-block="decorated-animal">
-        <div class="category-grid">
-          <figure class="category-item">
-            <img class="thumb-image" src="assets/images/decorated-cakes/animal/a-01.jpg" alt="Animal cake 1" />
-            <figcaption>Animal cake 1</figcaption>
-          </figure>
-          <figure class="category-item">
-            <img class="thumb-image" src="assets/images/decorated-cakes/animal/a-02.jpg" alt="Animal cake 2" />
-            <figcaption>Animal cake 2</figcaption>
-          </figure>
-          <figure class="category-item">
-            <img class="thumb-image" src="assets/images/decorated-cakes/animal/a-03.jpg" alt="Animal cake 3" />
-            <figcaption>Animal cake 3</figcaption>
-          </figure>
-          <figure class="category-item">
-            <img class="thumb-image" src="assets/images/decorated-cakes/animal/a-04.jpg" alt="Animal cake 4" />
-            <figcaption>Animal cake 4</figcaption>
-          </figure>
-        </div>
+        <div class="category-grid" data-gallery-api="decorated" data-gallery-sub="decorated-animal"></div>
       </div>
-
-      <!-- Character 子类 -->
       <div class="subcategory-block" data-subcategory-block="decorated-character">
-        <div class="category-grid">
-          <figure class="category-item">
-            <img class="thumb-image" src="assets/images/decorated-cakes/character/c-01.jpg" alt="Character cake 1" />
-            <figcaption>Character cake 1</figcaption>
-          </figure>
-          <figure class="category-item">
-            <img class="thumb-image" src="assets/images/decorated-cakes/character/c-02.jpg" alt="Character cake 2" />
-            <figcaption>Character cake 2</figcaption>
-          </figure>
-          <figure class="category-item">
-            <img class="thumb-image" src="assets/images/decorated-cakes/character/c-03.jpg" alt="Character cake 3" />
-            <figcaption>Character cake 3</figcaption>
-          </figure>
-          <figure class="category-item">
-            <img class="thumb-image" src="assets/images/decorated-cakes/character/c-04.jpg" alt="Character cake 4" />
-            <figcaption>Character cake 4</figcaption>
-          </figure>
-        </div>
+        <div class="category-grid" data-gallery-api="decorated" data-gallery-sub="decorated-character"></div>
       </div>
     </section>
 
     <section class="container category-section" data-category-section="fondant">
-      <div class="category-grid">
-        <figure class="category-item">
-          <img class="thumb-image" src="assets/images/fondant-cakes/fon-01.jpg" alt="Elegant fondant cake" />
-          <figcaption>Elegant fondant cake</figcaption>
-        </figure>
-        <figure class="category-item">
-          <img class="thumb-image" src="assets/images/fondant-cakes/fon-02.jpg" alt="Character fondant cake" />
-          <figcaption>Character fondant cake</figcaption>
-        </figure>
-        <figure class="category-item">
-          <img class="thumb-image" src="assets/images/fondant-cakes/fon-03.jpg" alt="Minimal fondant design" />
-          <figcaption>Minimal fondant design</figcaption>
-        </figure>
-        <figure class="category-item">
-          <img class="thumb-image" src="assets/images/fondant-cakes/fon-04.jpg" alt="White &amp; gold cake" />
-          <figcaption>White &amp; gold cake</figcaption>
-        </figure>
+      <div class="subcategory-block is-active" data-subcategory-block="fondant-all">
+        <div class="category-grid" data-gallery-api="fondant"></div>
+      </div>
+      <div class="subcategory-block" data-subcategory-block="fondant-wedding">
+        <div class="category-grid" data-gallery-api="fondant" data-gallery-sub="fondant-wedding"></div>
+      </div>
+      <div class="subcategory-block" data-subcategory-block="fondant-character">
+        <div class="category-grid" data-gallery-api="fondant" data-gallery-sub="fondant-character"></div>
       </div>
     </section>
 
     <section class="container category-section" data-category-section="french">
-      <div class="category-grid">
-        <figure class="category-item">
-          <img class="thumb-image" src="assets/images/french-pastries/fp-01.jpg" alt="Macarons" />
-          <figcaption>Macarons</figcaption>
-        </figure>
-        <figure class="category-item">
-          <img class="thumb-image" src="assets/images/french-pastries/fp-02.jpg" alt="Éclairs" />
-          <figcaption>Éclairs</figcaption>
-        </figure>
-        <figure class="category-item">
-          <img class="thumb-image" src="assets/images/french-pastries/fp-03.jpg" alt="Entremets" />
-          <figcaption>Entremets</figcaption>
-        </figure>
-        <figure class="category-item">
-          <img class="thumb-image" src="assets/images/french-pastries/fp-04.jpg" alt="Tarts" />
-          <figcaption>Tarts</figcaption>
-        </figure>
+      <div class="subcategory-block is-active" data-subcategory-block="french-all">
+        <div class="category-grid" data-gallery-api="french"></div>
+      </div>
+      <div class="subcategory-block" data-subcategory-block="mirror">
+        <div class="category-grid" data-gallery-api="french" data-gallery-sub="mirror"></div>
+      </div>
+      <div class="subcategory-block" data-subcategory-block="macarons">
+        <div class="category-grid" data-gallery-api="french" data-gallery-sub="macarons"></div>
+      </div>
+      <div class="subcategory-block" data-subcategory-block="assorted">
+        <div class="category-grid" data-gallery-api="french" data-gallery-sub="assorted"></div>
       </div>
     </section>
 
     <section class="container category-section" data-category-section="cookies">
-      <div class="category-grid">
-        <figure class="category-item">
-          <img class="thumb-image" src="assets/images/iced-cookies/ic-01.jpg" alt="Iced cookies" />
-          <figcaption>Iced cookies</figcaption>
-        </figure>
-        <figure class="category-item">
-          <img class="thumb-image" src="assets/images/iced-cookies/ic-02.jpg" alt="Holiday cookies" />
-          <figcaption>Holiday cookies</figcaption>
-        </figure>
-        <figure class="category-item">
-          <img class="thumb-image" src="assets/images/iced-cookies/ic-03.jpg" alt="Butter cookies" />
-          <figcaption>Butter cookies</figcaption>
-        </figure>
-        <figure class="category-item">
-          <img class="thumb-image" src="assets/images/iced-cookies/ic-04.jpg" alt="Gift box set" />
-          <figcaption>Gift box set</figcaption>
-        </figure>
-      </div>
+      <div class="category-grid" data-gallery-api="cookies"></div>
     </section>
   </main>
 
