@@ -112,7 +112,7 @@
         </div>
         <div class="form-group">
           <label>Subcategory</label>
-          <input type="text" id="gallerySub" placeholder="e.g. wedding, character, mirror, macarons, assorted" />
+          <select id="gallerySub"></select>
         </div>
         <div class="form-group">
           <label>Image URL (or upload)</label>
@@ -269,7 +269,36 @@
       a.addEventListener('click', (e) => { e.preventDefault(); showTab(a.dataset.tab); });
     });
 
-    // Gallery
+    // Gallery - 子类选项（按分类）
+    const subcategoryOptions = {
+      decorated: [
+        { value: 'decorated-floral', label: '花卉 Floral' },
+        { value: 'decorated-animal', label: '动物 Animal' },
+        { value: 'decorated-character', label: '角色 Character' },
+      ],
+      fondant: [
+        { value: 'wedding', label: '婚礼 Wedding' },
+        { value: 'character', label: '角色 Character' },
+      ],
+      french: [
+        { value: 'mirror', label: '镜面 Mirror' },
+        { value: 'macarons', label: '马卡龙 Macarons' },
+        { value: 'assorted', label: '综合 Assorted' },
+      ],
+      cookies: [
+        { value: 'cookies', label: 'Cookies' },
+      ],
+    };
+
+    function updateSubcategoryOptions() {
+      const cat = document.getElementById('galleryCategory').value;
+      const opts = subcategoryOptions[cat] || [{ value: cat, label: cat }];
+      const sel = document.getElementById('gallerySub');
+      sel.innerHTML = opts.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+    }
+
+    document.getElementById('galleryCategory').addEventListener('change', updateSubcategoryOptions);
+
     let galleryRows = [];
     async function loadGallery() {
       const res = await api('/gallery');
@@ -289,12 +318,14 @@
       `).join('');
       tbody.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => editGallery(b.dataset.edit)));
       tbody.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => delGallery(b.dataset.del)));
+      updateSubcategoryOptions();
     }
 
     function editGallery(id) {
       const r = galleryRows.find(x => x.id == id);
       if (!r) return;
       document.getElementById('galleryCategory').value = r.category;
+      updateSubcategoryOptions();
       document.getElementById('gallerySub').value = r.subcategory;
       document.getElementById('gallerySrc').value = r.src;
       document.getElementById('galleryCaption').value = r.caption;
@@ -312,7 +343,7 @@
       const src = document.getElementById('gallerySrc').value.trim();
       const caption = document.getElementById('galleryCaption').value.trim();
       const category = document.getElementById('galleryCategory').value;
-      const sub = document.getElementById('gallerySub').value.trim() || category;
+      const sub = document.getElementById('gallerySub').value || category;
       if (!src || !caption) return showMsg(document.getElementById('galleryMsg'), 'Src and caption required', true);
       const editId = document.getElementById('addGalleryBtn').dataset.editId;
       const body = { category, subcategory: sub, src, caption, alt: caption };
