@@ -118,6 +118,7 @@
           <label>Image URL (or upload)</label>
           <input type="text" id="gallerySrc" placeholder="assets/images/..." />
           <input type="file" id="galleryFile" accept="image/*" style="margin-top:0.5rem" />
+          <div id="gallerySrcPreview" style="margin-top:6px; display:none"><img src="" alt="" style="max-width:120px; max-height:120px; object-fit:cover; border-radius:6px" /></div>
         </div>
         <div class="form-group">
           <label>Caption</label>
@@ -381,7 +382,9 @@
       document.getElementById('galleryCategory').value = r.category;
       updateSubcategoryOptions();
       document.getElementById('gallerySub').value = r.subcategory;
-      document.getElementById('gallerySrc').value = r.src;
+      document.getElementById('gallerySrc').value = r.src || '';
+      const prev = document.getElementById('gallerySrcPreview');
+      if (prev) { prev.style.display = r.src ? 'block' : 'none'; prev.querySelector('img').src = r.src || ''; }
       document.getElementById('galleryCaption').value = r.caption;
       document.getElementById('gallerySortOrder').value = r.sort_order ?? 0;
       document.getElementById('addGalleryBtn').textContent = 'Update';
@@ -422,18 +425,42 @@
     document.getElementById('galleryFile').addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
+      showMsg(document.getElementById('galleryMsg'), 'Uploading...');
       const reader = new FileReader();
       reader.onload = async () => {
-        const res = await api('/upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ data: reader.result, filename: file.name, contentType: file.type }),
-        });
-        const data = await res.json();
-        if (res.ok) document.getElementById('gallerySrc').value = data.url;
-        else showMsg(document.getElementById('galleryMsg'), data.error || 'Upload failed', true);
+        try {
+          const res = await api('/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data: reader.result, filename: file.name, contentType: file.type }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            const url = data.url || '';
+            document.getElementById('gallerySrc').value = url;
+            const prev = document.getElementById('gallerySrcPreview');
+            if (prev && url) { prev.style.display = 'block'; prev.querySelector('img').src = url; }
+            showMsg(document.getElementById('galleryMsg'), 'Uploaded');
+          } else {
+            showMsg(document.getElementById('galleryMsg'), data.error || 'Upload failed', true);
+          }
+        } catch (err) {
+          console.error(err);
+          showMsg(document.getElementById('galleryMsg'), 'Upload failed: ' + (err.message || 'Network error'), true);
+        }
+        e.target.value = '';
       };
+      reader.onerror = () => showMsg(document.getElementById('galleryMsg'), 'Failed to read file', true);
       reader.readAsDataURL(file);
+    });
+
+    document.getElementById('gallerySrc').addEventListener('input', function () {
+      const prev = document.getElementById('gallerySrcPreview');
+      const url = this.value.trim();
+      if (prev) {
+        prev.style.display = url ? 'block' : 'none';
+        prev.querySelector('img').src = url || '';
+      }
     });
 
     // Posts
