@@ -265,6 +265,10 @@
     function showTab(name) {
       document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
       document.getElementById(name + 'Section').classList.add('active');
+      if (name === 'gallery') {
+        if (typeof updateSubcategoryOptions === 'function') updateSubcategoryOptions();
+        loadGallery();
+      }
       if (name === 'posts') loadPosts();
       if (name === 'pages') loadContentPage();
       if (name === 'visitors') loadVisitors();
@@ -306,11 +310,14 @@
 
     let galleryRows = [];
     async function loadGallery() {
-      const res = await api('/gallery');
-      galleryRows = await res.json();
-      const rows = galleryRows;
-      const tbody = document.querySelector('#galleryTable tbody');
-      tbody.innerHTML = rows.map(r => `
+      try {
+        const res = await api('/gallery');
+        const data = await res.json();
+        galleryRows = Array.isArray(data) ? data : [];
+        const rows = galleryRows;
+        const tbody = document.querySelector('#galleryTable tbody');
+        if (!tbody) return;
+        tbody.innerHTML = rows.map(r => `
         <tr>
           <td><input type="checkbox" class="gallery-row-cb" data-id="${r.id}" /></td>
           <td>${r.id}</td>
@@ -327,6 +334,10 @@
       tbody.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => delGallery(b.dataset.del)));
       updateSubcategoryOptions();
       bindGalleryCheckboxes();
+      } catch (e) {
+        console.error(e);
+        showMsg(document.getElementById('galleryMsg'), 'Failed to load gallery. Please refresh or check login.', true);
+      }
     }
 
     function bindGalleryCheckboxes() {
