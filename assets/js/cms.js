@@ -69,7 +69,6 @@
       .then(function (r) { return r.ok ? r.json() : []; })
       .then(function (rows) {
         var items = (rows || []).slice(0, 4);
-        if (items.length === 0) return;
         grid.innerHTML = items.map(function (r) {
           return '<figure class="home-thumb-item"><img class="thumb-image" src="' + (r.src || '') + '" alt="' + (r.alt || r.caption || '') + '" /><figcaption>' + (r.caption || '') + '</figcaption></figure>';
         }).join('');
