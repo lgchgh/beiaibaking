@@ -331,8 +331,12 @@
           </td>
         </tr>
       `).join('');
-      tbody.querySelectorAll('.gallery-order-cell').forEach(td => td.addEventListener('click', (e) => inlineEditOrder(td)));
-      tbody.querySelectorAll('.gallery-caption-cell').forEach(td => td.addEventListener('click', (e) => inlineEditCaption(td)));
+      tbody.querySelectorAll('.gallery-order-cell').forEach(td => td.addEventListener('click', (e) => { e.stopPropagation(); inlineEditOrder(td); }));
+      tbody.querySelectorAll('.gallery-caption-cell').forEach(td => td.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        if (!td.querySelector('input')) inlineEditCaption(td);
+      }));
       tbody.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => editGallery(b.dataset.edit)));
       tbody.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => delGallery(b.dataset.del)));
       updateSubcategoryOptions();
@@ -414,25 +418,40 @@
       const input = document.createElement('input');
       input.type = 'text';
       input.value = oldVal;
-      input.style = 'width:100%; min-width:120px; padding:2px 4px';
+      input.style = 'width:100%; min-width:120px; padding:2px 4px; box-sizing:border-box';
       td.textContent = '';
       td.appendChild(input);
       input.focus();
       input.select();
+      const restore = () => {
+        if (input.parentNode === td) {
+          td.removeChild(input);
+          td.textContent = oldVal;
+        }
+      };
       const save = async () => {
         const caption = input.value.trim();
         const r = galleryRows.find(x => x.id == id);
-        if (!r) return;
+        if (!r) { restore(); return; }
         const body = { category: r.category, subcategory: r.subcategory, src: r.src, caption: caption || r.caption, alt: caption || r.alt || r.caption, sort_order: r.sort_order ?? 0 };
-        const res = await api('/gallery/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-        if (res.ok) {
-          td.removeChild(input);
-          td.textContent = caption || '';
-          r.caption = caption;
+        try {
+          const res = await api('/gallery/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+          if (res.ok) {
+            td.removeChild(input);
+            td.textContent = caption || '';
+            r.caption = caption;
+          } else {
+            const data = await res.json().catch(() => ({}));
+            restore();
+            showMsg(document.getElementById('galleryMsg'), data.error || 'Save failed', true);
+          }
+        } catch (err) {
+          restore();
+          showMsg(document.getElementById('galleryMsg'), 'Network error: ' + (err.message || 'Unknown'), true);
         }
       };
       input.addEventListener('blur', save);
-      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { input.blur(); } });
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } });
     }
 
     function editGallery(id) {
