@@ -303,6 +303,7 @@ h1, h2, h3, h4, h5, h6 {
   margin-top: 6px;
   font-size: 0.9rem;
   color: var(--muted);
+  text-align: center;
 }
 
 /* 去掉浏览器默认给 figure 的左右外边距，避免看起来空隙很大 */
@@ -545,10 +546,12 @@ h1, h2, h3, h4, h5, h6 {
   aspect-ratio: 3 / 4;
 }
   
+  .home-thumb-item figcaption,
   .thumb-item figcaption {
     margin-top: 6px;
     font-size: 0.9rem;
     color: var(--muted);
+    text-align: center;
   }
   
   /* 中间自我介绍条带 */
