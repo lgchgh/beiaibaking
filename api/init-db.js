@@ -76,10 +76,6 @@ module.exports = async (req, res) => {
         ['cookies','cookies','assets/images/iced-cookies/ic-02.jpg','Holiday cookies'],
         ['cookies','cookies','assets/images/iced-cookies/ic-03.jpg','Butter cookies'],
         ['cookies','cookies','assets/images/iced-cookies/ic-04.jpg','Gift box set'],
-        ['chocolate','chocolate','assets/images/chocolate/ch-01.jpg','Chocolate bonbons'],
-        ['chocolate','chocolate','assets/images/chocolate/ch-02.jpg','Chocolate bars'],
-        ['chocolate','chocolate','assets/images/chocolate/ch-03.jpg','Chocolate flowers'],
-        ['chocolate','chocolate','assets/images/chocolate/ch-04.jpg','Gift assortment'],
       ];
       for (let i = 0; i < seed.length; i++) {
         const [cat, sub, src, cap] = seed[i];
@@ -91,14 +87,13 @@ module.exports = async (req, res) => {
       const defaults = [
         ['home','hero_label','Cake & Pastry Portfolio'],
         ['home','hero_title','Elegant Cake & Pastry Art'],
-        ['home','hero_subtitle','A curated selection of piped cakes, fondant cakes, French pastries, cookies and chocolate pieces handcrafted with delicate details and balanced colors.'],
+        ['home','hero_subtitle','A curated selection of piped cakes, fondant cakes, French pastries and cookies handcrafted with delicate details and balanced colors.'],
         ['home','intro_para1',"Hi, I'm Nova."],
         ['home','intro_para2',"My baking journey began with a simple cookie for my children and evolved into a global pursuit of mastery. From studying in Paris and Seoul to being featured on national TV, I've dedicated my life to inspiring others through the art of baking. I invite you to join me on this wonderful adventure."],
         ['home','cat_decorated','Decorated Cakes'],
         ['home','cat_fondant','Fondant Cakes'],
         ['home','cat_french','French Pastries'],
         ['home','cat_cookies','Iced Cookies'],
-        ['home','cat_chocolate','Chocolate'],
         ['about','hero_title','About Beiai Baking'],
         ['about','story_title','Our Story'],
         ['about','story_content',"Hi, I'm Nova. As a mother of three, my journey from a home baking enthusiast to a full-time professional instructor has been a path filled with unexpected joy.\n\nIt all began between 2001 and 2011. Driven by the simple desire to provide variety for my children's meals, I started following videos to bake simple cakes and cookies. What started as a parenting necessity soon sparked a deep passion. I found myself creating birthday cakes for friends and family, and as my curiosity grew, so did my ambition to master the craft.\n\nIn 2012, I decided to take my skills to the next level. My pursuit of excellence led me to Paris, France, to study classical pastry arts, followed by a journey to Seoul, South Korea, to master the latest trends in Korean flower piping. Two years later, I became a certified Wilton instructor, officially launching my professional career.\n\nSince 2014, I have had the privilege of teaching over 10,000 students. My work and journey have been featured on national television and captured in a personal documentary, aimed at inspiring homemakers to discover their own passions and careers.\n\nI am profoundly grateful to my family and friends—their support has shaped who I am today. Baking is a journey of endless surprises; through this website, I hope to share that energy with you. I invite you to join me on this wonderful baking adventure!"],
