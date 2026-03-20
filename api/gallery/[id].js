@@ -1,13 +1,22 @@
 const auth = require('../../lib/auth');
 const { sql } = require('../../lib/db');
 
+function getIdFromRequest(req) {
+  let id = req.query?.id;
+  if (!id && req.url) {
+    const m = String(req.url).match(/\/gallery\/(\d+)/);
+    if (m) id = m[1];
+  }
+  return id;
+}
+
 async function handlePut(req, res) {
   const user = auth.requireAuth(req);
   if (!user) {
     res.status(401).json({ error: 'Unauthorized' });
     return;
   }
-  const id = req.query?.id;
+  const id = getIdFromRequest(req);
   if (!id) {
     res.status(400).json({ error: 'ID required' });
     return;
@@ -41,7 +50,7 @@ async function handleDelete(req, res) {
     res.status(401).json({ error: 'Unauthorized' });
     return;
   }
-  const id = req.query?.id;
+  const id = getIdFromRequest(req);
   if (!id) {
     res.status(400).json({ error: 'ID required' });
     return;
