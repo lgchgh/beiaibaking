@@ -3,18 +3,20 @@
  */
 (function () {
   var pageMap = {
-    'index.html': 'home',
-    '': 'home',
-    '/': 'home',
-    'about.html': 'about',
-    'contact.html': 'contact',
-    'gallery.html': 'gallery',
-    'blog.html': 'share',
-    'post.html': 'post',
-    'privacy-policy.html': 'privacy',
-    'terms-of-use.html': 'terms',
+    'index.html': 'home', 'index': 'home',
+    '': 'home', '/': 'home',
+    'about.html': 'about', 'about': 'about',
+    'contact.html': 'contact', 'contact': 'contact',
+    'gallery.html': 'gallery', 'gallery': 'gallery',
+    'blog.html': 'share', 'blog': 'share', 'share': 'share',
+    'post.html': 'post', 'post': 'post',
+    'privacy-policy.html': 'privacy', 'privacy-policy': 'privacy',
+    'terms-of-use.html': 'terms', 'terms-of-use': 'terms',
   };
-  var path = window.location.pathname.split('/').pop() || 'index.html';
+  var path = (typeof window !== 'undefined' && window.location && window.location.pathname)
+    ? window.location.pathname.split('/').filter(Boolean).pop() || ''
+    : 'index.html';
+  if (!path) path = 'index.html';
   var page = pageMap[path] || pageMap['index.html'];
 
   function logVisit() {
@@ -61,17 +63,25 @@
       .catch(function () {});
   }
 
+  function resolveImgSrc(src) {
+    if (!src) return '';
+    if (src.indexOf('http://') === 0 || src.indexOf('https://') === 0) return src;
+    var origin = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : '';
+    return origin + (src.indexOf('/') === 0 ? src : '/' + src);
+  }
   function loadHomeThumbs() {
     document.querySelectorAll('[data-home-thumbs]').forEach(function (grid) {
     var section = grid.closest('[data-category]');
     var cat = section ? section.getAttribute('data-category') : '';
     if (!cat) return;
-    fetch('/api/gallery?category=' + encodeURIComponent(cat))
+    var url = ((typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : '') + '/api/gallery?category=' + encodeURIComponent(cat);
+    fetch(url)
       .then(function (r) { return r.ok ? r.json() : []; })
       .then(function (rows) {
         var items = (rows || []).slice(0, 4);
         grid.innerHTML = items.map(function (r) {
-          return '<figure class="home-thumb-item"><img class="thumb-image" src="' + (r.src || '') + '" alt="' + (r.alt || r.caption || '') + '" /><figcaption>' + (r.caption || '') + '</figcaption></figure>';
+          var src = resolveImgSrc(r.src || '');
+          return '<figure class="home-thumb-item"><img class="thumb-image" src="' + src + '" alt="' + ((r.alt || r.caption || '').replace(/"/g, '&quot;')) + '" onerror="this.style.display=\'none\'" /><figcaption>' + (r.caption || '').replace(/</g, '&lt;') + '</figcaption></figure>';
         }).join('');
       })
       .catch(function () {});
@@ -82,14 +92,15 @@
     document.querySelectorAll('[data-gallery-api]').forEach(function (grid) {
       var cat = grid.getAttribute('data-gallery-api');
       var sub = grid.getAttribute('data-gallery-sub');
-      var url = '/api/gallery?category=' + encodeURIComponent(cat);
-      if (sub) url += '&sub=' + encodeURIComponent(sub);
-      fetch(url)
+      var apiUrl = ((typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : '') + '/api/gallery?category=' + encodeURIComponent(cat);
+      if (sub) apiUrl += '&sub=' + encodeURIComponent(sub);
+      fetch(apiUrl)
         .then(function (r) { return r.ok ? r.json() : []; })
         .then(function (rows) {
           var items = rows || [];
           grid.innerHTML = items.map(function (r) {
-            return '<figure class="category-item"><img class="thumb-image" src="' + (r.src || '') + '" alt="' + (r.alt || r.caption || '') + '" /><figcaption>' + (r.caption || '') + '</figcaption></figure>';
+            var src = resolveImgSrc(r.src || '');
+            return '<figure class="category-item"><img class="thumb-image" src="' + src + '" alt="' + ((r.alt || r.caption || '').replace(/"/g, '&quot;')) + '" onerror="this.style.display=\'none\'" /><figcaption>' + (r.caption || '').replace(/</g, '&lt;') + '</figcaption></figure>';
           }).join('');
         })
         .catch(function () {});
