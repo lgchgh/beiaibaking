@@ -10,10 +10,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/css/style.css" />
   <style>
-    .share-tabs { display: flex; gap: 0.5rem; margin-bottom: 2rem; flex-wrap: wrap; }
-    .share-tab { padding: 0.5rem 1.25rem; border: 1px solid var(--border-color); border-radius: 6px; background: #fff; cursor: pointer; font-family: var(--font-body); font-size: 0.95rem; color: var(--text-light); transition: var(--transition); }
-    .share-tab:hover { color: var(--primary-color); border-color: var(--primary-light); }
-    .share-tab.active { background: var(--primary-color); color: #fff; border-color: var(--primary-color); }
+    .share-hero { margin-bottom: 2rem; }
+    .share-hero-banner { width: 100%; padding-top: 33%; background: var(--background-alt); position: relative; overflow: hidden; border-radius: 0 0 var(--border-radius) var(--border-radius); }
+    .share-hero-banner img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+    .share-tabs { display: flex; flex-wrap: wrap; gap: 0; margin: 16px 0 8px; justify-content: space-between; }
+    .share-tab { flex: 1 1 0; padding: 10px 0; border-radius: 0; font-size: 0.95rem; font-family: var(--font-heading); font-weight: 600; text-align: center; color: var(--text-dark); border: 1px solid var(--border); border-left-width: 0; background-color: #fff; cursor: pointer; transition: var(--transition); }
+    .share-tab:first-child { border-left-width: 1px; border-top-left-radius: var(--radius); border-bottom-left-radius: var(--radius); }
+    .share-tab:last-child { border-top-right-radius: var(--radius); border-bottom-right-radius: var(--radius); }
+    .share-tab:hover, .share-tab.active { border-color: var(--primary-color); background-color: #fff3ec; color: #8b3b24; }
     .share-list { list-style: none; padding: 0; margin: 0; }
     .share-list li { padding: 1rem 0; border-bottom: 1px solid var(--border-color); }
     .share-list li:last-child { border-bottom: none; }
@@ -57,13 +61,20 @@
   </header>
 
   <main>
-    <section class="container" style="padding: 48px 2rem 64px;">
-      <h1>Share</h1>
-      <div class="share-tabs">
+    <section class="share-hero">
+      <div class="container">
+        <!-- 图片位置：在 src 中填入你的图片 URL -->
+        <div class="share-hero-banner">
+          <img src="assets/images/french-pastries/fp-05.jpg" alt="Share" data-placeholder />
+        </div>
+        <div class="share-tabs">
         <button type="button" class="share-tab active" data-type="news">News</button>
         <button type="button" class="share-tab" data-type="recipe">Recipes</button>
         <button type="button" class="share-tab" data-type="blog">Blog</button>
+        </div>
       </div>
+    </section>
+    <section class="container" style="padding: 0 2rem 64px;">
       <div id="shareContent">
         <ul class="share-list" id="shareList"></ul>
         <p class="share-empty" id="shareEmpty" style="display:none">No posts yet.</p>
