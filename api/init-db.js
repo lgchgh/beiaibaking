@@ -30,12 +30,14 @@ module.exports = async (req, res) => {
       title VARCHAR(200) NOT NULL,
       slug VARCHAR(200) UNIQUE NOT NULL,
       content TEXT NOT NULL,
+      type VARCHAR(50) DEFAULT 'blog',
       excerpt VARCHAR(500),
       cover_image VARCHAR(500),
       published BOOLEAN DEFAULT false,
       created_at TIMESTAMPTZ DEFAULT NOW(),
       updated_at TIMESTAMPTZ DEFAULT NOW()
     )`;
+    await sql`ALTER TABLE posts ADD COLUMN IF NOT EXISTS type VARCHAR(50) DEFAULT 'blog'`;
     await sql`CREATE TABLE IF NOT EXISTS site_content (
       page VARCHAR(50) NOT NULL,
       key VARCHAR(100) NOT NULL,

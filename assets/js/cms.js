@@ -9,7 +9,8 @@
     'about.html': 'about',
     'contact.html': 'contact',
     'gallery.html': 'gallery',
-    'blog.html': 'blog',
+    'blog.html': 'share',
+    'post.html': 'post',
     'privacy-policy.html': 'privacy',
     'terms-of-use.html': 'terms',
   };

@@ -2,18 +2,20 @@ const auth = require('../../lib/auth');
 const { sql } = require('../../lib/db');
 
 async function handleGet(req, res) {
-  const id = req.query?.id;
-  const slug = req.query?.slug;
+  let id = req.query?.id;
+  let slug = req.query?.slug;
   if (!id && !slug) {
     res.status(400).json({ error: 'id or slug required' });
     return;
   }
   try {
     let result;
-    if (id) {
-      result = await sql`SELECT * FROM posts WHERE id = ${parseInt(id)}`;
+    const numId = parseInt(id);
+    if (id && !isNaN(numId)) {
+      result = await sql`SELECT * FROM posts WHERE id = ${numId}`;
     } else {
-      result = await sql`SELECT * FROM posts WHERE slug = ${slug}`;
+      const slugVal = slug || id;
+      result = await sql`SELECT * FROM posts WHERE slug = ${slugVal}`;
     }
     const row = result.rows?.[0];
     if (!row) {
@@ -57,10 +59,11 @@ async function handlePut(req, res) {
     const title = body.title ?? row.title;
     const slug = body.slug ?? row.slug;
     const content = body.content ?? row.content;
+    const typeVal = body.type !== undefined ? (['news', 'recipe', 'blog'].includes(body.type) ? body.type : (row.type || 'blog')) : (row.type || 'blog');
     const excerpt = body.excerpt ?? row.excerpt;
     const cover_image = body.cover_image ?? row.cover_image;
     const published = body.published !== undefined ? !!body.published : row.published;
-    const r = await sql`UPDATE posts SET title=${title}, slug=${slug}, content=${content}, excerpt=${excerpt}, cover_image=${cover_image}, published=${published}, updated_at=NOW() WHERE id = ${numId} RETURNING *`;
+    const r = await sql`UPDATE posts SET title=${title}, slug=${slug}, content=${content}, type=${typeVal}, excerpt=${excerpt}, cover_image=${cover_image}, published=${published}, updated_at=NOW() WHERE id = ${numId} RETURNING *`;
     res.status(200).json(r.rows[0] || {});
   } catch (e) {
     console.error(e);

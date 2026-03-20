@@ -3,10 +3,15 @@ const { sql } = require('../lib/db');
 
 async function handleGet(req, res) {
   const published = req.query?.published;
+  const type = req.query?.type;
   try {
     let result;
     if (published === 'true') {
-      result = await sql`SELECT id, title, slug, excerpt, cover_image, created_at FROM posts WHERE published = true ORDER BY created_at DESC`;
+      if (type) {
+        result = await sql`SELECT id, title, slug, type, excerpt, cover_image, created_at FROM posts WHERE published = true AND type = ${type} ORDER BY created_at DESC`;
+      } else {
+        result = await sql`SELECT id, title, slug, type, excerpt, cover_image, created_at FROM posts WHERE published = true ORDER BY created_at DESC`;
+      }
     } else {
       const user = auth.requireAuth(req);
       if (!user) {
@@ -30,13 +35,14 @@ async function handlePost(req, res) {
   }
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-    const { title, slug, content, excerpt, cover_image, published } = body;
+    const { title, slug, content, type, excerpt, cover_image, published } = body;
     if (!title || !content) {
       res.status(400).json({ error: 'title and content required' });
       return;
     }
+    const postType = ['news', 'recipe', 'blog'].includes(type) ? type : 'blog';
     const s = slug || title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-    const r = await sql`INSERT INTO posts (title, slug, content, excerpt, cover_image, published) VALUES (${title}, ${s}, ${content}, ${excerpt || ''}, ${cover_image || ''}, ${!!published}) RETURNING *`;
+    const r = await sql`INSERT INTO posts (title, slug, content, type, excerpt, cover_image, published) VALUES (${title}, ${s}, ${content}, ${postType}, ${excerpt || ''}, ${cover_image || ''}, ${!!published}) RETURNING *`;
     res.status(201).json(r.rows[0]);
   } catch (e) {
     console.error(e);

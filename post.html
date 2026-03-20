@@ -2,13 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>About | Beiai Baking</title>
+  <title>Post | Beiai Baking</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="About Beiai Baking - cake and pastry portfolio." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/css/style.css" />
+  <style>
+    .post-body { max-width: 720px; margin: 0 auto; padding: 2rem 0 4rem; }
+    .post-body h1, .post-body h2, .post-body h3 { margin-top: 1.5rem; }
+    .post-body p { margin-bottom: 1rem; }
+    .post-body img { max-width: 100%; height: auto; border-radius: var(--border-radius); margin: 1rem 0; }
+    .post-back { margin-bottom: 1.5rem; font-size: 0.9rem; }
+    .post-back a { color: var(--primary-color); }
+    .post-date { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem; }
+  </style>
 </head>
 <body>
   <header class="site-header">
@@ -22,7 +30,7 @@
           <a href="index.html">Home</a>
           <a href="gallery.html">Cake Gallery</a>
           <a href="blog.html">Share</a>
-          <a href="about.html" class="active">About</a>
+          <a href="about.html">About</a>
           <a href="contact.html">Contact</a>
         </nav>
         <div class="nav-social" aria-label="Social media links">
@@ -42,25 +50,22 @@
       </div>
     </div>
   </header>
+
   <main>
-    <section class="about-hero">
-      <div class="container">
-        <h1 data-content="hero_title">About Beiai Baking</h1>
-      </div>
-    </section>
-    <section class="about-body">
-      <div class="container about-story">
-        <h2 data-content="story_title">Our Story</h2>
-        <div data-content="story_content" data-html="true">
-          <p>Hi, I'm Nova. As a mother of three, my journey from a home baking enthusiast to a full-time professional instructor has been a path filled with unexpected joy.</p>
-          <p>It all began between 2001 and 2011. Driven by the simple desire to provide variety for my children's meals, I started following videos to bake simple cakes and cookies. What started as a parenting necessity soon sparked a deep passion. I found myself creating birthday cakes for friends and family, and as my curiosity grew, so did my ambition to master the craft.</p>
-          <p>In 2012, I decided to take my skills to the next level. My pursuit of excellence led me to Paris, France, to study classical pastry arts, followed by a journey to Seoul, South Korea, to master the latest trends in Korean flower piping. Two years later, I became a certified Wilton instructor, officially launching my professional career.</p>
-          <p>Since 2014, I have had the privilege of teaching over 10,000 students. My work and journey have been featured on national television and captured in a personal documentary, aimed at inspiring homemakers to discover their own passions and careers.</p>
-          <p>I am profoundly grateful to my family and friends—their support has shaped who I am today. Baking is a journey of endless surprises; through this website, I hope to share that energy with you. I invite you to join me on this wonderful baking adventure!</p>
+    <section class="container" style="padding: 48px 2rem 24px;">
+      <div class="post-back"><a href="blog.html">← Back to Share</a></div>
+      <div id="postContainer">
+        <p id="postLoading">Loading...</p>
+        <div id="postContent" style="display:none">
+          <h1 id="postTitle"></h1>
+          <p class="post-date" id="postDate"></p>
+          <div class="post-body" id="postBody"></div>
         </div>
+        <p id="postError" style="display:none; color: var(--text-muted);">Post not found.</p>
       </div>
     </section>
   </main>
+
   <footer class="site-footer">
     <div class="container footer-inner">
       <div class="footer-left">
@@ -91,7 +96,44 @@
       </div>
     </div>
   </footer>
+
   <script src="assets/js/main.js"></script>
   <script src="assets/js/cms.js"></script>
+  <script>
+  (function() {
+    var params = new URLSearchParams(window.location.search);
+    var slug = params.get('slug');
+    var id = params.get('id');
+    var loading = document.getElementById('postLoading');
+    var content = document.getElementById('postContent');
+    var error = document.getElementById('postError');
+
+    if (!slug && !id) {
+      loading.style.display = 'none';
+      error.style.display = 'block';
+      return;
+    }
+
+    var url = '/api/posts/' + (id || encodeURIComponent(slug));
+    fetch(url)
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .then(function(post) {
+        loading.style.display = 'none';
+        if (post) {
+          document.title = (post.title || 'Post') + ' | Beiai Baking';
+          document.getElementById('postTitle').textContent = post.title || '';
+          document.getElementById('postDate').textContent = post.created_at ? new Date(post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+          document.getElementById('postBody').innerHTML = post.content || '';
+          content.style.display = 'block';
+        } else {
+          error.style.display = 'block';
+        }
+      })
+      .catch(function() {
+        loading.style.display = 'none';
+        error.style.display = 'block';
+      });
+  })();
+  </script>
 </body>
 </html>

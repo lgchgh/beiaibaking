@@ -138,10 +138,18 @@
       </div>
 
       <div id="postsSection" class="admin-section">
-        <h2>Blog Posts</h2>
+        <h2>Share (News / Recipes / Blog)</h2>
         <button type="button" class="btn btn-primary" id="newPostBtn">New Post</button>
         <div id="postForm" style="display:none; margin-top:1rem; padding:1rem; border:1px solid #eee; border-radius:8px">
           <input type="hidden" id="postId" />
+          <div class="form-group">
+            <label>Type</label>
+            <select id="postType">
+              <option value="news">News</option>
+              <option value="recipe">Recipes</option>
+              <option value="blog">Blog</option>
+            </select>
+          </div>
           <div class="form-group">
             <label>Title</label>
             <input type="text" id="postTitle" />
@@ -152,13 +160,14 @@
           </div>
           <div class="form-group">
             <label>Content (HTML)</label>
-            <textarea id="postContent"></textarea>
+            <textarea id="postContent" rows="12"></textarea>
+            <small style="color:var(--text-muted)">Insert images with &lt;img src="URL" alt="..."&gt;. Upload via Gallery or use image URL.</small>
           </div>
-          <div class="form-group">
+          <div class="form-group" style="display:none">
             <label>Excerpt</label>
             <input type="text" id="postExcerpt" />
           </div>
-          <div class="form-group">
+          <div class="form-group" style="display:none">
             <label>Cover Image URL</label>
             <input type="text" id="postCover" />
           </div>
@@ -170,7 +179,7 @@
         </div>
         <div id="postsMsg"></div>
         <table id="postsTable" style="margin-top:1.5rem">
-          <thead><tr><th>ID</th><th>Title</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th>ID</th><th>Type</th><th>Title</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -546,10 +555,11 @@
       const res = await api('/posts');
       const rows = await res.json();
       const tbody = document.querySelector('#postsTable tbody');
-      tbody.innerHTML = rows.map(r => `
+      tbody.innerHTML = (rows || []).map(r => `
         <tr>
           <td>${r.id}</td>
-          <td>${r.title}</td>
+          <td>${(r.type || 'blog').charAt(0).toUpperCase() + (r.type || 'blog').slice(1)}</td>
+          <td>${(r.title || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>
           <td>${r.published ? 'Published' : 'Draft'}</td>
           <td>
             <button class="btn btn-sm" data-edit="${r.id}">Edit</button>
@@ -566,6 +576,7 @@
       const r = await res.json();
       if (!res.ok) return;
       document.getElementById('postId').value = r.id;
+      document.getElementById('postType').value = r.type || 'blog';
       document.getElementById('postTitle').value = r.title;
       document.getElementById('postSlug').value = r.slug;
       document.getElementById('postContent').value = r.content;
@@ -583,6 +594,7 @@
 
     document.getElementById('newPostBtn').addEventListener('click', () => {
       document.getElementById('postId').value = '';
+      document.getElementById('postType').value = 'blog';
       document.getElementById('postTitle').value = document.getElementById('postSlug').value = document.getElementById('postContent').value = document.getElementById('postExcerpt').value = document.getElementById('postCover').value = '';
       document.getElementById('postPublished').checked = false;
       document.getElementById('postForm').style.display = 'block';
@@ -594,6 +606,7 @@
         title: document.getElementById('postTitle').value,
         slug: document.getElementById('postSlug').value || undefined,
         content: document.getElementById('postContent').value,
+        type: document.getElementById('postType').value || 'blog',
         excerpt: document.getElementById('postExcerpt').value,
         cover_image: document.getElementById('postCover').value || undefined,
         published: document.getElementById('postPublished').checked,
