@@ -268,10 +268,10 @@
         { key: 'title', label: 'Form Title' },
       ],
       gallery: [
-        { key: 'banner_image', label: 'Gallery Banner Image URL' },
+        { key: 'banner_image', label: 'Gallery Banner Image URL', imageUpload: true },
       ],
       share: [
-        { key: 'banner_image', label: 'Share Banner Image URL' },
+        { key: 'banner_image', label: 'Share Banner Image URL', imageUpload: true },
       ],
       privacy: [
         { key: 'content', label: 'Full Content (HTML)', textarea: true },
@@ -661,12 +661,68 @@
     function renderContentFields(page) {
       const fields = contentFields[page] || [];
       const container = document.getElementById('contentFields');
-      container.innerHTML = fields.map(f => `
+      container.innerHTML = fields.map(f => {
+        if (f.imageUpload) {
+          return `
+        <div class="form-group">
+          <label>${f.label}</label>
+          <input type="text" id="cf_${f.key}" placeholder="URL or upload below" />
+          <input type="file" id="cf_${f.key}_file" accept="image/*" style="margin-top:0.5rem" />
+          <div id="cf_${f.key}_preview" style="margin-top:6px; display:none"><img src="" alt="" style="max-width:120px; max-height:120px; object-fit:cover; border-radius:6px" /></div>
+        </div>
+          `;
+        }
+        return `
         <div class="form-group">
           <label>${f.label}</label>
           ${f.textarea ? `<textarea id="cf_${f.key}" rows="4"></textarea>` : `<input type="text" id="cf_${f.key}" />`}
         </div>
-      `).join('');
+        `;
+      }).join('');
+      // Bind upload for imageUpload fields
+      fields.filter(f => f.imageUpload).forEach(f => {
+        const fileInput = document.getElementById('cf_' + f.key + '_file');
+        const urlInput = document.getElementById('cf_' + f.key);
+        const preview = document.getElementById('cf_' + f.key + '_preview');
+        const msgEl = document.getElementById('contentMsg');
+        if (fileInput && urlInput) {
+          fileInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            showMsg(msgEl, 'Uploading...');
+            const reader = new FileReader();
+            reader.onload = async () => {
+              try {
+                const res = await api('/upload', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ data: reader.result, filename: file.name, contentType: file.type }),
+                });
+                const data = await res.json();
+                if (res.ok) {
+                  urlInput.value = data.url || '';
+                  if (preview && data.url) { preview.style.display = 'block'; preview.querySelector('img').src = data.url; }
+                  showMsg(msgEl, 'Uploaded');
+                } else {
+                  showMsg(msgEl, data.error || 'Upload failed', true);
+                }
+              } catch (err) {
+                showMsg(msgEl, 'Upload failed: ' + (err?.message || 'Network error'), true);
+              }
+              fileInput.value = '';
+            };
+            reader.onerror = () => showMsg(msgEl, 'Failed to read file', true);
+            reader.readAsDataURL(file);
+          };
+        }
+        if (urlInput && preview) {
+          urlInput.oninput = () => {
+            const url = urlInput.value.trim();
+            preview.style.display = url ? 'block' : 'none';
+            preview.querySelector('img').src = url || '';
+          };
+        }
+      });
     }
     async function loadContentPage() {
       const page = document.getElementById('contentPage').value;
@@ -676,6 +732,11 @@
       (contentFields[page] || []).forEach(f => {
         const el = document.getElementById('cf_' + f.key);
         if (el) el.value = data[f.key] || '';
+        if (f.imageUpload) {
+          const prev = document.getElementById('cf_' + f.key + '_preview');
+          const url = data[f.key] || '';
+          if (prev) { prev.style.display = url ? 'block' : 'none'; prev.querySelector('img').src = url || ''; }
+        }
       });
     }
     document.getElementById('contentPage').addEventListener('change', loadContentPage);
