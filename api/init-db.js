@@ -111,6 +111,8 @@ module.exports = async (req, res) => {
         await sql`INSERT INTO site_content (page, key, value) VALUES (${p}, ${k}, ${v}) ON CONFLICT (page, key) DO NOTHING`;
       }
     }
+    await sql`INSERT INTO site_content (page, key, value) VALUES ('gallery', 'banner_image', 'assets/images/french-pastries/fp-05.jpg') ON CONFLICT (page, key) DO NOTHING`;
+    await sql`INSERT INTO site_content (page, key, value) VALUES ('share', 'banner_image', 'assets/images/share-hero.jpg') ON CONFLICT (page, key) DO NOTHING`;
     res.status(200).json({ success: true, message: 'Database initialized' });
   } catch (e) {
     console.error(e);

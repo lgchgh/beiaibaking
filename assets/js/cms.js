@@ -33,7 +33,10 @@
       var val = data[key];
       if (!val && val !== '') return;
       document.querySelectorAll('[data-content="' + key + '"]').forEach(function (el) {
-        if (el.getAttribute('data-html') === 'true') {
+        if (el.tagName === 'IMG' || el.getAttribute('data-content-src') === 'true') {
+          el.src = val;
+          el.style.display = val ? '' : 'none';
+        } else if (el.getAttribute('data-html') === 'true') {
           var html = val;
           if (html.indexOf('<') === -1) {
             html = html.split(/\n\n+/).map(function (p) { return '<p>' + p.replace(/\n/g, '<br>') + '</p>'; }).join('');
