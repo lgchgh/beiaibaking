@@ -1,6 +1,7 @@
 const auth = require('../../lib/auth');
 const { sql } = require('../../lib/db');
 const { deriveSlug } = require('../../lib/postSlug');
+const { getJsonBody } = require('../../lib/parseBody');
 
 async function handleGet(req, res) {
   let id = req.query?.id;
@@ -49,7 +50,11 @@ async function handlePut(req, res) {
     return;
   }
   try {
-    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    const body = getJsonBody(req);
+    if (!body || typeof body !== 'object') {
+      res.status(400).json({ error: 'Invalid JSON body' });
+      return;
+    }
     const numId = parseInt(id);
     const cur = await sql`SELECT * FROM posts WHERE id = ${numId}`;
     if (!cur.rows?.length) {
@@ -57,19 +62,19 @@ async function handlePut(req, res) {
       return;
     }
     const row = cur.rows[0];
-    const title = body.title ?? row.title;
+    const title = String(body.title ?? row.title).slice(0, 200);
     const slug = body.slug !== undefined ? deriveSlug(body.slug, title) : row.slug;
     const content = body.content ?? row.content;
     const typeVal = body.type !== undefined ? (['news', 'recipe', 'blog'].includes(body.type) ? body.type : (row.type || 'blog')) : (row.type || 'blog');
-    const excerpt = body.excerpt ?? row.excerpt;
-    const cover_image = body.cover_image ?? row.cover_image;
+    const excerpt = String(body.excerpt ?? row.excerpt ?? '').slice(0, 500);
+    const cover_image = String(body.cover_image ?? row.cover_image ?? '').slice(0, 500);
     const published = body.published !== undefined ? !!body.published : row.published;
     const pinned = body.pinned !== undefined ? !!body.pinned : !!row.pinned;
     const r = await sql`UPDATE posts SET title=${title}, slug=${slug}, content=${content}, type=${typeVal}, excerpt=${excerpt}, cover_image=${cover_image}, published=${published}, pinned=${pinned}, updated_at=NOW() WHERE id = ${numId} RETURNING *`;
     res.status(200).json(r.rows[0] || {});
   } catch (e) {
     console.error(e);
-    res.status(500).json({ error: 'Failed to update' });
+    res.status(500).json({ error: 'Failed to update', detail: e.message || String(e), code: e.code });
   }
 }
 

@@ -640,7 +640,9 @@
         document.getElementById('postForm').style.display = 'none';
         showMsg(document.getElementById('postsMsg'), 'Saved');
       } else {
-        showMsg(document.getElementById('postsMsg'), data.error || 'Failed', true);
+        const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const hint = data.detail ? `${esc(data.error || 'Failed')} — ${esc(data.detail)}` : esc(data.error || 'Failed');
+        showMsg(document.getElementById('postsMsg'), hint + (data.code ? ` [${esc(data.code)}]` : ''), true);
       }
     });
 

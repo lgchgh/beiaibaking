@@ -1,6 +1,7 @@
 const auth = require('../lib/auth');
 const { sql } = require('../lib/db');
 const { deriveSlug } = require('../lib/postSlug');
+const { getJsonBody } = require('../lib/parseBody');
 
 async function handleGet(req, res) {
   const published = req.query?.published;
@@ -24,7 +25,11 @@ async function handleGet(req, res) {
     res.status(200).json(result.rows || []);
   } catch (e) {
     console.error(e);
-    res.status(500).json({ error: 'Failed to fetch posts' });
+    res.status(500).json({
+      error: 'Failed to fetch posts',
+      detail: e.message || String(e),
+      code: e.code,
+    });
   }
 }
 
@@ -35,19 +40,46 @@ async function handlePost(req, res) {
     return;
   }
   try {
-    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    const body = getJsonBody(req);
+    if (!body || typeof body !== 'object') {
+      res.status(400).json({ error: 'Invalid JSON body' });
+      return;
+    }
     const { title, slug, content, type, excerpt, cover_image, published, pinned } = body;
     if (!title || !content) {
       res.status(400).json({ error: 'title and content required' });
       return;
     }
     const postType = ['news', 'recipe', 'blog'].includes(type) ? type : 'blog';
-    const s = deriveSlug(slug, title);
-    const r = await sql`INSERT INTO posts (title, slug, content, type, excerpt, cover_image, published, pinned) VALUES (${title}, ${s}, ${content}, ${postType}, ${excerpt || ''}, ${cover_image || ''}, ${!!published}, ${!!pinned}) RETURNING *`;
-    res.status(201).json(r.rows[0]);
+    const ex = String(excerpt || '').slice(0, 500);
+    const baseSlug = deriveSlug(slug, title);
+    let lastErr;
+    for (let attempt = 0; attempt < 8; attempt++) {
+      const s = attempt === 0 ? baseSlug : `${baseSlug}-${attempt + 1}`;
+      try {
+        const cov = String(cover_image || '').slice(0, 500);
+        const r = await sql`INSERT INTO posts (title, slug, content, type, excerpt, cover_image, published, pinned) VALUES (${String(title).slice(0, 200)}, ${s}, ${content}, ${postType}, ${ex}, ${cov}, ${!!published}, ${!!pinned}) RETURNING *`;
+        res.status(201).json(r.rows[0]);
+        return;
+      } catch (e) {
+        lastErr = e;
+        if (e.code === '23505' && attempt < 7) continue;
+        break;
+      }
+    }
+    console.error(lastErr);
+    res.status(500).json({
+      error: 'Failed to create post',
+      detail: (lastErr && (lastErr.message || String(lastErr))) || 'unknown',
+      code: lastErr && lastErr.code,
+    });
   } catch (e) {
     console.error(e);
-    res.status(500).json({ error: 'Failed to create post' });
+    res.status(500).json({
+      error: 'Failed to create post',
+      detail: e.message || String(e),
+      code: e.code,
+    });
   }
 }
 
