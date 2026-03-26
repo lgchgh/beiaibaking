@@ -220,7 +220,7 @@
         .then(function(r) { return r.ok ? r.json() : []; })
         .then(function(rows) {
           listEl.innerHTML = (rows || []).map(function(p) {
-            var href = 'post.html?slug=' + encodeURIComponent(p.slug || '');
+            var href = 'post.html?slug=' + encodeURIComponent(p.slug || '') + '&type=' + encodeURIComponent(type);
             var title = (p.title || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             var pin = p.pinned ? '<span class="share-pinned-badge">Pinned</span>' : '';
             var date = formatDate(p.created_at);

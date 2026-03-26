@@ -56,7 +56,7 @@
 
   <main>
     <section class="container" style="padding: 48px 2rem 24px;">
-      <div class="post-back"><a href="blog.html">← Back to Share</a></div>
+      <div class="post-back"><a id="postBackLink" href="blog.html">← Back to Share</a></div>
       <div id="postContainer">
         <p id="postLoading">Loading...</p>
         <div id="postContent" style="display:none">
@@ -107,9 +107,29 @@
     var params = new URLSearchParams(window.location.search);
     var slug = params.get('slug');
     var id = params.get('id');
+    var typeFromUrl = params.get('type');
     var loading = document.getElementById('postLoading');
     var content = document.getElementById('postContent');
     var error = document.getElementById('postError');
+    var backLink = document.getElementById('postBackLink');
+
+    function validShareType(t) {
+      return ['news', 'recipe', 'blog'].indexOf(String(t || '').toLowerCase()) >= 0;
+    }
+
+    function applyBackLink(t) {
+      var type = String(t || '').toLowerCase();
+      var labels = { news: 'Back to News', recipe: 'Back to Recipes', blog: 'Back to Blog' };
+      if (labels[type]) {
+        backLink.setAttribute('href', 'blog.html?type=' + encodeURIComponent(type));
+        backLink.textContent = '← ' + labels[type];
+      } else {
+        backLink.setAttribute('href', 'blog.html');
+        backLink.textContent = '← Back to Share';
+      }
+    }
+
+    if (validShareType(typeFromUrl)) applyBackLink(typeFromUrl);
 
     if (!slug && !id) {
       loading.style.display = 'none';
@@ -123,6 +143,7 @@
       .then(function(post) {
         loading.style.display = 'none';
         if (post) {
+          if (!validShareType(typeFromUrl)) applyBackLink(post.type);
           document.title = (post.title || 'Post') + ' | Beiai Baking';
           document.getElementById('postTitle').textContent = post.title || '';
           document.getElementById('postDate').textContent = post.created_at ? new Date(post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
