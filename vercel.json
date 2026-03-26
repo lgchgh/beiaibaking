@@ -3,6 +3,7 @@
   "outputDirectory": ".",
   "installCommand": "npm install --omit=optional",
   "rewrites": [
-    { "source": "/admin", "destination": "/admin/index.html" }
+    { "source": "/admin", "destination": "/admin/index.html" },
+    { "source": "/favicon.ico", "destination": "/assets/images/logo.png" }
   ]
 }
