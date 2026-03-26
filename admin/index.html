@@ -177,7 +177,7 @@
               <button type="button" class="btn btn-sm btn-primary" id="insertPostImageBtn">Insert image</button>
             </div>
             <textarea id="postContent" rows="12"></textarea>
-            <small style="color:var(--text-muted)">Use <strong>Insert image</strong> or paste &lt;img src="URL" alt="..."&gt;. Upload in Gallery first if needed.</small>
+            <small style="color:var(--text-muted)">Use <strong>Insert image</strong> for URL, gallery, or <strong>local file upload</strong>. External links must point to the image file itself, not a webpage.</small>
           </div>
           <div class="form-group" style="display:none">
             <label>Excerpt</label>
@@ -221,14 +221,20 @@
   <dialog id="insertPostImageDialog" aria-labelledby="insertPostImageTitle">
     <h3 id="insertPostImageTitle">Insert image</h3>
     <div class="form-group">
+      <label>Upload from computer</label>
+      <input type="file" id="insertPostImageFile" accept="image/*" />
+      <small style="color:var(--text-muted);display:block;margin-top:4px">File uploads to your site and fills <strong>Image URL</strong> (same as Gallery upload).</small>
+    </div>
+    <div class="form-group">
       <label>Pick from gallery</label>
       <select id="insertPostImageGalleryPick">
         <option value="">— Optional: choose a saved image —</option>
       </select>
     </div>
     <div class="form-group">
-      <label>Image URL</label>
-      <input type="url" id="insertPostImageUrl" placeholder="https://…" autocomplete="off" />
+      <label>Image URL (external or after upload)</label>
+      <input type="text" id="insertPostImageUrl" placeholder="https://example.com/photo.jpg" autocomplete="off" />
+      <small style="color:var(--text-muted);display:block;margin-top:4px">Must be a <strong>direct image</strong> link (.jpg, .png, .webp…). A news <em>article or gallery page</em> URL (often ending in .html) will not display inside an image.</small>
     </div>
     <div class="form-group">
       <label>Alt text (description)</label>
@@ -782,6 +788,48 @@
         } catch (e) { /* ignore */ }
       }
 
+      function urlLooksLikeWebPageNotImage(u) {
+        const s = String(u).trim();
+        if (!s) return false;
+        try {
+          const path = new URL(s, window.location.origin).pathname.toLowerCase();
+          if (path.endsWith('.html') || path.endsWith('.htm')) return true;
+        } catch (e) {
+          if (/\.html?([?#]|$)/i.test(s)) return true;
+        }
+        return false;
+      }
+
+      const fileInput = document.getElementById('insertPostImageFile');
+      fileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const msgEl = document.getElementById('postsMsg');
+        showMsg(msgEl, 'Uploading image...');
+        const reader = new FileReader();
+        reader.onload = async () => {
+          try {
+            const res = await api('/upload', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ data: reader.result, filename: file.name, contentType: file.type }),
+            });
+            const data = await res.json();
+            if (res.ok && data.url) {
+              urlInput.value = data.url;
+              showMsg(msgEl, 'Uploaded. Add alt text if needed, then Insert at cursor.');
+            } else {
+              showMsg(msgEl, data.error || 'Upload failed', true);
+            }
+          } catch (err) {
+            showMsg(msgEl, 'Upload failed: ' + (err?.message || 'Network error'), true);
+          }
+          e.target.value = '';
+        };
+        reader.onerror = () => showMsg(msgEl, 'Failed to read file', true);
+        reader.readAsDataURL(file);
+      });
+
       document.getElementById('insertPostImageBtn').addEventListener('click', async () => {
         if (document.getElementById('postForm').style.display === 'none') {
           alert('Open New Post or Edit a post first, then use Insert image.');
@@ -790,6 +838,7 @@
         urlInput.value = '';
         altInput.value = '';
         galSelect.value = '';
+        fileInput.value = '';
         await fillGalleryOptions();
         if (typeof dlg.showModal === 'function') dlg.showModal();
         else alert('Your browser does not support this dialog.');
@@ -806,9 +855,15 @@
       document.getElementById('insertPostImageConfirm').addEventListener('click', () => {
         const url = urlInput.value.trim();
         if (!url) {
-          alert('Enter an image URL or pick from gallery.');
+          alert('Upload a file, enter a direct image URL, or pick from gallery.');
           urlInput.focus();
           return;
+        }
+        if (urlLooksLikeWebPageNotImage(url)) {
+          if (!window.confirm('This URL looks like a webpage (e.g. .html), not a direct image. <img> only works with image file URLs (.jpg, .png, …). Right-click the image on that site → “Copy image address”, or use Upload / Gallery.\n\nInsert this URL anyway?')) {
+            urlInput.focus();
+            return;
+          }
         }
         const alt = altInput.value.trim();
         const snippet = '\n<img src="' + escAttr(url) + '" alt="' + escAttr(alt) + '" />\n';
