@@ -44,6 +44,13 @@
     Object.keys(data).forEach(function (key) {
       var val = data[key];
       if (!val && val !== '') return;
+      if (key === 'site_email_label' && val) {
+        document.querySelectorAll('[data-mailto="site_email"]').forEach(function (el) {
+          el.setAttribute('title', val);
+          el.setAttribute('aria-label', val);
+        });
+        return;
+      }
       document.querySelectorAll('[data-content="' + key + '"]').forEach(function (el) {
         if (el.tagName === 'IMG' || el.getAttribute('data-content-src') === 'true') {
           el.src = resolveImgSrc(val);
