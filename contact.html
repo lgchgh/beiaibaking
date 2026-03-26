@@ -62,7 +62,7 @@
   <main>
     <section class="container contact-section">
       <h1 class="contact-title" data-content="title">Send Us a Message</h1>
-      <form class="contact-form" action="#" method="post">
+      <form class="contact-form" action="#" method="post" id="contactForm">
         <div class="form-group">
           <label for="contact-email">Email Address <span class="required">*</span></label>
           <input type="email" id="contact-email" name="email" required />
@@ -76,6 +76,7 @@
           <textarea id="contact-message" name="message" rows="5" required></textarea>
         </div>
         <button type="submit" class="contact-submit">Send Message</button>
+        <p class="contact-form-hint" style="font-size:0.88rem;color:var(--text-muted);margin-top:1rem;max-width:520px;line-height:1.5">After you click Send, your email app should open with this message addressed to us (no data is posted to the web server). If the app does not open, use the mail icon in the site header.</p>
       </form>
     </section>
   </main>
@@ -113,5 +114,33 @@
 
   <script src="assets/js/main.js"></script>
   <script src="assets/js/cms.js"></script>
+  <script>
+  (function () {
+    var form = document.getElementById('contactForm');
+    if (!form) return;
+    var toAddr = 'admin@beiaibaking.net';
+    fetch('/api/content?page=site')
+      .then(function (r) { return r.ok ? r.json() : {}; })
+      .then(function (d) {
+        if (d && typeof d.site_email === 'string' && d.site_email.trim()) toAddr = d.site_email.trim();
+      })
+      .catch(function () {});
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var from = document.getElementById('contact-email').value.trim();
+      var subject = document.getElementById('contact-subject').value.trim();
+      var msg = document.getElementById('contact-message').value.trim();
+      if (!from || !subject || !msg) return;
+      var body = 'From (visitor email): ' + from + '\n\n' + msg;
+      var qs = 'subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+      if (qs.length > 1600) {
+        body = body.slice(0, 1200) + '\n\n[Message trimmed — please send a shorter note or email us directly.]';
+        qs = 'subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+      }
+      window.location.href = 'mailto:' + toAddr + '?' + qs;
+    });
+  })();
+  </script>
 </body>
 </html>
