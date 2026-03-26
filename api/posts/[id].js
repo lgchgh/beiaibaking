@@ -2,6 +2,7 @@ const auth = require('../../lib/auth');
 const { sql } = require('../../lib/db');
 const { deriveSlug } = require('../../lib/postSlug');
 const { getJsonBody } = require('../../lib/parseBody');
+const { ensurePostsSchema } = require('../../lib/ensurePostsSchema');
 
 async function handleGet(req, res) {
   let id = req.query?.id;
@@ -99,6 +100,13 @@ async function handleDelete(req, res) {
 }
 
 module.exports = async (req, res) => {
+  try {
+    await ensurePostsSchema();
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Database setup failed', detail: e.message || String(e), code: e.code });
+    return;
+  }
   if (req.method === 'GET') return handleGet(req, res);
   if (req.method === 'PUT') return handlePut(req, res);
   if (req.method === 'DELETE') return handleDelete(req, res);
