@@ -63,7 +63,8 @@ async function handlePut(req, res) {
     const excerpt = body.excerpt ?? row.excerpt;
     const cover_image = body.cover_image ?? row.cover_image;
     const published = body.published !== undefined ? !!body.published : row.published;
-    const r = await sql`UPDATE posts SET title=${title}, slug=${slug}, content=${content}, type=${typeVal}, excerpt=${excerpt}, cover_image=${cover_image}, published=${published}, updated_at=NOW() WHERE id = ${numId} RETURNING *`;
+    const pinned = body.pinned !== undefined ? !!body.pinned : !!row.pinned;
+    const r = await sql`UPDATE posts SET title=${title}, slug=${slug}, content=${content}, type=${typeVal}, excerpt=${excerpt}, cover_image=${cover_image}, published=${published}, pinned=${pinned}, updated_at=NOW() WHERE id = ${numId} RETURNING *`;
     res.status(200).json(r.rows[0] || {});
   } catch (e) {
     console.error(e);

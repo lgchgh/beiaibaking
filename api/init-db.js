@@ -38,6 +38,7 @@ module.exports = async (req, res) => {
       updated_at TIMESTAMPTZ DEFAULT NOW()
     )`;
     await sql`ALTER TABLE posts ADD COLUMN IF NOT EXISTS type VARCHAR(50) DEFAULT 'blog'`;
+    await sql`ALTER TABLE posts ADD COLUMN IF NOT EXISTS pinned BOOLEAN DEFAULT false`;
     await sql`CREATE TABLE IF NOT EXISTS site_content (
       page VARCHAR(50) NOT NULL,
       key VARCHAR(100) NOT NULL,

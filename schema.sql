@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS posts (
   excerpt VARCHAR(500),
   cover_image VARCHAR(500),
   published BOOLEAN DEFAULT false,
+  pinned BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

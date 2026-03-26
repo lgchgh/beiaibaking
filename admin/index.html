@@ -179,12 +179,15 @@
           <div class="form-group">
             <label><input type="checkbox" id="postPublished" /> Published</label>
           </div>
+          <div class="form-group">
+            <label><input type="checkbox" id="postPinned" /> Pin to top (置顶)</label>
+          </div>
           <button type="button" class="btn btn-primary" id="savePostBtn">Save</button>
           <button type="button" class="btn" id="cancelPostBtn">Cancel</button>
         </div>
         <div id="postsMsg"></div>
         <table id="postsTable" style="margin-top:1.5rem">
-          <thead><tr><th>ID</th><th>Type</th><th>Title</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th>ID</th><th>Type</th><th>Title</th><th>Pin</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -571,6 +574,7 @@
           <td>${r.id}</td>
           <td>${(r.type || 'blog').charAt(0).toUpperCase() + (r.type || 'blog').slice(1)}</td>
           <td>${(r.title || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>
+          <td>${r.pinned ? 'Yes' : ''}</td>
           <td>${r.published ? 'Published' : 'Draft'}</td>
           <td>
             <button class="btn btn-sm" data-edit="${r.id}">Edit</button>
@@ -594,6 +598,7 @@
       document.getElementById('postExcerpt').value = r.excerpt || '';
       document.getElementById('postCover').value = r.cover_image || '';
       document.getElementById('postPublished').checked = r.published;
+      document.getElementById('postPinned').checked = !!r.pinned;
       document.getElementById('postForm').style.display = 'block';
     }
 
@@ -608,6 +613,7 @@
       document.getElementById('postType').value = 'blog';
       document.getElementById('postTitle').value = document.getElementById('postSlug').value = document.getElementById('postContent').value = document.getElementById('postExcerpt').value = document.getElementById('postCover').value = '';
       document.getElementById('postPublished').checked = false;
+      document.getElementById('postPinned').checked = false;
       document.getElementById('postForm').style.display = 'block';
     });
 
@@ -621,6 +627,7 @@
         excerpt: document.getElementById('postExcerpt').value,
         cover_image: document.getElementById('postCover').value || undefined,
         published: document.getElementById('postPublished').checked,
+        pinned: document.getElementById('postPinned').checked,
       };
       const res = id
         ? await api('/posts/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })

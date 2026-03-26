@@ -21,12 +21,64 @@
     .share-tab:first-child { border-left-width: 1px; border-top-left-radius: var(--radius); border-bottom-left-radius: var(--radius); }
     .share-tab:last-child { border-top-right-radius: var(--radius); border-bottom-right-radius: var(--radius); }
     .share-tab:hover, .share-tab.active { border-color: var(--primary-color); background-color: #fff3ec; color: #8b3b24; }
-    .share-list { list-style: none; padding: 0; margin: 0; }
-    .share-list li { padding: 1rem 0; border-bottom: 1px solid var(--border-color); }
-    .share-list li:last-child { border-bottom: none; }
-    .share-list a { display: block; }
-    .share-list .post-title { font-family: var(--font-heading); font-size: 1.1rem; margin-bottom: 0.25rem; }
-    .share-list .post-date { font-size: 0.85rem; color: var(--text-muted); }
+    /* News-style list: small square bullet + one line title */
+    .share-list { list-style: none; padding: 0; margin: 0; max-width: 720px; }
+    .share-list > li { margin: 0; padding: 0; border: none; }
+    .share-list-link {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--border-color);
+      color: #1a2a4a;
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+    .share-list-link::before {
+      content: '';
+      flex: 0 0 6px;
+      width: 6px;
+      height: 6px;
+      margin-top: 0.5em;
+      background: var(--primary-color);
+      border-radius: 1px;
+    }
+    .share-list-link:hover {
+      color: #8b3b24;
+    }
+    .share-list-body {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.35rem 0.75rem;
+    }
+    .share-list-title {
+      font-family: var(--font-body);
+      font-size: 1rem;
+      font-weight: 500;
+      line-height: 1.55;
+    }
+    .share-list-meta {
+      flex: 0 0 auto;
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .share-pinned-badge {
+      flex: 0 0 auto;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.12rem 0.4rem;
+      border-radius: 4px;
+      background: #fff3ec;
+      color: #8b3b24;
+      letter-spacing: 0.02em;
+    }
     .share-empty { color: var(--text-muted); padding: 2rem 0; }
   </style>
 </head>
@@ -138,7 +190,10 @@
         .then(function(rows) {
           listEl.innerHTML = (rows || []).map(function(p) {
             var href = 'post.html?slug=' + encodeURIComponent(p.slug || '');
-            return '<li><a href="' + href + '"><span class="post-title">' + (p.title || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span><span class="post-date">' + formatDate(p.created_at) + '</span></a></li>';
+            var title = (p.title || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            var pin = p.pinned ? '<span class="share-pinned-badge">置顶</span>' : '';
+            var date = formatDate(p.created_at);
+            return '<li><a class="share-list-link" href="' + href + '"><span class="share-list-body"><span class="share-list-title">' + title + '</span></span><span class="share-list-meta">' + pin + (date ? '<time>' + date + '</time>' : '') + '</span></a></li>';
           }).join('');
           listEl.style.display = (rows && rows.length) ? '' : 'none';
           emptyEl.style.display = (rows && rows.length) ? 'none' : 'block';

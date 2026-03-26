@@ -8,9 +8,9 @@ async function handleGet(req, res) {
     let result;
     if (published === 'true') {
       if (type) {
-        result = await sql`SELECT id, title, slug, type, excerpt, cover_image, created_at FROM posts WHERE published = true AND type = ${type} ORDER BY created_at DESC`;
+        result = await sql`SELECT id, title, slug, type, excerpt, cover_image, pinned, created_at FROM posts WHERE published = true AND type = ${type} ORDER BY COALESCE(pinned, false) DESC, created_at DESC`;
       } else {
-        result = await sql`SELECT id, title, slug, type, excerpt, cover_image, created_at FROM posts WHERE published = true ORDER BY created_at DESC`;
+        result = await sql`SELECT id, title, slug, type, excerpt, cover_image, pinned, created_at FROM posts WHERE published = true ORDER BY COALESCE(pinned, false) DESC, created_at DESC`;
       }
     } else {
       const user = auth.requireAuth(req);
@@ -18,7 +18,7 @@ async function handleGet(req, res) {
         res.status(401).json({ error: 'Unauthorized' });
         return;
       }
-      result = await sql`SELECT * FROM posts ORDER BY created_at DESC`;
+      result = await sql`SELECT * FROM posts ORDER BY COALESCE(pinned, false) DESC, created_at DESC`;
     }
     res.status(200).json(result.rows || []);
   } catch (e) {
@@ -35,14 +35,14 @@ async function handlePost(req, res) {
   }
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-    const { title, slug, content, type, excerpt, cover_image, published } = body;
+    const { title, slug, content, type, excerpt, cover_image, published, pinned } = body;
     if (!title || !content) {
       res.status(400).json({ error: 'title and content required' });
       return;
     }
     const postType = ['news', 'recipe', 'blog'].includes(type) ? type : 'blog';
     const s = slug || title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-    const r = await sql`INSERT INTO posts (title, slug, content, type, excerpt, cover_image, published) VALUES (${title}, ${s}, ${content}, ${postType}, ${excerpt || ''}, ${cover_image || ''}, ${!!published}) RETURNING *`;
+    const r = await sql`INSERT INTO posts (title, slug, content, type, excerpt, cover_image, published, pinned) VALUES (${title}, ${s}, ${content}, ${postType}, ${excerpt || ''}, ${cover_image || ''}, ${!!published}, ${!!pinned}) RETURNING *`;
     res.status(201).json(r.rows[0]);
   } catch (e) {
     console.error(e);
