@@ -113,12 +113,32 @@ h1, h2, h3, h4, h5, h6 {
   text-decoration: none;
 }
   
-/* Match reference site logo image size */
+/* Logo image: no border/outline box around graphic */
 .logo-img {
   width: 50px;
   height: 50px;
   object-fit: contain;
   flex: 0 0 auto;
+  border: 0;
+  outline: 0;
+  box-shadow: none;
+  background: transparent;
+  display: block;
+  -webkit-tap-highlight-color: transparent;
+}
+
+a.logo {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a.logo:focus {
+  outline: none;
+}
+
+a.logo:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 4px;
+  border-radius: 6px;
 }
 
 /* Gradient text like reference site logo-text */
@@ -654,6 +674,11 @@ h1, h2, h3, h4, h5, h6 {
     width: 88px;
     height: 88px;
     object-fit: contain;
+    border: 0;
+    outline: 0;
+    box-shadow: none;
+    background: transparent;
+    display: block;
   }
 
   .footer-right {

@@ -13,10 +13,15 @@
     'privacy-policy.html': 'privacy', 'privacy-policy': 'privacy',
     'terms-of-use.html': 'terms', 'terms-of-use': 'terms',
   };
-  var path = (typeof window !== 'undefined' && window.location && window.location.pathname)
-    ? window.location.pathname.split('/').filter(Boolean).pop() || ''
-    : 'index.html';
-  if (!path) path = 'index.html';
+  var path = 'index.html';
+  if (typeof window !== 'undefined' && window.location && window.location.pathname) {
+    var segments = window.location.pathname.split('/').filter(Boolean);
+    path = segments.length ? segments[segments.length - 1] : '';
+    path = path.split('?')[0].split('#')[0] || '';
+    path = path.toLowerCase();
+    if (!path) path = 'index.html';
+    if (path === 'index') path = 'index.html';
+  }
   var page = pageMap[path] || pageMap['index.html'];
 
   function logVisit() {
@@ -27,6 +32,13 @@
     }).catch(function () {});
   }
 
+  function resolveImgSrc(src) {
+    if (!src) return '';
+    if (src.indexOf('http://') === 0 || src.indexOf('https://') === 0) return src;
+    var origin = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : '';
+    return origin + (src.indexOf('/') === 0 ? src : '/' + src);
+  }
+
   function applyContent(data) {
     if (!data) return;
     Object.keys(data).forEach(function (key) {
@@ -34,7 +46,7 @@
       if (!val && val !== '') return;
       document.querySelectorAll('[data-content="' + key + '"]').forEach(function (el) {
         if (el.tagName === 'IMG' || el.getAttribute('data-content-src') === 'true') {
-          el.src = val;
+          el.src = resolveImgSrc(val);
           el.style.display = val ? '' : 'none';
         } else if (el.getAttribute('data-html') === 'true') {
           var html = val;
@@ -66,12 +78,6 @@
       .catch(function () {});
   }
 
-  function resolveImgSrc(src) {
-    if (!src) return '';
-    if (src.indexOf('http://') === 0 || src.indexOf('https://') === 0) return src;
-    var origin = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : '';
-    return origin + (src.indexOf('/') === 0 ? src : '/' + src);
-  }
   function loadHomeThumbs() {
     document.querySelectorAll('[data-home-thumbs]').forEach(function (grid) {
     var section = grid.closest('[data-category]');
@@ -110,8 +116,15 @@
     });
   }
 
-  logVisit();
-  loadContent();
-  if (page === 'home') loadHomeThumbs();
-  if (page === 'gallery') loadGalleryThumbs();
+  function boot() {
+    logVisit();
+    loadContent();
+    if (page === 'home') loadHomeThumbs();
+    if (page === 'gallery') loadGalleryThumbs();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
 })();
