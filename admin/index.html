@@ -242,7 +242,7 @@
     </div>
     <div class="insert-img-actions">
       <button type="button" class="btn" id="insertPostImageCancel">Cancel</button>
-      <button type="button" class="btn btn-primary" id="insertPostImageConfirm">Insert at cursor</button>
+      <button type="button" class="btn btn-primary" id="insertPostImageConfirm">插入</button>
     </div>
   </dialog>
 
@@ -817,7 +817,7 @@
             const data = await res.json();
             if (res.ok && data.url) {
               urlInput.value = data.url;
-              showMsg(msgEl, 'Uploaded. Add alt text if needed, then Insert at cursor.');
+              showMsg(msgEl, '上传成功。可填写说明文字后点击「插入」。');
             } else {
               showMsg(msgEl, data.error || 'Upload failed', true);
             }
