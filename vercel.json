@@ -2,6 +2,12 @@
   "buildCommand": "echo 'Static site'",
   "outputDirectory": ".",
   "installCommand": "npm install --omit=optional",
+  "headers": [
+    {
+      "source": "/blog.html",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
+    }
+  ],
   "rewrites": [
     { "source": "/admin", "destination": "/admin/index.html" },
     { "source": "/favicon.ico", "destination": "/assets/images/logo.png" }

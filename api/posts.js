@@ -3,6 +3,7 @@ const { sql } = require('../lib/db');
 const { deriveSlug } = require('../lib/postSlug');
 const { getJsonBody } = require('../lib/parseBody');
 const { ensurePostsSchema } = require('../lib/ensurePostsSchema');
+const { clearOtherPinnedPosts } = require('../lib/uniquePinned');
 
 async function handleGet(req, res) {
   const published = req.query?.published;
@@ -60,7 +61,9 @@ async function handlePost(req, res) {
       try {
         const cov = String(cover_image || '').slice(0, 500);
         const r = await sql`INSERT INTO posts (title, slug, content, type, excerpt, cover_image, published, pinned) VALUES (${String(title).slice(0, 200)}, ${s}, ${content}, ${postType}, ${ex}, ${cov}, ${!!published}, ${!!pinned}) RETURNING *`;
-        res.status(201).json(r.rows[0]);
+        const row = r.rows[0];
+        if (row && row.pinned) await clearOtherPinnedPosts(postType, row.id);
+        res.status(201).json(row);
         return;
       } catch (e) {
         lastErr = e;

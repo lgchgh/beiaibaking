@@ -1,5 +1,16 @@
 # 后台部署说明
 
+## 自动部署（推荐）
+
+1. 将本仓库推送到 **GitHub / GitLab / Bitbucket**（任选其一均可被 Vercel 连接）。
+2. 打开 [Vercel Dashboard](https://vercel.com/dashboard) → **Add New…** → **Project** → 选中该仓库并 **Import**。
+3. 使用项目内的 `vercel.json`（Framework Preset 选 **Other**、Root Directory 为仓库根目录即可），其余与下文「部署前准备」「环境变量」一致。
+4. 保存后，**每次往 Production 分支（通常为 `main`）推送**，Vercel 会自动构建并上线；**其他分支 / Pull Request** 会生成 **Preview** 预览地址。
+
+若仓库已挂在该项目上，只需日常 `git push`，无需手动在 Vercel 点 Deploy。
+
+---
+
 ## 0. 部署前准备（若构建失败）
 
 若 Vercel 在 "Installing dependencies" 阶段失败，可尝试：

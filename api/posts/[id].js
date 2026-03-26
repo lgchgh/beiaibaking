@@ -3,6 +3,7 @@ const { sql } = require('../../lib/db');
 const { deriveSlug } = require('../../lib/postSlug');
 const { getJsonBody } = require('../../lib/parseBody');
 const { ensurePostsSchema } = require('../../lib/ensurePostsSchema');
+const { clearOtherPinnedPosts } = require('../../lib/uniquePinned');
 
 async function handleGet(req, res) {
   let id = req.query?.id;
@@ -72,7 +73,9 @@ async function handlePut(req, res) {
     const published = body.published !== undefined ? !!body.published : row.published;
     const pinned = body.pinned !== undefined ? !!body.pinned : !!row.pinned;
     const r = await sql`UPDATE posts SET title=${title}, slug=${slug}, content=${content}, type=${typeVal}, excerpt=${excerpt}, cover_image=${cover_image}, published=${published}, pinned=${pinned}, updated_at=NOW() WHERE id = ${numId} RETURNING *`;
-    res.status(200).json(r.rows[0] || {});
+    const updated = r.rows[0];
+    if (updated && updated.pinned) await clearOtherPinnedPosts(typeVal, numId);
+    res.status(200).json(updated || {});
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Failed to update', detail: e.message || String(e), code: e.code });
