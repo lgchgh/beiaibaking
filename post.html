@@ -126,7 +126,19 @@
           document.title = (post.title || 'Post') + ' | Beiai Baking';
           document.getElementById('postTitle').textContent = post.title || '';
           document.getElementById('postDate').textContent = post.created_at ? new Date(post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
-          document.getElementById('postBody').innerHTML = post.content || '';
+          var bodyEl = document.getElementById('postBody');
+          bodyEl.innerHTML = post.content || '';
+          // Third-party hotlinking: some hosts block requests with a foreign Referer; Google is often unreachable in some regions.
+          bodyEl.querySelectorAll('img').forEach(function (img) {
+            var raw = img.getAttribute('src');
+            if (!raw) return;
+            try {
+              var u = new URL(raw, window.location.href);
+              if (u.origin !== window.location.origin) {
+                img.setAttribute('referrerpolicy', 'no-referrer');
+              }
+            } catch (e) { /* ignore */ }
+          });
           content.style.display = 'block';
         } else {
           error.style.display = 'block';

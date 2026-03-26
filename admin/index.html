@@ -866,7 +866,7 @@
           }
         }
         const alt = altInput.value.trim();
-        const snippet = '\n<img src="' + escAttr(url) + '" alt="' + escAttr(alt) + '" />\n';
+        const snippet = '\n<img src="' + escAttr(url) + '" alt="' + escAttr(alt) + '" referrerpolicy="no-referrer" />\n';
         insertAtCursor(postTa, snippet);
         dlg.close();
         postTa.focus();
