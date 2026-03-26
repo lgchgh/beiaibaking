@@ -145,6 +145,8 @@
       <div id="postsSection" class="admin-section">
         <h2>Share (News / Recipes / Blog)</h2>
         <button type="button" class="btn btn-primary" id="newPostBtn">New Post</button>
+        <button type="button" class="btn" id="batchEditPostsBtn" style="margin-left:0.5rem;display:none">Edit Selected</button>
+        <button type="button" class="btn btn-danger" id="batchDelPostsBtn" style="margin-left:0.5rem;display:none">Delete Selected</button>
         <div id="postForm" style="display:none; margin-top:1rem; padding:1rem; border:1px solid #eee; border-radius:8px">
           <input type="hidden" id="postId" />
           <div class="form-group">
@@ -188,7 +190,7 @@
         </div>
         <div id="postsMsg"></div>
         <table id="postsTable" style="margin-top:1.5rem">
-          <thead><tr><th>ID</th><th>Type</th><th>Title</th><th>Pin</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th><input type="checkbox" id="postsSelectAll" title="Select all" /></th><th>ID</th><th>Type</th><th>Title</th><th>Pin</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -566,12 +568,41 @@
     });
 
     // Posts
+    function getSelectedPostIds() {
+      return Array.from(document.querySelectorAll('.posts-row-cb:checked')).map(cb => cb.dataset.id);
+    }
+
+    function bindPostsCheckboxes() {
+      const selectAll = document.getElementById('postsSelectAll');
+      const batchDel = document.getElementById('batchDelPostsBtn');
+      const batchEdit = document.getElementById('batchEditPostsBtn');
+      const cbs = document.querySelectorAll('.posts-row-cb');
+      function updateUI() {
+        const n = document.querySelectorAll('.posts-row-cb:checked').length;
+        batchDel.style.display = n ? 'inline-block' : 'none';
+        batchDel.textContent = n ? 'Delete Selected (' + n + ')' : 'Delete Selected';
+        batchEdit.style.display = n ? 'inline-block' : 'none';
+        batchEdit.textContent = 'Edit Selected' + (n > 1 ? ' (' + n + ')' : '');
+        if (selectAll) selectAll.checked = cbs.length > 0 && n === cbs.length;
+      }
+      if (selectAll) {
+        selectAll.checked = false;
+        selectAll.onchange = () => {
+          cbs.forEach(cb => { cb.checked = selectAll.checked; });
+          updateUI();
+        };
+      }
+      cbs.forEach(cb => cb.addEventListener('change', updateUI));
+      updateUI();
+    }
+
     async function loadPosts() {
       const res = await api('/posts');
       const rows = await res.json();
       const tbody = document.querySelector('#postsTable tbody');
       tbody.innerHTML = (rows || []).map(r => `
         <tr>
+          <td><input type="checkbox" class="posts-row-cb" data-id="${r.id}" /></td>
           <td>${r.id}</td>
           <td>${(r.type || 'blog').charAt(0).toUpperCase() + (r.type || 'blog').slice(1)}</td>
           <td>${(r.title || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>
@@ -585,7 +616,33 @@
       `).join('');
       tbody.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => editPost(b.dataset.edit)));
       tbody.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => delPost(b.dataset.del)));
+      bindPostsCheckboxes();
     }
+
+    document.getElementById('batchEditPostsBtn').addEventListener('click', () => {
+      const ids = getSelectedPostIds();
+      if (!ids.length) return;
+      if (ids.length > 1) {
+        alert('Select only one post to edit, or use row Edit.');
+        return;
+      }
+      editPost(ids[0]);
+    });
+
+    document.getElementById('batchDelPostsBtn').addEventListener('click', async () => {
+      const ids = getSelectedPostIds();
+      if (!ids.length) return;
+      if (!confirm('Delete ' + ids.length + ' post(s)?')) return;
+      showMsg(document.getElementById('postsMsg'), 'Deleting...');
+      let ok = 0, err = 0;
+      for (const id of ids) {
+        const res = await api('/posts/' + id, { method: 'DELETE' });
+        res.ok ? ok++ : err++;
+      }
+      document.getElementById('postForm').style.display = 'none';
+      await loadPosts();
+      showMsg(document.getElementById('postsMsg'), ok + ' deleted' + (err ? ', ' + err + ' failed' : ''), !!err);
+    });
 
     async function editPost(id) {
       const res = await api('/posts/' + id);
