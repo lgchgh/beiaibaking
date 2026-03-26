@@ -1,5 +1,6 @@
 const auth = require('../../lib/auth');
 const { sql } = require('../../lib/db');
+const { deriveSlug } = require('../../lib/postSlug');
 
 async function handleGet(req, res) {
   let id = req.query?.id;
@@ -57,7 +58,7 @@ async function handlePut(req, res) {
     }
     const row = cur.rows[0];
     const title = body.title ?? row.title;
-    const slug = body.slug ?? row.slug;
+    const slug = body.slug !== undefined ? deriveSlug(body.slug, title) : row.slug;
     const content = body.content ?? row.content;
     const typeVal = body.type !== undefined ? (['news', 'recipe', 'blog'].includes(body.type) ? body.type : (row.type || 'blog')) : (row.type || 'blog');
     const excerpt = body.excerpt ?? row.excerpt;

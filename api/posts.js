@@ -1,5 +1,6 @@
 const auth = require('../lib/auth');
 const { sql } = require('../lib/db');
+const { deriveSlug } = require('../lib/postSlug');
 
 async function handleGet(req, res) {
   const published = req.query?.published;
@@ -41,7 +42,7 @@ async function handlePost(req, res) {
       return;
     }
     const postType = ['news', 'recipe', 'blog'].includes(type) ? type : 'blog';
-    const s = slug || title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const s = deriveSlug(slug, title);
     const r = await sql`INSERT INTO posts (title, slug, content, type, excerpt, cover_image, published, pinned) VALUES (${title}, ${s}, ${content}, ${postType}, ${excerpt || ''}, ${cover_image || ''}, ${!!published}, ${!!pinned}) RETURNING *`;
     res.status(201).json(r.rows[0]);
   } catch (e) {

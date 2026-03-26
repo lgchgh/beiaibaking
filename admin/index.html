@@ -619,9 +619,11 @@
 
     document.getElementById('savePostBtn').addEventListener('click', async () => {
       const id = document.getElementById('postId').value;
+      const slugRaw = document.getElementById('postSlug').value.trim();
+      const slugVal = slugRaw && !/^auto-generated$/i.test(slugRaw) ? slugRaw : undefined;
       const body = {
         title: document.getElementById('postTitle').value,
-        slug: document.getElementById('postSlug').value || undefined,
+        slug: slugVal,
         content: document.getElementById('postContent').value,
         type: document.getElementById('postType').value || 'blog',
         excerpt: document.getElementById('postExcerpt').value,
