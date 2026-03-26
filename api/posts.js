@@ -52,7 +52,7 @@ async function handlePost(req, res) {
       res.status(400).json({ error: 'title and content required' });
       return;
     }
-    const postType = ['news', 'recipe', 'blog'].includes(type) ? type : 'blog';
+    const postType = ['news', 'recipe', 'blog'].includes(type) ? type : 'news';
     const ex = String(excerpt || '').slice(0, 500);
     const baseSlug = deriveSlug(slug, title);
     let lastErr;

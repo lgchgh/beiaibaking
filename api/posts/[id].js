@@ -67,7 +67,7 @@ async function handlePut(req, res) {
     const title = String(body.title ?? row.title).slice(0, 200);
     const slug = body.slug !== undefined ? deriveSlug(body.slug, title) : row.slug;
     const content = body.content ?? row.content;
-    const typeVal = body.type !== undefined ? (['news', 'recipe', 'blog'].includes(body.type) ? body.type : (row.type || 'blog')) : (row.type || 'blog');
+    const typeVal = body.type !== undefined ? (['news', 'recipe', 'blog'].includes(body.type) ? body.type : (row.type || 'news')) : (row.type || 'news');
     const excerpt = String(body.excerpt ?? row.excerpt ?? '').slice(0, 500);
     const cover_image = String(body.cover_image ?? row.cover_image ?? '').slice(0, 500);
     const published = body.published !== undefined ? !!body.published : row.published;
