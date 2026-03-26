@@ -311,7 +311,10 @@
         { key: 'banner_image', label: 'Gallery Banner Image URL', imageUpload: true },
       ],
       share: [
-        { key: 'banner_image', label: 'Share Banner Image URL', imageUpload: true },
+        { key: 'banner_image', label: 'Default banner (all tabs)', imageUpload: true, hint: 'Shown when a tab has no own banner. Paste a URL or upload a file.' },
+        { key: 'banner_image_news', label: 'News tab banner', imageUpload: true, hint: 'Optional. Overrides default for News only. URL or upload.' },
+        { key: 'banner_image_recipe', label: 'Recipes tab banner', imageUpload: true, hint: 'Optional. Overrides default for Recipes only. URL or upload.' },
+        { key: 'banner_image_blog', label: 'Blog tab banner', imageUpload: true, hint: 'Optional. Overrides default for Blog only. URL or upload.' },
       ],
       privacy: [
         { key: 'content', label: 'Full Content (HTML)', textarea: true },
@@ -842,12 +845,14 @@
       const container = document.getElementById('contentFields');
       container.innerHTML = fields.map(f => {
         if (f.imageUpload) {
+          const imgHint = f.hint || 'Paste image URL or upload a file from your computer.';
           return `
         <div class="form-group">
           <label>${f.label}</label>
-          <input type="text" id="cf_${f.key}" placeholder="URL or upload below" />
+          <input type="text" id="cf_${f.key}" placeholder="https://… or upload below" />
           <input type="file" id="cf_${f.key}_file" accept="image/*" style="margin-top:0.5rem" />
           <div id="cf_${f.key}_preview" style="margin-top:6px; display:none"><img src="" alt="" style="max-width:120px; max-height:120px; object-fit:cover; border-radius:6px" /></div>
+          <small style="color:var(--text-muted);display:block;margin-top:6px">${imgHint}</small>
         </div>
           `;
         }

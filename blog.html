@@ -119,7 +119,7 @@
     <section class="share-hero">
       <div class="container">
         <div class="share-hero-banner">
-          <img data-content="banner_image" src="assets/images/share-hero.jpg" alt="Share" onerror="this.style.display='none'" />
+          <img id="shareBannerImg" src="assets/images/share-hero.jpg" alt="Share" onerror="this.style.display='none'" />
         </div>
         <div class="share-tabs">
         <button type="button" class="share-tab active" data-type="news">News</button>
@@ -175,6 +175,37 @@
     var emptyEl = document.getElementById('shareEmpty');
     var tabs = document.querySelectorAll('.share-tab');
     var currentType = 'news';
+    var shareContent = {};
+
+    function resolveShareSrc(src) {
+      if (!src) return '';
+      if (src.indexOf('http://') === 0 || src.indexOf('https://') === 0) return src;
+      var o = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : '';
+      return o + (src.indexOf('/') === 0 ? src : '/' + src);
+    }
+
+    function bannerUrlForType(type) {
+      var map = { news: 'banner_image_news', recipe: 'banner_image_recipe', blog: 'banner_image_blog' };
+      var specific = String(shareContent[map[type]] || '').trim();
+      var def = String(shareContent.banner_image || '').trim();
+      var u = specific || def;
+      return resolveShareSrc(u) || 'assets/images/share-hero.jpg';
+    }
+
+    function applyShareBanner(type) {
+      var img = document.getElementById('shareBannerImg');
+      if (!img) return;
+      img.src = bannerUrlForType(type);
+      img.style.display = '';
+    }
+
+    fetch('/api/content?page=share')
+      .then(function(r) { return r.ok ? r.json() : {}; })
+      .then(function(data) {
+        shareContent = data || {};
+        applyShareBanner(currentType);
+      })
+      .catch(function() {});
 
     function formatDate(d) {
       try {
@@ -210,6 +241,7 @@
       tabs.forEach(function(t) {
         t.classList.toggle('active', t.getAttribute('data-type') === type);
       });
+      applyShareBanner(type);
       loadPosts(type);
     }
 
