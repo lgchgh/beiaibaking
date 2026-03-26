@@ -30,6 +30,12 @@
     .msg.err { background: #fdd; color: #c00; }
     .msg.ok { background: #dfd; color: #060; }
     #postContent { min-height: 200px; }
+    .content-label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 0.3rem; }
+    .content-label-row label { margin-bottom: 0 !important; }
+    #insertPostImageDialog { padding: 1.25rem; border: none; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-width: 440px; width: calc(100vw - 2rem); }
+    #insertPostImageDialog::backdrop { background: rgba(0,0,0,0.35); }
+    #insertPostImageDialog h3 { margin: 0 0 1rem; font-size: 1.1rem; }
+    .insert-img-actions { display: flex; gap: 0.5rem; margin-top: 1rem; justify-content: flex-end; flex-wrap: wrap; }
   </style>
 </head>
 <body>
@@ -166,9 +172,12 @@
             <input type="text" id="postSlug" placeholder="auto-generated" />
           </div>
           <div class="form-group">
-            <label>Content (HTML)</label>
+            <div class="content-label-row">
+              <label>Content (HTML)</label>
+              <button type="button" class="btn btn-sm btn-primary" id="insertPostImageBtn">Insert image</button>
+            </div>
             <textarea id="postContent" rows="12"></textarea>
-            <small style="color:var(--text-muted)">Insert images with &lt;img src="URL" alt="..."&gt;. Upload via Gallery or use image URL.</small>
+            <small style="color:var(--text-muted)">Use <strong>Insert image</strong> or paste &lt;img src="URL" alt="..."&gt;. Upload in Gallery first if needed.</small>
           </div>
           <div class="form-group" style="display:none">
             <label>Excerpt</label>
@@ -208,6 +217,28 @@
       </div>
     </div>
   </div>
+
+  <dialog id="insertPostImageDialog" aria-labelledby="insertPostImageTitle">
+    <h3 id="insertPostImageTitle">Insert image</h3>
+    <div class="form-group">
+      <label>Pick from gallery</label>
+      <select id="insertPostImageGalleryPick">
+        <option value="">— Optional: choose a saved image —</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Image URL</label>
+      <input type="url" id="insertPostImageUrl" placeholder="https://…" autocomplete="off" />
+    </div>
+    <div class="form-group">
+      <label>Alt text (description)</label>
+      <input type="text" id="insertPostImageAlt" placeholder="Short description for accessibility" autocomplete="off" />
+    </div>
+    <div class="insert-img-actions">
+      <button type="button" class="btn" id="insertPostImageCancel">Cancel</button>
+      <button type="button" class="btn btn-primary" id="insertPostImageConfirm">Insert at cursor</button>
+    </div>
+  </dialog>
 
   <script>
     const API = '/api';
@@ -707,6 +738,82 @@
     document.getElementById('cancelPostBtn').addEventListener('click', () => {
       document.getElementById('postForm').style.display = 'none';
     });
+
+    (function () {
+      const dlg = document.getElementById('insertPostImageDialog');
+      const urlInput = document.getElementById('insertPostImageUrl');
+      const altInput = document.getElementById('insertPostImageAlt');
+      const galSelect = document.getElementById('insertPostImageGalleryPick');
+      const postTa = document.getElementById('postContent');
+
+      function escAttr(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/\r\n|\r|\n/g, ' ');
+      }
+
+      function insertAtCursor(el, text) {
+        el.focus();
+        const start = el.selectionStart ?? el.value.length;
+        const end = el.selectionEnd ?? el.value.length;
+        const before = el.value.slice(0, start);
+        const after = el.value.slice(end);
+        el.value = before + text + after;
+        const pos = start + text.length;
+        el.selectionStart = el.selectionEnd = pos;
+      }
+
+      async function fillGalleryOptions() {
+        galSelect.innerHTML = '<option value="">— Optional: choose a saved image —</option>';
+        try {
+          const res = await api('/gallery');
+          const rows = await res.json();
+          (Array.isArray(rows) ? rows : []).forEach(r => {
+            if (!r || !r.src) return;
+            const opt = document.createElement('option');
+            opt.value = r.src;
+            let label = (r.caption || r.alt || '').trim();
+            if (!label) label = r.src.length > 56 ? r.src.slice(0, 56) + '…' : r.src;
+            if (label.length > 72) label = label.slice(0, 72) + '…';
+            opt.textContent = label;
+            galSelect.appendChild(opt);
+          });
+        } catch (e) { /* ignore */ }
+      }
+
+      document.getElementById('insertPostImageBtn').addEventListener('click', async () => {
+        if (document.getElementById('postForm').style.display === 'none') {
+          alert('Open New Post or Edit a post first, then use Insert image.');
+          return;
+        }
+        urlInput.value = '';
+        altInput.value = '';
+        galSelect.value = '';
+        await fillGalleryOptions();
+        if (typeof dlg.showModal === 'function') dlg.showModal();
+        else alert('Your browser does not support this dialog.');
+        setTimeout(() => urlInput.focus(), 0);
+      });
+
+      galSelect.addEventListener('change', () => {
+        const v = galSelect.value;
+        if (v) urlInput.value = v;
+      });
+
+      document.getElementById('insertPostImageCancel').addEventListener('click', () => dlg.close());
+
+      document.getElementById('insertPostImageConfirm').addEventListener('click', () => {
+        const url = urlInput.value.trim();
+        if (!url) {
+          alert('Enter an image URL or pick from gallery.');
+          urlInput.focus();
+          return;
+        }
+        const alt = altInput.value.trim();
+        const snippet = '\n<img src="' + escAttr(url) + '" alt="' + escAttr(alt) + '" />\n';
+        insertAtCursor(postTa, snippet);
+        dlg.close();
+        postTa.focus();
+      });
+    })();
 
     // Site settings
     async function loadSite() {
