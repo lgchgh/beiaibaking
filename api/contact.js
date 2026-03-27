@@ -137,11 +137,10 @@ module.exports = (req, res) => {
           (Array.isArray(data.message) &&
             data.message.map((x) => (x && x.message) || '').filter(Boolean).join('; ')) ||
           'Could not send email';
-        const hint =
-          /verify|domain|own email|testing/i.test(msg)
-            ? ' With onboarding@resend.dev, Resend often only delivers to your signup email until you verify beiaibaking.net in Resend. Set CONTACT_TO_EMAIL to that email, or verify your domain and use RESEND_FROM.'
-            : '';
-        reply(502, { error: msg + hint, code: data.name });
+        // Mirror Resend 4xx (e.g. 403 testing / domain rules) so the client gets JSON + real status, not 502.
+        const clientStatus =
+          r.status >= 400 && r.status < 500 ? r.status : 502;
+        reply(clientStatus, { error: msg, code: data.name });
         return;
       }
 
