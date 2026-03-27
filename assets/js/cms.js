@@ -184,7 +184,7 @@
   /** 单次请求拉齐首页四类，避免四次独立 /api 调用在无服务器环境下的冷启动与并发失败 */
   function fetchHomeThumbBundle() {
     var url = '/api/gallery?home=1';
-    var max = 4;
+    var max = 5;
     function delay(ms) {
       return new Promise(function (res) {
         setTimeout(res, ms);
@@ -198,6 +198,12 @@
         })
         .then(function (data) {
           if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('gallery home shape');
+          /* 确保四类键始终为数组，避免缺键导致空白 */
+          var cats = ['decorated', 'fondant', 'french', 'cookies'];
+          for (var c = 0; c < cats.length; c++) {
+            var k = cats[c];
+            if (!Array.isArray(data[k])) data[k] = [];
+          }
           return data;
         })
         .catch(function () {
@@ -238,7 +244,7 @@
         var section = grid.closest('[data-category]');
         var cat = section ? section.getAttribute('data-category') : '';
         if (!cat) return;
-        renderHomeThumbGrid(grid, bundle[cat]);
+        renderHomeThumbGrid(grid, bundle[cat] || []);
       });
     });
   }
