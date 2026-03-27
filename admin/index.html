@@ -341,8 +341,8 @@
       ],
       about: [
         { key: 'hero_title', label: 'Hero Title' },
-        { key: 'story_title', label: 'Story Title' },
-        { key: 'story_content', label: 'Story Content (paragraphs, \\n for new line)', textarea: true },
+        { key: 'story_title', label: 'Story Title（About 页副标题，页面已居中）' },
+        { key: 'story_content', label: 'Story Content（正文）', textarea: true, rows: 16, hint: '段落之间<strong>空一行</strong>。网站会自动<strong>每段首行缩进约 2 个汉字</strong>，不必在后台敲空格。需要小标题或链接时可写 HTML（例如 &lt;h3&gt;小标题&lt;/h3&gt;、&lt;a href="contact.html"&gt;联系&lt;/a&gt;）。' },
       ],
       contact: [
         { key: 'title', label: 'Form Title' },
@@ -960,10 +960,14 @@
         </div>
           `;
         }
+        const fieldHint = f.hint && !f.imageUpload
+          ? `<small style="color:var(--text-muted);display:block;margin-top:6px;line-height:1.45">${f.hint}</small>`
+          : '';
         return `
         <div class="form-group">
           <label>${f.label}</label>
           ${f.textarea ? `<textarea id="cf_${f.key}" rows="${f.rows || 4}"></textarea>` : `<input type="text" id="cf_${f.key}" />`}
+          ${fieldHint}
         </div>
         `;
       }).join('');
