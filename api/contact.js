@@ -12,9 +12,17 @@ function esc(s) {
 
 module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     return res.status(204).end();
+  }
+  if (req.method === 'GET') {
+    res.status(200).json({
+      ok: true,
+      contactApi: true,
+      resendConfigured: !!process.env.RESEND_API_KEY,
+    });
+    return;
   }
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
@@ -28,7 +36,14 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const body = getJsonBody(req);
+  let body = getJsonBody(req);
+  if (!body && req.body != null) {
+    try {
+      body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    } catch (e) {
+      body = null;
+    }
+  }
   if (!body || typeof body !== 'object') {
     res.status(400).json({ error: 'Invalid JSON body' });
     return;

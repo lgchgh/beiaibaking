@@ -51,7 +51,9 @@
 2. **`CONTACT_TO_EMAIL`**：收到信的地址（建议与后台 Site 里的 Contact Email 一致）。不设置则默认为 `admin@beiaibaking.net`。
 3. **`RESEND_FROM`**：发件人展示名 + 地址。未完成域名验证前，可用官方测试发件人：  
    `Beiai Baking <onboarding@resend.dev>`（Resend 文档可能有更新，以控制台说明为准）。验证你自己的域名后，改为例如 `Beiai Baking <hello@你的域名>`。
-4. 保存环境变量后 **Redeploy** 再测 Contact 页。
+4. 保存环境变量后必须在 Vercel 对项目做一次 **Redeploy**（仅保存变量不会更新已在跑的函数）。  
+
+**自检：** 浏览器打开 `https://你的域名/api/contact`，应看到 JSON：`{"ok":true,"contactApi":true,"resendConfigured":true}`（最后项在已配置 Key 后为 `true`）。若 404，说明尚未部署含 `api/contact.js` 的版本或需 Redeploy。
 
 未配置 `RESEND_API_KEY` 时，提交会提示表单未就绪，仍可使用导航栏邮件图标。
 

@@ -170,7 +170,20 @@
         body: JSON.stringify(payload),
       })
         .then(function (r) {
-          return r.json().then(function (data) {
+          return r.text().then(function (text) {
+            var data = {};
+            if (text) {
+              try {
+                data = JSON.parse(text);
+              } catch (e) {
+                data = {
+                  error:
+                    'Server returned non-JSON (HTTP ' +
+                    r.status +
+                    '). If you just added RESEND_API_KEY, redeploy the project on Vercel. Open /api/contact in a new tab — you should see JSON.',
+                };
+              }
+            }
             return { ok: r.ok, status: r.status, data: data };
           });
         })
@@ -179,14 +192,21 @@
             showThankYou();
           } else {
             var msg = (res.data && res.data.error) || 'Something went wrong. Please try again or email us from the header icon.';
+            if (res.status === 404) {
+              msg =
+                'Contact API not found (404). Deploy the latest code from GitHub, then Redeploy on Vercel.';
+            }
             if (res.status === 503) {
               msg = 'Contact form is not set up yet. Please email us using the mail icon in the site header.';
             }
             showError(msg);
           }
         })
-        .catch(function () {
-          showError('Network error. Please check your connection and try again.');
+        .catch(function (err) {
+          showError(
+            (err && err.message) ||
+              'Could not reach the server. Check your connection, or try again after redeploying on Vercel.'
+          );
         })
         .then(function () {
           submitBtn.disabled = false;
