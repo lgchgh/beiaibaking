@@ -93,6 +93,12 @@
           <label>YouTube URL</label>
           <input type="url" id="site_youtube" placeholder="https://youtube.com/..." />
         </div>
+        <div class="form-group">
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-weight:400">
+            <input type="checkbox" id="site_nav_social_email_only" style="margin-top:4px" />
+            <span>导航栏仅显示信箱图标（隐藏 YouTube、Pinterest、Instagram；不删除，可随时再显示）</span>
+          </label>
+        </div>
         <button type="button" class="btn btn-primary" id="saveSiteBtn">Save</button>
         <div id="siteMsg"></div>
       </div>
@@ -886,6 +892,8 @@
       document.getElementById('site_instagram').value = data.site_instagram || '';
       document.getElementById('site_pinterest').value = data.site_pinterest || '';
       document.getElementById('site_youtube').value = data.site_youtube || '';
+      document.getElementById('site_nav_social_email_only').checked =
+        data.site_nav_social_email_only === '1' || data.site_nav_social_email_only === 'true';
     }
     document.getElementById('saveSiteBtn').addEventListener('click', async () => {
       const content = {
@@ -894,6 +902,7 @@
         site_instagram: document.getElementById('site_instagram').value,
         site_pinterest: document.getElementById('site_pinterest').value,
         site_youtube: document.getElementById('site_youtube').value,
+        site_nav_social_email_only: document.getElementById('site_nav_social_email_only').checked ? '1' : '0',
       };
       const res = await api('/content', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ page: 'site', content }) });
       if (res.ok) showMsg(document.getElementById('siteMsg'), 'Saved');

@@ -105,6 +105,13 @@
         });
         return;
       }
+      if (key === 'site_nav_social_email_only') {
+        var emailOnly =
+          String(val) === '1' ||
+          String(val).toLowerCase() === 'true';
+        document.body.classList.toggle('nav-social-email-only', emailOnly);
+        return;
+      }
       document.querySelectorAll('[data-content="' + key + '"]').forEach(function (el) {
         if (el.tagName === 'IMG' || el.getAttribute('data-content-src') === 'true') {
           el.src = resolveImgSrc(val);
