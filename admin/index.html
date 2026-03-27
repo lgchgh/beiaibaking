@@ -284,6 +284,15 @@
       el.innerHTML = text ? `<div class="msg ${isErr ? 'err' : 'ok'}">${text}</div>` : '';
     }
 
+    /** PUT/POST 返回 401：会话无效，避免只显示英文 Unauthorized */
+    function handleApiUnauthorized(msgEl) {
+      const hint = '登录已失效或未携带登录信息，请<strong>重新登录</strong>后再保存。<br />若您曾用「带 www」和「不带 www」两种地址打开网站，请<strong>固定只用一种网址</strong>登录后台（或在 Vercel 环境变量设置 COOKIE_DOMAIN，如 <code>.您的域名.com</code>）。';
+      showMsg(msgEl, hint, true);
+      document.getElementById('adminPanel').style.display = 'none';
+      document.getElementById('loginSection').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
     // Login
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -930,6 +939,7 @@
       };
       const res = await api('/content', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ page: 'site', content }) });
       if (res.ok) showMsg(document.getElementById('siteMsg'), 'Saved');
+      else if (res.status === 401) handleApiUnauthorized(document.getElementById('siteMsg'));
       else showMsg(document.getElementById('siteMsg'), (await res.json()).error || 'Failed', true);
     });
 
@@ -1026,8 +1036,9 @@
         if (el) content[f.key] = el.value;
       });
       const res = await api('/content', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ page, content }) });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (res.ok) showMsg(document.getElementById('contentMsg'), 'Saved');
+      else if (res.status === 401) handleApiUnauthorized(document.getElementById('contentMsg'));
       else showMsg(document.getElementById('contentMsg'), data.error || 'Failed', true);
     });
 
