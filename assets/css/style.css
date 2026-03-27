@@ -1140,14 +1140,11 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
   font-size: 1.6rem;
   margin: 0 0 1.25rem;
   color: var(--text-dark);
-  text-align: center;
 }
 .about-story p {
   margin: 0 0 1rem;
   color: var(--text-light);
   line-height: 1.7;
-  /* 中文排版：每段首行约缩进 2 个字宽（后台纯文本分段即可，无需手打空格） */
-  text-indent: 2em;
 }
 .about-story p:last-child {
   margin-bottom: 0;
