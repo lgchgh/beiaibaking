@@ -2,6 +2,11 @@
   "buildCommand": "echo 'Static site'",
   "outputDirectory": ".",
   "installCommand": "npm install --omit=optional",
+  "functions": {
+    "api/contact.js": {
+      "maxDuration": 30
+    }
+  },
   "headers": [
     {
       "source": "/blog.html",

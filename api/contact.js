@@ -2,25 +2,66 @@
  * Public contact form → email via Resend (https://resend.com).
  * Env: RESEND_API_KEY (required), CONTACT_TO_EMAIL, RESEND_FROM
  *
- * Note: With default from "onboarding@resend.dev", Resend only allows sending
- * to your signup email until you verify a domain — see ADMIN-SETUP.md.
+ * Uses https.request (not fetch) so the handler works on all Node runtimes on Vercel.
  */
-const { getJsonBody } = require('../lib/parseBody');
+const https = require('https');
 
-const RESEND_URL = 'https://api.resend.com/emails';
+const RESEND_HOST = 'api.resend.com';
+const RESEND_PATH = '/emails';
+
+function getJsonBody(req) {
+  const b = req.body;
+  if (b == null || b === '') return null;
+  if (Buffer.isBuffer(b)) {
+    try {
+      return JSON.parse(b.toString('utf8'));
+    } catch {
+      return null;
+    }
+  }
+  if (typeof b === 'string') {
+    try {
+      return JSON.parse(b);
+    } catch {
+      return null;
+    }
+  }
+  if (typeof b === 'object') return b;
+  return null;
+}
 
 function esc(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function sendJson(res, status, obj) {
-  try {
-    if (res.headersSent) return;
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.status(status).end(JSON.stringify(obj));
-  } catch (e) {
-    console.error('sendJson failed', e);
-  }
+function resendPost(apiKey, payload) {
+  const body = JSON.stringify(payload);
+  return new Promise((resolve, reject) => {
+    const req = https.request(
+      {
+        hostname: RESEND_HOST,
+        port: 443,
+        path: RESEND_PATH,
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(body, 'utf8'),
+        },
+      },
+      (incoming) => {
+        const chunks = [];
+        incoming.on('data', (d) => chunks.push(d));
+        incoming.on('end', () => {
+          const text = Buffer.concat(chunks).toString('utf8');
+          resolve({ status: incoming.statusCode || 0, text });
+        });
+      }
+    );
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
 }
 
 module.exports = async (req, res) => {
@@ -31,20 +72,20 @@ module.exports = async (req, res) => {
       return res.status(204).end();
     }
     if (req.method === 'GET') {
-      return sendJson(res, 200, {
+      return res.status(200).json({
         ok: true,
         contactApi: true,
         resendConfigured: !!process.env.RESEND_API_KEY,
       });
     }
     if (req.method !== 'POST') {
-      return sendJson(res, 405, { error: 'Method not allowed' });
+      return res.status(405).json({ error: 'Method not allowed' });
     }
 
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
       console.error('RESEND_API_KEY is not set');
-      return sendJson(res, 503, {
+      return res.status(503).json({
         error: 'Contact form is not configured (missing RESEND_API_KEY)',
       });
     }
@@ -53,12 +94,12 @@ module.exports = async (req, res) => {
     if (!body && req.body != null) {
       try {
         body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-      } catch (e) {
+      } catch {
         body = null;
       }
     }
     if (!body || typeof body !== 'object') {
-      return sendJson(res, 400, { error: 'Invalid JSON body' });
+      return res.status(400).json({ error: 'Invalid JSON body' });
     }
 
     const email = String(body.email || '').trim().slice(0, 320);
@@ -66,13 +107,13 @@ module.exports = async (req, res) => {
     const message = String(body.message || '').trim().slice(0, 10000);
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return sendJson(res, 400, { error: 'Valid email address required' });
+      return res.status(400).json({ error: 'Valid email address required' });
     }
     if (!subject) {
-      return sendJson(res, 400, { error: 'Subject required' });
+      return res.status(400).json({ error: 'Subject required' });
     }
     if (!message) {
-      return sendJson(res, 400, { error: 'Message required' });
+      return res.status(400).json({ error: 'Message required' });
     }
 
     const to = (process.env.CONTACT_TO_EMAIL || 'admin@beiaibaking.net').trim();
@@ -81,35 +122,27 @@ module.exports = async (req, res) => {
     const plain = `From: ${email}\nSubject: ${subject}\n\n${message}`;
     const html = `<p><strong>From:</strong> ${esc(email)}</p><p><strong>Subject:</strong> ${esc(subject)}</p><p style="white-space:pre-wrap">${esc(message)}</p>`;
 
-    const r = await fetch(RESEND_URL, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from,
-        to: [to],
-        reply_to: email,
-        subject: `[Beiai Baking contact] ${subject}`,
-        text: plain,
-        html,
-      }),
+    const r = await resendPost(apiKey, {
+      from,
+      to: [to],
+      reply_to: email,
+      subject: `[Beiai Baking contact] ${subject}`,
+      text: plain,
+      html,
     });
 
-    const raw = await r.text();
     let data = {};
     try {
-      data = raw ? JSON.parse(raw) : {};
+      data = r.text ? JSON.parse(r.text) : {};
     } catch (e) {
-      console.error('Resend non-JSON body', r.status, raw.slice(0, 500));
-      return sendJson(res, 502, {
+      console.error('Resend non-JSON body', r.status, String(r.text).slice(0, 500));
+      return res.status(502).json({
         error: 'Email provider returned an invalid response',
         status: r.status,
       });
     }
 
-    if (!r.ok) {
+    if (r.status < 200 || r.status >= 300) {
       console.error('Resend HTTP', r.status, data);
       let msg =
         (typeof data.message === 'string' && data.message) ||
@@ -120,12 +153,15 @@ module.exports = async (req, res) => {
         /verify|domain|own email|testing/i.test(msg)
           ? ' With onboarding@resend.dev, Resend often only delivers to your signup email until you verify beiaibaking.net in Resend. Set CONTACT_TO_EMAIL to that email, or verify your domain and use RESEND_FROM.'
           : '';
-      return sendJson(res, 502, { error: msg + hint, code: data.name });
+      return res.status(502).json({ error: msg + hint, code: data.name });
     }
 
-    return sendJson(res, 200, { success: true });
+    return res.status(200).json({ success: true });
   } catch (e) {
     console.error('contact handler error', e);
-    return sendJson(res, 500, { error: 'Failed to send message', detail: String(e.message || e) });
+    return res.status(500).json({
+      error: 'Failed to send message',
+      detail: String(e.message || e),
+    });
   }
 };
