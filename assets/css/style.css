@@ -636,7 +636,7 @@ a.logo:focus-visible {
     gap: 24px;
   }
 
-  /* 页脚导航分两行：上行 Home|Gallery|Share 右对齐；下行 About|Contact 相对块宽居中 */
+  /* 页脚导航分两行：整块仍靠右；块内左对齐，第二行缩进使 About 落在 Cake 的 C 下方 */
   .footer-left {
     max-width: min(400px, 100%);
     justify-self: end;
@@ -773,6 +773,10 @@ a.logo:focus-visible {
     .footer-line-row1,
     .footer-line-row2 {
       justify-content: center;
+    }
+
+    .footer-line-row2 {
+      padding-left: 0;
     }
 
     .footer-right {
