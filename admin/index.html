@@ -1010,9 +1010,17 @@
       renderContentFields(page);
       const res = await api('/content?page=' + page);
       const data = await res.json();
+      const homeIntroLinkDefault = 'Explore My Story';
       (contentFields[page] || []).forEach(f => {
         const el = document.getElementById('cf_' + f.key);
-        if (el) el.value = data[f.key] || '';
+        if (el) {
+          var raw = data[f.key];
+          if (f.key === 'intro_story_link' && (raw == null || String(raw).trim() === '')) {
+            el.value = homeIntroLinkDefault;
+          } else {
+            el.value = raw || '';
+          }
+        }
         if (f.imageUpload) {
           const prev = document.getElementById('cf_' + f.key + '_preview');
           const url = data[f.key] || '';

@@ -136,6 +136,10 @@
           }
           el.innerHTML = html;
         } else {
+          /* 可选文案：CMS 存了空串时不要抹掉 HTML 里的默认字（例如仅上传头像后保存会提交空的 intro_story_link） */
+          if (el.getAttribute('data-content-skip-if-empty') === 'true' && String(val == null ? '' : val).trim() === '') {
+            return;
+          }
           el.textContent = val;
         }
       });
