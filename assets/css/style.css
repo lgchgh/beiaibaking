@@ -32,8 +32,6 @@
   --bg: var(--background);
   --text: var(--text-dark);
   --muted: var(--text-light);
-  /* 首页 hero 品牌句：装饰性，略淡于正文 */
-  --hero-tagline-color: #9aa0aa;
   /* 页脚专用：略淡于正文，易读且不抢主内容 */
   --footer-text: #6a6f76;
   --footer-link: #585d64;
@@ -253,21 +251,23 @@ a.logo:focus-visible {
   border-radius: 999px;
 }
 
+/* 首页主标题：签名式手写体，色同导航 Logo 主色、80% 不透明 */
 .hero-tagline {
   margin: 0;
-  max-width: 28em;
-  font-family: 'Allura', 'Poppins', system-ui, sans-serif;
+  max-width: 36em;
+  font-family: 'Great Vibes', 'La Belle Aurore', cursive;
   font-weight: 400;
-  font-size: clamp(0.82rem, 2.15vw, 0.95rem);
-  line-height: 1.35;
-  letter-spacing: 0.08em;
-  color: var(--hero-tagline-color);
+  font-style: normal;
+  font-size: clamp(1.08rem, 3.4vw, 1.5rem);
+  line-height: 1.2;
+  letter-spacing: 0.025em;
+  color: var(--primary-color);
+  opacity: 0.8;
   font-synthesis: none;
 }
 
-/* 主标题语义为 h1，但视觉为装饰句：覆盖全局标题衬线/粗体 */
 .hero .hero-tagline {
-  font-family: 'Allura', 'Poppins', system-ui, sans-serif;
+  font-family: 'Great Vibes', 'La Belle Aurore', cursive;
   font-weight: 400;
   margin-bottom: 0;
 }
