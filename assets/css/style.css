@@ -518,6 +518,12 @@ a.logo:focus-visible {
   .home-page .hero + .gallery-row {
     border-top: none;
   }
+
+  /* 首页：裱花–翻糖、法式西点–糖霜饼干 之间不要顶线 */
+  .home-page .gallery-row[data-category="decorated"] + .gallery-row,
+  .home-page .gallery-row[data-category="french"] + .gallery-row {
+    border-top: none;
+  }
   
   .row-header {
     display: flex;
