@@ -1,6 +1,17 @@
 const auth = require('../lib/auth');
 const { sql } = require('../lib/db');
 
+/** 读取 home 时合并旧版 intro_para1 + intro_para2，便于无缝迁移到 intro_main */
+function mergeLegacyHomeIntro(data) {
+  if (!data || typeof data !== 'object') return;
+  const main = data.intro_main;
+  if (main != null && String(main).trim() !== '') return;
+  const parts = [data.intro_para1, data.intro_para2].filter(
+    (x) => x != null && String(x).trim() !== ''
+  );
+  if (parts.length) data.intro_main = parts.join('\n\n');
+}
+
 /**
  * DB may still hold older legal copy with mailto:. Rewrite on read so the live site
  * matches the static HTML defaults (links to contact.html).
@@ -31,6 +42,7 @@ async function handleGet(req, res) {
     const r = await sql`SELECT key, value FROM site_content WHERE page = ${page}`;
     const data = {};
     (r.rows || []).forEach(row => { data[row.key] = row.value; });
+    if (page === 'home') mergeLegacyHomeIntro(data);
     if ((page === 'privacy' || page === 'terms') && typeof data.content === 'string') {
       data.content = rewriteLegalContactHtml(data.content);
     }

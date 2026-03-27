@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <!-- admin form v2: hero_tagline, intro_photo+upload, intro textarea, intro_story_link, cat_french -->
+  <!-- admin form v3: hero_tagline, intro_photo, intro_main, cat_french -->
   <link rel="icon" href="/assets/images/favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="/assets/images/logo.png" type="image/png" sizes="32x32" />
   <link rel="apple-touch-icon" href="/assets/images/logo.png" />
@@ -120,7 +120,7 @@
 
       <div id="pagesSection" class="admin-section">
         <h2>Page Content</h2>
-        <p style="font-size:0.85rem;color:var(--text-muted,#666);margin:-0.25rem 0 1rem;line-height:1.5">选 Home 时应看到「Intro portrait photo」上传项与两栏<strong>多行</strong>自我介绍。若仍是 Intro Para 1/2 单行框，说明当前打开的不是最新部署的文件：请把代码推送到 Vercel/Git 后再试，并用隐身窗口打开 <code style="font-size:0.9em">/admin</code>。</p>
+        <p style="font-size:0.85rem;color:var(--text-muted,#666);margin:-0.25rem 0 1rem;line-height:1.5">选 Home 时应看到「Intro portrait photo」与一栏<strong>多行</strong>自我介绍（Intro）。若仍是旧版表单，请重新部署并用隐身窗口打开 <code style="font-size:0.9em">/admin</code>。</p>
         <div class="form-group">
           <label>Page</label>
           <select id="contentPage">
@@ -325,9 +325,7 @@
       home: [
         { key: 'hero_tagline', label: 'Home — Brand tagline (one decorative line)' },
         { key: 'intro_photo', label: 'Home — Intro portrait photo（首页自我介绍侧图，可选）', imageUpload: true, hint: '上传或粘贴图片 URL；留空则显示 “Your photo” 占位。' },
-        { key: 'intro_para1', label: 'Home — Intro line 1（自我介绍标题/第一行）', textarea: true },
-        { key: 'intro_para2', label: 'Home — Intro paragraph（自我介绍正文）', textarea: true, rows: 8 },
-        { key: 'intro_story_link', label: 'Home — “Read more” link text（跳转 About 的链接文字）' },
+        { key: 'intro_main', label: 'Home — Intro（自我介绍正文，一段或多段；段落之间空一行）', textarea: true, rows: 12 },
         { key: 'cat_decorated', label: 'Category: Decorated Cakes' },
         { key: 'cat_fondant', label: 'Category: Fondant Cakes' },
         { key: 'cat_french', label: 'Category: French Pastries' },
@@ -1010,17 +1008,9 @@
       renderContentFields(page);
       const res = await api('/content?page=' + page);
       const data = await res.json();
-      const homeIntroLinkDefault = 'Explore My Story';
       (contentFields[page] || []).forEach(f => {
         const el = document.getElementById('cf_' + f.key);
-        if (el) {
-          var raw = data[f.key];
-          if (f.key === 'intro_story_link' && (raw == null || String(raw).trim() === '')) {
-            el.value = homeIntroLinkDefault;
-          } else {
-            el.value = raw || '';
-          }
-        }
+        if (el) el.value = data[f.key] || '';
         if (f.imageUpload) {
           const prev = document.getElementById('cf_' + f.key + '_preview');
           const url = data[f.key] || '';

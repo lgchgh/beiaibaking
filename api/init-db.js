@@ -4,6 +4,8 @@
  */
 const { sql } = require('../lib/db');
 
+const HOME_INTRO_MAIN_DEFAULT = "Hi, I'm Nova.\n\nMy baking journey began with a simple cookie for my children and evolved into a global pursuit of mastery. From studying in Paris and Seoul to being featured on national TV, I've dedicated my life to inspiring others through the art of baking. I invite you to join me on this wonderful adventure.";
+
 module.exports = async (req, res) => {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' });
@@ -90,9 +92,7 @@ module.exports = async (req, res) => {
       const defaults = [
         ['home','hero_tagline','Where flavor meets art.'],
         ['home','intro_photo',''],
-        ['home','intro_para1',"Hi, I'm Nova."],
-        ['home','intro_para2',"My baking journey began with a simple cookie for my children and evolved into a global pursuit of mastery. From studying in Paris and Seoul to being featured on national TV, I've dedicated my life to inspiring others through the art of baking. I invite you to join me on this wonderful adventure."],
-        ['home','intro_story_link','Explore My Story'],
+        ['home','intro_main', HOME_INTRO_MAIN_DEFAULT],
         ['home','cat_decorated','Decorated Cakes'],
         ['home','cat_fondant','Fondant Cakes'],
         ['home','cat_french','French Pastries'],
@@ -117,7 +117,7 @@ module.exports = async (req, res) => {
       }
     }
     await sql`INSERT INTO site_content (page, key, value) VALUES ('home', 'intro_photo', '') ON CONFLICT (page, key) DO NOTHING`;
-    await sql`INSERT INTO site_content (page, key, value) VALUES ('home', 'intro_story_link', 'Explore My Story') ON CONFLICT (page, key) DO NOTHING`;
+    await sql`INSERT INTO site_content (page, key, value) VALUES ('home', 'intro_main', ${HOME_INTRO_MAIN_DEFAULT}) ON CONFLICT (page, key) DO NOTHING`;
     await sql`INSERT INTO site_content (page, key, value) VALUES ('gallery', 'banner_image', 'assets/images/french-pastries/fp-05.jpg') ON CONFLICT (page, key) DO NOTHING`;
     await sql`INSERT INTO site_content (page, key, value) VALUES ('share', 'banner_image', 'assets/images/share-hero.jpg') ON CONFLICT (page, key) DO NOTHING`;
     await sql`INSERT INTO site_content (page, key, value) VALUES ('site', 'site_nav_show_youtube', '1') ON CONFLICT (page, key) DO NOTHING`;

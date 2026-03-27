@@ -663,11 +663,19 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
     align-self: stretch;
   }
 
+  /* 正文在「链接」上方的剩余高度里垂直居中，与左侧圆形头像视觉对齐 */
   .home-page .about-text-body {
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .home-page .about-intro-copy p:last-child {
+    margin-bottom: 0;
   }
   
   .photo-placeholder {
