@@ -92,9 +92,13 @@
     if (!cat) return;
     var url = ((typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : '') + '/api/gallery?category=' + encodeURIComponent(cat);
     fetch(url)
-      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (r) {
+        if (!r.ok) return [];
+        return r.json().catch(function () { return []; });
+      })
       .then(function (rows) {
-        var items = (rows || []).slice(0, 4);
+        if (!Array.isArray(rows)) rows = [];
+        var items = rows.slice(0, 4);
         grid.innerHTML = items.map(function (r) {
           var src = resolveImgSrc(r.src || '');
           return '<figure class="home-thumb-item"><img class="thumb-image" src="' + src + '" alt="' + ((r.alt || r.caption || '').replace(/"/g, '&quot;')) + '" onerror="this.style.display=\'none\'" /><figcaption>' + (r.caption || '').replace(/</g, '&lt;') + '</figcaption></figure>';
