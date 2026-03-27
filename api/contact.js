@@ -2,8 +2,8 @@
  * Public contact form → email via Resend (https://resend.com).
  * Env: RESEND_API_KEY (required), CONTACT_TO_EMAIL, RESEND_FROM
  *
- * Uses https.request (not fetch). Sends JSON via writeHead/end only — avoids
- * relying on res.json() so errors always return JSON instead of an HTML 502.
+ * Uses https.request (not fetch). Waits for res "finish" after end() so Fluid /
+ * serverless does not freeze the isolate before the body is flushed (avoids 502).
  */
 const https = require('https');
 
@@ -40,14 +40,55 @@ function readRawBody(req) {
   });
 }
 
+/** @returns {Promise<void>} */
 function sendJson(res, status, obj) {
-  if (res.headersSent || res.writableEnded) return;
-  const payload = JSON.stringify(obj);
-  res.writeHead(status, {
-    'Content-Type': 'application/json; charset=utf-8',
-    'Content-Length': Buffer.byteLength(payload, 'utf8'),
+  return new Promise((resolve, reject) => {
+    if (res.headersSent || res.writableEnded) {
+      resolve();
+      return;
+    }
+    const payload = JSON.stringify(obj);
+    const done = () => resolve();
+    const fail = (err) => reject(err);
+    res.once('finish', done);
+    res.once('error', fail);
+    try {
+      res.writeHead(status, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Content-Length': Buffer.byteLength(payload, 'utf8'),
+      });
+      res.end(payload);
+    } catch (e) {
+      res.removeListener('finish', done);
+      res.removeListener('error', fail);
+      reject(e);
+    }
   });
-  res.end(payload);
+}
+
+/** @returns {Promise<void>} */
+function sendOptions(res) {
+  return new Promise((resolve, reject) => {
+    if (res.headersSent || res.writableEnded) {
+      resolve();
+      return;
+    }
+    const done = () => resolve();
+    const fail = (err) => reject(err);
+    res.once('finish', done);
+    res.once('error', fail);
+    try {
+      res.writeHead(204, {
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      });
+      res.end();
+    } catch (e) {
+      res.removeListener('finish', done);
+      res.removeListener('error', fail);
+      reject(e);
+    }
+  });
 }
 
 function esc(s) {
@@ -87,17 +128,11 @@ function resendPost(apiKey, payload) {
 module.exports = async (req, res) => {
   try {
     if (req.method === 'OPTIONS') {
-      if (!res.headersSent) {
-        res.writeHead(204, {
-          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        });
-        res.end();
-      }
+      await sendOptions(res);
       return;
     }
     if (req.method === 'GET') {
-      sendJson(res, 200, {
+      await sendJson(res, 200, {
         ok: true,
         contactApi: true,
         resendConfigured: !!process.env.RESEND_API_KEY,
@@ -105,14 +140,14 @@ module.exports = async (req, res) => {
       return;
     }
     if (req.method !== 'POST') {
-      sendJson(res, 405, { error: 'Method not allowed' });
+      await sendJson(res, 405, { error: 'Method not allowed' });
       return;
     }
 
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
       console.error('RESEND_API_KEY is not set');
-      sendJson(res, 503, {
+      await sendJson(res, 503, {
         error: 'Contact form is not configured (missing RESEND_API_KEY)',
       });
       return;
@@ -129,7 +164,7 @@ module.exports = async (req, res) => {
       }
     }
     if (!body || typeof body !== 'object') {
-      sendJson(res, 400, { error: 'Invalid JSON body' });
+      await sendJson(res, 400, { error: 'Invalid JSON body' });
       return;
     }
 
@@ -138,15 +173,15 @@ module.exports = async (req, res) => {
     const message = String(body.message || '').trim().slice(0, 10000);
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      sendJson(res, 400, { error: 'Valid email address required' });
+      await sendJson(res, 400, { error: 'Valid email address required' });
       return;
     }
     if (!subject) {
-      sendJson(res, 400, { error: 'Subject required' });
+      await sendJson(res, 400, { error: 'Subject required' });
       return;
     }
     if (!message) {
-      sendJson(res, 400, { error: 'Message required' });
+      await sendJson(res, 400, { error: 'Message required' });
       return;
     }
 
@@ -170,7 +205,7 @@ module.exports = async (req, res) => {
       data = r.text ? JSON.parse(r.text) : {};
     } catch (e) {
       console.error('Resend non-JSON body', r.status, String(r.text).slice(0, 500));
-      sendJson(res, 502, {
+      await sendJson(res, 502, {
         error: 'Email provider returned an invalid response',
         status: r.status,
       });
@@ -188,16 +223,20 @@ module.exports = async (req, res) => {
         /verify|domain|own email|testing/i.test(msg)
           ? ' With onboarding@resend.dev, Resend often only delivers to your signup email until you verify beiaibaking.net in Resend. Set CONTACT_TO_EMAIL to that email, or verify your domain and use RESEND_FROM.'
           : '';
-      sendJson(res, 502, { error: msg + hint, code: data.name });
+      await sendJson(res, 502, { error: msg + hint, code: data.name });
       return;
     }
 
-    sendJson(res, 200, { success: true });
+    await sendJson(res, 200, { success: true });
   } catch (e) {
     console.error('contact handler error', e);
-    sendJson(res, 500, {
-      error: 'Failed to send message',
-      detail: String(e.message || e),
-    });
+    try {
+      await sendJson(res, 500, {
+        error: 'Failed to send message',
+        detail: String(e.message || e),
+      });
+    } catch (e2) {
+      console.error('contact handler: could not send error JSON', e2);
+    }
   }
 };
