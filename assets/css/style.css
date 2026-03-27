@@ -687,6 +687,13 @@ a.logo:focus-visible {
     user-select: none;
   }
 
+  /* 桌面：About 略向左（小屏保持居中不位移） */
+  @media (min-width: 769px) {
+    .footer-nav-rows > .footer-dmain--bottom {
+      transform: translateX(-0.35em);
+    }
+  }
+
   .footer-right {
     max-width: 300px;
     justify-self: start;
