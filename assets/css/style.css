@@ -690,7 +690,7 @@ a.logo:focus-visible {
   /* 桌面：About 向左平移（小屏保持居中不位移） */
   @media (min-width: 769px) {
     .footer-nav-rows > .footer-dmain--bottom {
-      transform: translateX(-1.15em);
+      transform: translateX(-0.65em);
     }
   }
 
