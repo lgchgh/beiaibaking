@@ -599,7 +599,7 @@ a.logo:focus-visible {
   
   /* 中间自我介绍条带 */
   .about-strip {
-  background-color: var(--background-alt);
+    background-color: var(--white);
     padding: 32px 0;
   }
   
