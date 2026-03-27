@@ -66,14 +66,14 @@
 部署完成后，在浏览器访问：
 
 ```
-https://beiaibaking.net/api/init-db?secret=你的INIT_SECRET
+https://www.beiaibaking.net/api/init-db?secret=你的INIT_SECRET
 ```
 
 看到 `{"success":true,"message":"Database initialized"}` 表示成功。之后可删除 `INIT_SECRET` 环境变量。
 
 ## 4. 登录后台
 
-访问 `https://beiaibaking.net/admin`，用 `lgchgh` / `lg697280` 登录。
+访问 `https://www.beiaibaking.net/admin`，用 `lgchgh` / `lg697280` 登录。
 
 ## 5. 后台功能
 
