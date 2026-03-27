@@ -95,6 +95,11 @@
 
   function applyContent(data) {
     if (!data) return;
+    var navSocialHideClass = {
+      site_nav_show_youtube: 'nav-hide-social-yt',
+      site_nav_show_pinterest: 'nav-hide-social-pin',
+      site_nav_show_instagram: 'nav-hide-social-insta',
+    };
     Object.keys(data).forEach(function (key) {
       var val = data[key];
       if (!val && val !== '') return;
@@ -105,11 +110,14 @@
         });
         return;
       }
-      if (key === 'site_nav_social_email_only') {
-        var emailOnly =
+      if (navSocialHideClass[key]) {
+        var showSocial =
+          val === undefined ||
+          val === null ||
+          String(val) === '' ||
           String(val) === '1' ||
           String(val).toLowerCase() === 'true';
-        document.body.classList.toggle('nav-social-email-only', emailOnly);
+        document.body.classList.toggle(navSocialHideClass[key], !showSocial);
         return;
       }
       document.querySelectorAll('[data-content="' + key + '"]').forEach(function (el) {

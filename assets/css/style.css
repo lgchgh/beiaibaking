@@ -178,8 +178,10 @@ a.logo:focus-visible {
   gap: 0.5rem;
 }
 
-/* 后台开关：仅显示信箱时隐藏 YouTube / Pinterest / Instagram（不删 DOM） */
-body.nav-social-email-only .nav-social .social-icon:not(.mail) {
+/* 后台分别开关：隐藏对应社媒图标（不删 DOM） */
+body.nav-hide-social-yt .nav-social .social-icon.yt,
+body.nav-hide-social-pin .nav-social .social-icon.pin,
+body.nav-hide-social-insta .nav-social .social-icon.insta {
   display: none !important;
 }
 
