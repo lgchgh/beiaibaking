@@ -4,10 +4,13 @@
   <meta charset="UTF-8" />
   <title>Admin | Beiai Baking</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <!-- admin form v2: hero_tagline, intro_photo+upload, intro textarea, intro_story_link, cat_french -->
   <link rel="icon" href="/assets/images/favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="/assets/images/logo.png" type="image/png" sizes="32x32" />
   <link rel="apple-touch-icon" href="/assets/images/logo.png" />
-  <link rel="stylesheet" href="../assets/css/style.css" />
+  <link rel="stylesheet" href="../assets/css/style.css?v=admin-cms2" />
   <style>
     .admin-wrap { max-width: 900px; margin: 0 auto; padding: 2rem; }
     .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
@@ -117,6 +120,7 @@
 
       <div id="pagesSection" class="admin-section">
         <h2>Page Content</h2>
+        <p style="font-size:0.85rem;color:var(--text-muted,#666);margin:-0.25rem 0 1rem;line-height:1.5">选 Home 时应看到「Intro portrait photo」上传项与两栏<strong>多行</strong>自我介绍。若仍是 Intro Para 1/2 单行框，说明当前打开的不是最新部署的文件：请把代码推送到 Vercel/Git 后再试，并用隐身窗口打开 <code style="font-size:0.9em">/admin</code>。</p>
         <div class="form-group">
           <label>Page</label>
           <select id="contentPage">
@@ -320,11 +324,13 @@
     const contentFields = {
       home: [
         { key: 'hero_tagline', label: 'Home — Brand tagline (one decorative line)' },
-        { key: 'intro_para1', label: 'Intro Para 1' },
-        { key: 'intro_para2', label: 'Intro Para 2' },
+        { key: 'intro_photo', label: 'Home — Intro portrait photo（首页自我介绍侧图，可选）', imageUpload: true, hint: '上传或粘贴图片 URL；留空则显示 “Your photo” 占位。' },
+        { key: 'intro_para1', label: 'Home — Intro line 1（自我介绍标题/第一行）', textarea: true },
+        { key: 'intro_para2', label: 'Home — Intro paragraph（自我介绍正文）', textarea: true, rows: 8 },
+        { key: 'intro_story_link', label: 'Home — “Read more” link text（跳转 About 的链接文字）' },
         { key: 'cat_decorated', label: 'Category: Decorated Cakes' },
         { key: 'cat_fondant', label: 'Category: Fondant Cakes' },
-        { key: 'cat_pastries', label: 'Category: Western Pastries' },
+        { key: 'cat_french', label: 'Category: French Pastries' },
         { key: 'cat_cookies', label: 'Category: Iced Cookies' },
       ],
       about: [
@@ -950,7 +956,7 @@
         return `
         <div class="form-group">
           <label>${f.label}</label>
-          ${f.textarea ? `<textarea id="cf_${f.key}" rows="4"></textarea>` : `<input type="text" id="cf_${f.key}" />`}
+          ${f.textarea ? `<textarea id="cf_${f.key}" rows="${f.rows || 4}"></textarea>` : `<input type="text" id="cf_${f.key}" />`}
         </div>
         `;
       }).join('');

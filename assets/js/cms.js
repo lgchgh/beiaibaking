@@ -124,6 +124,11 @@
         if (el.tagName === 'IMG' || el.getAttribute('data-content-src') === 'true') {
           el.src = resolveImgSrc(val);
           el.style.display = val ? '' : 'none';
+          var wrap = el.closest('.about-photo');
+          if (wrap) {
+            var fb = wrap.querySelector('[data-intro-photo-fallback]');
+            if (fb) fb.style.display = val ? 'none' : '';
+          }
         } else if (el.getAttribute('data-html') === 'true') {
           var html = val;
           if (html.indexOf('<') === -1) {
@@ -154,36 +159,87 @@
       .catch(function () {});
   }
 
-  function loadHomeThumbs() {
+  function renderHomeThumbGrid(grid, rows) {
+    if (!Array.isArray(rows)) rows = [];
+    var items = rows.slice(0, 4);
+    grid.innerHTML = items
+      .map(function (r) {
+        var src = resolveImgSrc(r.src || '');
+        var alt = escAttr(r.alt || r.caption || '');
+        var cap = (r.caption || '').replace(/</g, '&lt;');
+        return (
+          '<figure class="home-thumb-item"><img class="thumb-image" src="' +
+          escAttr(src) +
+          '" alt="' +
+          alt +
+          '" /><figcaption>' +
+          cap +
+          '</figcaption></figure>'
+        );
+      })
+      .join('');
+    bindHomeThumbImgRetry(grid);
+  }
+
+  /** 单次请求拉齐首页四类，避免四次独立 /api 调用在无服务器环境下的冷启动与并发失败 */
+  function fetchHomeThumbBundle() {
+    var url = '/api/gallery?home=1';
+    var max = 4;
+    function delay(ms) {
+      return new Promise(function (res) {
+        setTimeout(res, ms);
+      });
+    }
+    function tryOnce(i) {
+      return fetch(url, { cache: 'no-store', credentials: 'same-origin' })
+        .then(function (r) {
+          if (!r.ok) throw new Error('gallery home http ' + r.status);
+          return r.json();
+        })
+        .then(function (data) {
+          if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('gallery home shape');
+          return data;
+        })
+        .catch(function () {
+          if (i + 1 < max) {
+            return delay(280 * (i + 1) + Math.random() * 120).then(function () {
+              return tryOnce(i + 1);
+            });
+          }
+          return null;
+        });
+    }
+    return tryOnce(0);
+  }
+
+  function loadHomeThumbsPerSection() {
     var grids = document.querySelectorAll('[data-home-thumbs]');
     grids.forEach(function (grid, idx) {
       var section = grid.closest('[data-category]');
       var cat = section ? section.getAttribute('data-category') : '';
       if (!cat) return;
-      /* 错开四个分类的请求时间，减轻同一时刻冷启动与连接建连压力 */
       setTimeout(function () {
         fetchGalleryRows(cat).then(function (rows) {
-          if (!Array.isArray(rows)) rows = [];
-          var items = rows.slice(0, 4);
-          grid.innerHTML = items
-            .map(function (r) {
-              var src = resolveImgSrc(r.src || '');
-              var alt = escAttr(r.alt || r.caption || '');
-              var cap = (r.caption || '').replace(/</g, '&lt;');
-              return (
-                '<figure class="home-thumb-item"><img class="thumb-image" src="' +
-                escAttr(src) +
-                '" alt="' +
-                alt +
-                '" /><figcaption>' +
-                cap +
-                '</figcaption></figure>'
-              );
-            })
-            .join('');
-          bindHomeThumbImgRetry(grid);
+          renderHomeThumbGrid(grid, rows);
         });
       }, idx * 75);
+    });
+  }
+
+  function loadHomeThumbs() {
+    var grids = document.querySelectorAll('[data-home-thumbs]');
+    if (!grids.length) return;
+    fetchHomeThumbBundle().then(function (bundle) {
+      if (!bundle) {
+        loadHomeThumbsPerSection();
+        return;
+      }
+      grids.forEach(function (grid) {
+        var section = grid.closest('[data-category]');
+        var cat = section ? section.getAttribute('data-category') : '';
+        if (!cat) return;
+        renderHomeThumbGrid(grid, bundle[cat]);
+      });
     });
   }
 

@@ -1,10 +1,27 @@
 const auth = require('../lib/auth');
 const { sql } = require('../lib/db');
 
+const HOME_CATEGORIES = ['decorated', 'fondant', 'french', 'cookies'];
+
 async function handleGet(req, res) {
   const category = req.query?.category;
   const subcategory = req.query?.sub;
+  const home = req.query?.home;
   try {
+    if (home === '1' || home === 'true') {
+      const rowsList = await Promise.all(
+        HOME_CATEGORIES.map((cat) =>
+          sql`SELECT * FROM gallery_images WHERE category = ${cat} ORDER BY sort_order, id LIMIT 4`
+        )
+      );
+      const out = {};
+      HOME_CATEGORIES.forEach((cat, i) => {
+        out[cat] = rowsList[i].rows || [];
+      });
+      res.setHeader('Cache-Control', 'private, no-store, max-age=0');
+      res.status(200).json(out);
+      return;
+    }
     let result;
     if (category && subcategory) {
       result = await sql`SELECT * FROM gallery_images WHERE category = ${category} AND subcategory = ${subcategory} ORDER BY sort_order, id`;

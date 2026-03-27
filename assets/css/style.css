@@ -637,6 +637,36 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
     gap: 24px;
     align-items: center;
   }
+
+  /* 首页自我介绍：两列同高（行高=较高的一列，通常等于圆形象高度），链接贴文字列底、与头像列底齐平 */
+  .home-page .about-inner {
+    align-items: stretch;
+  }
+
+  /* 左列也参与拉伸，否则部分浏览器下行高不对，右侧拿不到足够高度做 flex 推底 */
+  .home-page .about-photo {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    min-width: 0;
+  }
+
+  .home-page .about-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    /* 占满网格单元高度，才能把正文区 flex 撑开、把链接压到底行 */
+    height: 100%;
+    min-height: 100%;
+    align-self: stretch;
+  }
+
+  .home-page .about-text-body {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
   
   .photo-placeholder {
     width: 100%;
@@ -649,6 +679,16 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
     justify-content: center;
     color: var(--muted);
     font-size: 0.9rem;
+  }
+
+  /* CMS 上传的自我介绍头像：与占位块同尺寸、圆形 */
+  .home-page .about-photo-img {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 999px;
+    object-fit: cover;
+    border: 1px solid var(--border);
+    display: block;
   }
   
   .about-text h2 {
@@ -664,6 +704,14 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
   .about-text-more {
     margin-top: 12px;
     margin-bottom: 0;
+    text-align: right;
+  }
+
+  .home-page .about-text-more {
+    flex: 0 0 auto;
+    margin-top: 0;
+    padding-top: 12px;
+    width: 100%;
     text-align: right;
   }
   
