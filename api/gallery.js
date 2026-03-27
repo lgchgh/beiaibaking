@@ -13,6 +13,7 @@ async function handleGet(req, res) {
     } else {
       result = await sql`SELECT * FROM gallery_images ORDER BY category, subcategory, sort_order, id`;
     }
+    res.setHeader('Cache-Control', 'private, no-store, max-age=0');
     res.status(200).json(result.rows || []);
   } catch (e) {
     console.error(e);

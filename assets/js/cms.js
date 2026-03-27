@@ -39,6 +39,60 @@
     return origin + (src.indexOf('/') === 0 ? src : '/' + src);
   }
 
+  function escAttr(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;');
+  }
+
+  /** 首页多区块并行请求易撞上无服务器冷启动/DB 瞬时失败，做有限次重试 */
+  function fetchGalleryRows(category) {
+    var url = '/api/gallery?category=' + encodeURIComponent(category);
+    var max = 4;
+    function delay(ms) {
+      return new Promise(function (res) {
+        setTimeout(res, ms);
+      });
+    }
+    function tryOnce(i) {
+      return fetch(url, { cache: 'no-store', credentials: 'same-origin' })
+        .then(function (r) {
+          if (!r.ok) throw new Error('gallery http ' + r.status);
+          return r.json();
+        })
+        .then(function (data) {
+          if (!Array.isArray(data)) throw new Error('gallery not array');
+          return data;
+        })
+        .catch(function () {
+          if (i + 1 < max) {
+            return delay(280 * (i + 1) + Math.random() * 120).then(function () {
+              return tryOnce(i + 1);
+            });
+          }
+          return [];
+        });
+    }
+    return tryOnce(0);
+  }
+
+  function bindHomeThumbImgRetry(grid) {
+    grid.querySelectorAll('.thumb-image').forEach(function (img) {
+      img.addEventListener(
+        'error',
+        function onImgErr() {
+          img.removeEventListener('error', onImgErr);
+          if (img.dataset.thumbRetry) return;
+          img.dataset.thumbRetry = '1';
+          var base = (img.getAttribute('src') || '').split('?')[0];
+          if (base) img.src = base + '?_=' + Date.now();
+        },
+        { passive: true }
+      );
+    });
+  }
+
   function applyContent(data) {
     if (!data) return;
     Object.keys(data).forEach(function (key) {
@@ -86,25 +140,35 @@
   }
 
   function loadHomeThumbs() {
-    document.querySelectorAll('[data-home-thumbs]').forEach(function (grid) {
-    var section = grid.closest('[data-category]');
-    var cat = section ? section.getAttribute('data-category') : '';
-    if (!cat) return;
-    var url = ((typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : '') + '/api/gallery?category=' + encodeURIComponent(cat);
-    fetch(url)
-      .then(function (r) {
-        if (!r.ok) return [];
-        return r.json().catch(function () { return []; });
-      })
-      .then(function (rows) {
-        if (!Array.isArray(rows)) rows = [];
-        var items = rows.slice(0, 4);
-        grid.innerHTML = items.map(function (r) {
-          var src = resolveImgSrc(r.src || '');
-          return '<figure class="home-thumb-item"><img class="thumb-image" src="' + src + '" alt="' + ((r.alt || r.caption || '').replace(/"/g, '&quot;')) + '" onerror="this.style.display=\'none\'" /><figcaption>' + (r.caption || '').replace(/</g, '&lt;') + '</figcaption></figure>';
-        }).join('');
-      })
-      .catch(function () {});
+    var grids = document.querySelectorAll('[data-home-thumbs]');
+    grids.forEach(function (grid, idx) {
+      var section = grid.closest('[data-category]');
+      var cat = section ? section.getAttribute('data-category') : '';
+      if (!cat) return;
+      /* 错开四个分类的请求时间，减轻同一时刻冷启动与连接建连压力 */
+      setTimeout(function () {
+        fetchGalleryRows(cat).then(function (rows) {
+          if (!Array.isArray(rows)) rows = [];
+          var items = rows.slice(0, 4);
+          grid.innerHTML = items
+            .map(function (r) {
+              var src = resolveImgSrc(r.src || '');
+              var alt = escAttr(r.alt || r.caption || '');
+              var cap = (r.caption || '').replace(/</g, '&lt;');
+              return (
+                '<figure class="home-thumb-item"><img class="thumb-image" src="' +
+                escAttr(src) +
+                '" alt="' +
+                alt +
+                '" /><figcaption>' +
+                cap +
+                '</figcaption></figure>'
+              );
+            })
+            .join('');
+          bindHomeThumbImgRetry(grid);
+        });
+      }, idx * 75);
     });
   }
 
@@ -138,4 +202,9 @@
   } else {
     boot();
   }
+
+  /* 从 bfcache 恢复时脚本不会再次 DOMContentLoaded，补载一次首页缩略图 */
+  window.addEventListener('pageshow', function (ev) {
+    if (ev.persisted && page === 'home') loadHomeThumbs();
+  });
 })();
