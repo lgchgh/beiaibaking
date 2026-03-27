@@ -524,6 +524,11 @@ a.logo:focus-visible {
   .home-page .gallery-row[data-category="french"] + .gallery-row {
     border-top: none;
   }
+
+  /* 首页：人物介绍与法式西点区块之间不要顶线 */
+  .home-page .about-strip + .gallery-row {
+    border-top: none;
+  }
   
   .row-header {
     display: flex;
