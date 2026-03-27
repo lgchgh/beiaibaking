@@ -88,9 +88,7 @@ module.exports = async (req, res) => {
     const { rows: scRows } = await sql`SELECT COUNT(*) as c FROM site_content`;
     if (parseInt(scRows?.[0]?.c || 0) === 0) {
       const defaults = [
-        ['home','hero_label','Cake & Pastry Portfolio'],
-        ['home','hero_title','Elegant Cake & Pastry Art'],
-        ['home','hero_subtitle','A curated selection of piped cakes, fondant cakes, French pastries and cookies handcrafted with delicate details and balanced colors.'],
+        ['home','hero_tagline','Where flavor meets art.'],
         ['home','intro_para1',"Hi, I'm Nova."],
         ['home','intro_para2',"My baking journey began with a simple cookie for my children and evolved into a global pursuit of mastery. From studying in Paris and Seoul to being featured on national TV, I've dedicated my life to inspiring others through the art of baking. I invite you to join me on this wonderful adventure."],
         ['home','cat_decorated','Decorated Cakes'],

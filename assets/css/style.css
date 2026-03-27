@@ -32,6 +32,8 @@
   --bg: var(--background);
   --text: var(--text-dark);
   --muted: var(--text-light);
+  /* 首页 hero 品牌句：装饰性，略淡于正文 */
+  --hero-tagline-color: #9aa0aa;
   /* 页脚专用：略淡于正文，易读且不抢主内容 */
   --footer-text: #6a6f76;
   --footer-link: #585d64;
@@ -55,6 +57,19 @@
     background-color: var(--bg);
     color: var(--text);
   line-height: 1.7;
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
   }
   
   a {
@@ -251,22 +266,16 @@ a.logo:focus-visible {
   border-radius: 999px;
 }
 
-.hero h1 {
-  margin: 0 0 6px;
-  font-size: 2.1rem;
-}
-
-.hero-text {
+.hero-tagline {
   margin: 0;
-  color: var(--muted);
-  max-width: 640px;
-}
-
-/* 桌面端时强制一行显示介绍文字 */
-@media (min-width: 1024px) {
-    .hero-text {
-      white-space: nowrap;
-    }
+  max-width: 28em;
+  font-family: 'Allura', 'Poppins', system-ui, sans-serif;
+  font-weight: 400;
+  font-size: clamp(0.82rem, 2.15vw, 0.95rem);
+  line-height: 1.35;
+  letter-spacing: 0.08em;
+  color: var(--hero-tagline-color);
+  font-synthesis: none;
 }
 
 .hero-divider {
@@ -275,6 +284,14 @@ a.logo:focus-visible {
   height: 2px;
   border-radius: 999px;
   background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+}
+
+.hero-divider--tagline {
+  margin-top: 12px;
+  width: 48px;
+  height: 1px;
+  opacity: 0.4;
+  background: linear-gradient(90deg, var(--hero-tagline-color), transparent);
 }
 
 /* 分类页面 */
