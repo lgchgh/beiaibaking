@@ -514,8 +514,8 @@ a.logo:focus-visible {
     border-top: 1px solid var(--border);
   }
 
-  /* 首页：标语与首行缩略图之间不要顶部分隔线 */
-  .home-page .gallery-row:first-of-type {
+  /* 首页：紧跟 hero 的第一条作品行去掉顶线（:first-of-type 会误匹配到 .hero 这个 section，之前规则无效） */
+  .home-page .hero + .gallery-row {
     border-top: none;
   }
   
