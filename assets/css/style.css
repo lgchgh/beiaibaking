@@ -644,7 +644,7 @@ a.logo:focus-visible {
     justify-content: flex-end;
   }
 
-  /* 2×2 网格：第 1、2 列在两行对齐，About 与 Cake Gallery 同列左缘；占位格用不可见 Home| 撑满第 1 列宽 */
+  /* 2×2 网格：第 1 列宽由第一行「Home|」决定，第二行左留空占位格，About 与 Cake Gallery 同列 */
   .footer-nav-rows {
     display: inline-grid;
     grid-template-columns: auto auto;
@@ -682,19 +682,9 @@ a.logo:focus-visible {
     flex-wrap: nowrap;
   }
 
-  /* 整块占位：仍参与排版宽度，但不绘制「Home|」（避免个别环境子元素隐藏失效） */
   .footer-dpref--spacer {
-    visibility: hidden;
     pointer-events: none;
     user-select: none;
-  }
-
-  /* 桌面：第二行略向左收，About 更靠近 Cake；需要再调可改 translateX */
-  @media (min-width: 769px) {
-    .footer-nav-rows > .footer-dpref--spacer,
-    .footer-nav-rows > .footer-dmain--bottom {
-      transform: translateX(-0.45em);
-    }
   }
 
   .footer-right {
