@@ -178,9 +178,9 @@
               } catch (e) {
                 data = {
                   error:
-                    'Server returned non-JSON (HTTP ' +
+                    'Server error (HTTP ' +
                     r.status +
-                    '). If you just added RESEND_API_KEY, redeploy the project on Vercel. Open /api/contact in a new tab — you should see JSON.',
+                    ') with a non-JSON page. Open Vercel → your deployment → Functions → Logs for /api/contact. Redeploy after changing env vars.',
                 };
               }
             }
