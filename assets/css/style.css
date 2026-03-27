@@ -230,9 +230,9 @@ a.logo:focus-visible {
   /* 邮件图标保持同色系即可 */
 }
   
-/* 顶部标题区（导航与第一行缩略图之间的轻分隔） */
+/* 顶部标题区（导航与标语 / 首屏内容之间的留白） */
 .hero {
-  padding: 32px 0 12px;
+  padding: 3.5rem 0 12px;
 }
 
 .hero-inner {
