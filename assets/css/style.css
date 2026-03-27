@@ -597,10 +597,18 @@ a.logo:focus-visible {
     text-align: center;
   }
   
-  /* 中间自我介绍条带 */
+  /* 中间自我介绍条带：首页强制纯白底；占位图也偏白以免整块仍像米色 */
   .about-strip {
-    background-color: var(--white);
     padding: 32px 0;
+  }
+
+  .home-page .about-strip {
+    background: #ffffff;
+  }
+
+  .home-page .about-strip .photo-placeholder {
+    background: linear-gradient(145deg, #ffffff, #f3f1ee);
+    border-color: #e6e2dd;
   }
   
   .about-inner {
