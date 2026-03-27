@@ -45,7 +45,7 @@
       var val = data[key];
       if (!val && val !== '') return;
       if (key === 'site_email_label' && val) {
-        document.querySelectorAll('[data-mailto="site_email"]').forEach(function (el) {
+        document.querySelectorAll('[data-mailto="site_email"], [data-contact-link]').forEach(function (el) {
           el.setAttribute('title', val);
           el.setAttribute('aria-label', val);
         });
