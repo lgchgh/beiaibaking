@@ -236,7 +236,7 @@ a.logo:focus-visible {
 }
 
 .hero-inner {
-  text-align: left;
+  text-align: center;
 }
 
 .hero-label {
@@ -251,18 +251,20 @@ a.logo:focus-visible {
   border-radius: 999px;
 }
 
-/* 首页主标题：签名式手写体，色同导航 Logo 主色、80% 不透明 */
+/* 首页主标题：手写签名感，居中、宽字距、略小字号、低透明度如钤印 */
 .hero-tagline {
-  margin: 0;
-  max-width: 36em;
+  margin: 0 auto;
+  max-width: none;
+  width: 100%;
+  text-align: center;
   font-family: 'Great Vibes', 'La Belle Aurore', cursive;
   font-weight: 400;
   font-style: normal;
-  font-size: clamp(1.08rem, 3.4vw, 1.5rem);
-  line-height: 1.2;
-  letter-spacing: 0.025em;
+  font-size: 16px;
+  line-height: 1.25;
+  letter-spacing: 0.45em;
   color: var(--primary-color);
-  opacity: 0.8;
+  opacity: 0.6;
   font-synthesis: none;
 }
 
@@ -270,6 +272,15 @@ a.logo:focus-visible {
   font-family: 'Great Vibes', 'La Belle Aurore', cursive;
   font-weight: 400;
   margin-bottom: 0;
+}
+
+@media (max-width: 480px) {
+  .hero-tagline {
+    letter-spacing: 0.32em;
+    font-size: 15px;
+    padding: 0 0.25rem;
+    box-sizing: border-box;
+  }
 }
 
 /* 分类页面 */
