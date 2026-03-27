@@ -636,20 +636,17 @@ a.logo:focus-visible {
     gap: 24px;
   }
 
-  /* 左右两列同宽；左边稍宽一点少换行，和右边一行更平衡 */
-  .footer-left,
-  .footer-right {
-    max-width: 300px;
-  }
-
+  /* 左侧导航需要一行放下 Home|Gallery|Share|About|Contact，不能太窄 */
   .footer-left {
+    max-width: min(480px, 100%);
     justify-self: end;
     text-align: right;
   }
 
   .footer-right {
+    max-width: 300px;
     justify-self: start;
-    text-align: left;
+    text-align: right;
   }
 
   .footer-left p {
@@ -681,10 +678,6 @@ a.logo:focus-visible {
     display: block;
   }
 
-  .footer-right {
-    text-align: right;
-  }
-
   /* 小屏时取消“往中间靠”，改为居中 */
   @media (max-width: 768px) {
     .footer-left { justify-self: center; }
@@ -701,6 +694,7 @@ a.logo:focus-visible {
 
   .footer-left .footer-line {
     justify-content: flex-end;
+    flex-wrap: nowrap;
   }
 
   .footer-right .footer-line {
@@ -761,6 +755,7 @@ a.logo:focus-visible {
 
     .footer-left .footer-line {
       justify-content: center;
+      flex-wrap: wrap;
     }
 
     .footer-right {
