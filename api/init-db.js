@@ -90,7 +90,6 @@ module.exports = async (req, res) => {
     const { rows: scRows } = await sql`SELECT COUNT(*) as c FROM site_content`;
     if (parseInt(scRows?.[0]?.c || 0) === 0) {
       const defaults = [
-        ['home','hero_tagline','Where flavor meets art.'],
         ['home','intro_photo',''],
         ['home','intro_main', HOME_INTRO_MAIN_DEFAULT],
         ['home','cat_decorated','Decorated Cakes'],
