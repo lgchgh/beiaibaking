@@ -32,6 +32,10 @@
   --bg: var(--background);
   --text: var(--text-dark);
   --muted: var(--text-light);
+  /* 页脚专用：略淡于正文，易读且不抢主内容 */
+  --footer-text: #6a6f76;
+  --footer-link: #585d64;
+  --footer-sep-color: #8b9098;
   --accent: var(--primary-color);
   --border: var(--border-color);
   --max-width: var(--container-width);
@@ -626,7 +630,15 @@ a.logo:focus-visible {
     padding: 24px 0 32px;
     margin-top: 24px;
     font-size: 0.85rem;
-    color: var(--muted);
+    color: var(--footer-text);
+  }
+
+  .site-footer a {
+    color: var(--footer-link);
+  }
+
+  .site-footer a:hover {
+    color: var(--primary-color);
   }
 
   .footer-inner {
@@ -729,12 +741,6 @@ a.logo:focus-visible {
     display: block;
   }
 
-  /* 小屏时取消“往中间靠”，改为居中 */
-  @media (max-width: 768px) {
-    .footer-left { justify-self: center; }
-    .footer-right { justify-self: center; }
-  }
-
   .footer-line {
     margin: 0;
     display: flex;
@@ -747,17 +753,9 @@ a.logo:focus-visible {
     justify-content: flex-start;
   }
 
-  .footer-sep {
-    color: var(--muted);
+  .site-footer .footer-sep {
+    color: var(--footer-sep-color);
     user-select: none;
-  }
-
-  .footer-line a {
-    color: var(--muted);
-  }
-
-  .footer-line a:hover {
-    color: var(--primary-color);
   }
 
   .footer-right .footer-line-indent {
@@ -789,30 +787,43 @@ a.logo:focus-visible {
     .footer-inner {
       grid-template-columns: 1fr;
       text-align: center;
+      justify-items: center;
+      align-items: center;
+      gap: 1.25rem;
     }
 
     .footer-left {
       order: 1;
+      width: 100%;
+      max-width: 100%;
+      justify-self: stretch;
       justify-content: center;
     }
 
     .footer-center {
       order: 0;
+      width: 100%;
+      justify-self: center;
     }
 
     .footer-nav-rows {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
+      justify-content: center;
+      width: 100%;
+      gap: 0.5rem;
     }
 
     .footer-nav-top-cluster {
       display: flex;
-      flex-wrap: nowrap;
+      flex-wrap: wrap;
       justify-content: center;
       align-items: center;
+      align-content: center;
       gap: 0.35em;
+      row-gap: 0.25rem;
+      max-width: 100%;
     }
 
     .footer-dpref--spacer {
@@ -821,15 +832,30 @@ a.logo:focus-visible {
 
     .footer-dmain--bottom {
       justify-content: center;
+      transform: none;
+    }
+
+    .footer-nav-rows .footer-dpref,
+    .footer-nav-rows .footer-dmain {
+      justify-content: center;
     }
 
     .footer-right {
       order: 2;
+      width: 100%;
+      max-width: 100%;
+      justify-self: stretch;
       text-align: center;
     }
 
     .footer-right .footer-line {
       justify-content: center;
+      text-align: center;
+    }
+
+    .footer-right .footer-line-indent {
+      margin-left: 0;
+      margin-right: 0;
     }
   }
 
