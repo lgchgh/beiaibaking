@@ -636,11 +636,19 @@ a.logo:focus-visible {
     gap: 24px;
   }
 
-  /* 左侧导航需要一行放下 Home|Gallery|Share|About|Contact，不能太窄 */
+  /* 页脚导航分两行：上行 Home|Gallery|Share 右对齐；下行 About|Contact 相对块宽居中 */
   .footer-left {
-    max-width: min(480px, 100%);
+    max-width: min(400px, 100%);
     justify-self: end;
-    text-align: right;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .footer-nav-rows {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
   }
 
   .footer-right {
@@ -692,9 +700,17 @@ a.logo:focus-visible {
     gap: 0.35em;
   }
 
-  .footer-left .footer-line {
-    justify-content: flex-end;
+  .footer-line-row1,
+  .footer-line-row2 {
     flex-wrap: nowrap;
+  }
+
+  .footer-line-row1 {
+    justify-content: flex-end;
+  }
+
+  .footer-line-row2 {
+    justify-content: center;
   }
 
   .footer-right .footer-line {
@@ -747,15 +763,16 @@ a.logo:focus-visible {
 
     .footer-left {
       order: 1;
+      justify-content: center;
     }
 
     .footer-center {
       order: 0;
     }
 
-    .footer-left .footer-line {
+    .footer-line-row1,
+    .footer-line-row2 {
       justify-content: center;
-      flex-wrap: wrap;
     }
 
     .footer-right {
