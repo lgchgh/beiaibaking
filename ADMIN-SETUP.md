@@ -39,6 +39,21 @@
 | `ADMIN_PASSWORD` | `lg697280` | 登录密码（建议上线后修改） |
 | `JWT_SECRET` | 随机字符串 | 用于 session，可填 `your-random-secret-here` |
 | `INIT_SECRET` | 随机字符串 | 初始化数据库用，执行一次后可删除 |
+| `RESEND_API_KEY` | Resend 后台 API Key | **联系表单发信**（见下文「联系表单 / Resend」） |
+| `CONTACT_TO_EMAIL` | 如 `admin@beiaibaking.net` | 访客提交后邮件送达的收件箱（默认与下栏一致可省略） |
+| `RESEND_FROM` | 如 `Beiai Baking \<noreply@你的域名>` | 发件人；域名在 Resend 验证前可用 `Beiai Baking \<onboarding@resend.dev>` 测通 |
+
+## 2b. 联系表单 / Resend（与别的网站的「提交成功页」一致）
+
+联系页通过 `/api/contact` 把留言发到你的邮箱，需使用 [Resend](https://resend.com)（免费档可试用）：
+
+1. 注册 Resend → **API Keys** 新建 Key，填入 Vercel 环境变量 **`RESEND_API_KEY`**。
+2. **`CONTACT_TO_EMAIL`**：收到信的地址（建议与后台 Site 里的 Contact Email 一致）。不设置则默认为 `admin@beiaibaking.net`。
+3. **`RESEND_FROM`**：发件人展示名 + 地址。未完成域名验证前，可用官方测试发件人：  
+   `Beiai Baking <onboarding@resend.dev>`（Resend 文档可能有更新，以控制台说明为准）。验证你自己的域名后，改为例如 `Beiai Baking <hello@你的域名>`。
+4. 保存环境变量后 **Redeploy** 再测 Contact 页。
+
+未配置 `RESEND_API_KEY` 时，提交会提示表单未就绪，仍可使用导航栏邮件图标。
 
 ## 3. 初始化数据库
 
