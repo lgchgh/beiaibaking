@@ -682,13 +682,19 @@ a.logo:focus-visible {
     flex-wrap: nowrap;
   }
 
-  .footer-dpref--spacer .footer-spacer-measure,
-  .footer-dpref--spacer > .footer-sep {
+  /* 整块占位：仍参与排版宽度，但不绘制「Home|」（避免个别环境子元素隐藏失效） */
+  .footer-dpref--spacer {
     visibility: hidden;
+    pointer-events: none;
+    user-select: none;
   }
 
-  .footer-dpref--spacer {
-    pointer-events: none;
+  /* 桌面：第二行略向左收，About 更靠近 Cake；需要再调可改 translateX */
+  @media (min-width: 769px) {
+    .footer-nav-rows > .footer-dpref--spacer,
+    .footer-nav-rows > .footer-dmain--bottom {
+      transform: translateX(-0.45em);
+    }
   }
 
   .footer-right {
