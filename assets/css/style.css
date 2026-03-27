@@ -417,6 +417,10 @@ a.logo:focus-visible {
   justify-content: space-between; /* 让整排大类按钮在横幅宽度内尽量铺满 */
 }
 
+.gallery-page .category-tabs {
+  margin-top: 2rem;
+}
+
 .category-tab {
   flex: 1 1 0;              /* 每个按钮等宽分配整行空间 */
   padding: 10px 0;          /* 只做上下内边距，左右靠 flex 撑开 */
