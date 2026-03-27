@@ -1,6 +1,26 @@
 const auth = require('../lib/auth');
 const { sql } = require('../lib/db');
 
+/**
+ * DB may still hold older legal copy with mailto:. Rewrite on read so the live site
+ * matches the static HTML defaults (links to contact.html).
+ */
+function rewriteLegalContactHtml(html) {
+  if (!html || typeof html !== 'string') return html;
+  let s = html;
+  s = s.replace(
+    /<a\s+href=['"]mailto:admin@beiaibaking\.net['"][^>]*>[\s\S]*?<\/a>/gi,
+    '<a href="contact.html">contact us</a>'
+  );
+  s = s.replace(
+    /when you contact us by email \(e\.g\. admin@beiaibaking\.net\)/gi,
+    'when you contact us through our <a href="contact.html">Contact page</a>'
+  );
+  s = s.replace(/please contact us at admin@beiaibaking\.net/gi, 'please <a href="contact.html">contact us</a>');
+  s = s.replace(/contact us at admin@beiaibaking\.net/gi, 'please <a href="contact.html">contact us</a>');
+  return s;
+}
+
 async function handleGet(req, res) {
   const page = req.query?.page;
   if (!page) {
@@ -11,6 +31,9 @@ async function handleGet(req, res) {
     const r = await sql`SELECT key, value FROM site_content WHERE page = ${page}`;
     const data = {};
     (r.rows || []).forEach(row => { data[row.key] = row.value; });
+    if ((page === 'privacy' || page === 'terms') && typeof data.content === 'string') {
+      data.content = rewriteLegalContactHtml(data.content);
+    }
     res.status(200).json(data);
   } catch (e) {
     if (e.message?.includes('does not exist')) {
