@@ -559,6 +559,13 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
   color: var(--primary-color);
   }
 
+  /* 首页分类区块底部：作品集入口 */
+  .view-all-link--collection {
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    color: var(--primary-color);
+  }
+
 .row-footer {
   margin-top: 10px;
   text-align: right;
