@@ -10,14 +10,6 @@
       "maxDuration": 30
     }
   },
-  "redirects": [
-    {
-      "source": "/(.*)",
-      "has": [{ "type": "host", "value": "beiaibaking.net" }],
-      "destination": "https://www.beiaibaking.net/$1",
-      "permanent": true
-    }
-  ],
   "headers": [
     {
       "source": "/blog.html",
