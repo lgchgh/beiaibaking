@@ -4,7 +4,7 @@
  * Run by GitHub Actions (weekly or manually for bulk historical fill).
  * Searches Tavily for real baking industry content, rewrites with DeepSeek,
  * then POSTs to BEIAI_API_URL. Recommended: https://你的域名/api/posts（与后台同一接口，凭 x-cron-secret 走入库逻辑）；
- * 也可使用 /api/ingest 或 /api/auto-generate-receiver。
+ * 仅使用 POST /api/posts（带 x-cron-secret 或 Bearer），勿再单独部署 /api/ingest（Hobby 12 函数上限）。
  *
  * Anti-AI-tone measures:
  *   - Random mood + formatting mode per article

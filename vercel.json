@@ -9,10 +9,7 @@
     "api/gallery.js": {
       "maxDuration": 30
     },
-    "api/ingest.js": {
-      "maxDuration": 60
-    },
-    "api/auto-generate-receiver.js": {
+    "api/posts.js": {
       "maxDuration": 60
     }
   },

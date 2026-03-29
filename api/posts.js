@@ -94,7 +94,7 @@ module.exports = async (req, res) => {
   if (req.method === 'POST') {
     if (readCronSecretFromRequest(req)) {
       const authz = cronAuthResult(req);
-      if (authz.ok) return require('./ingest')(req, res);
+      if (authz.ok) return require('../lib/cronIngestHandler')(req, res);
       if (authz.reason === 'not_configured') {
         return res.status(503).json({
           error: 'Server misconfiguration',
