@@ -25,8 +25,8 @@ const path   = require('path');
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 const TAVILY_API_KEY   = process.env.TAVILY_API_KEY;
-const BEIAI_API_URL    = process.env.BEIAI_API_URL;
-const CRON_SECRET      = process.env.CRON_SECRET;
+const BEIAI_API_URL    = String(process.env.BEIAI_API_URL || '').trim();
+const CRON_SECRET      = String(process.env.CRON_SECRET || '').trim();
 
 if (!DEEPSEEK_API_KEY || !TAVILY_API_KEY || !BEIAI_API_URL || !CRON_SECRET) {
   console.error('[auto-generate] Missing required environment variables.');
@@ -385,13 +385,31 @@ async function sendToReceiver(posts) {
   console.log(`  [send] sending ${valid.length} posts...`);
 
   const response = await fetch(BEIAI_API_URL, {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json', 'x-cron-secret': CRON_SECRET },
-    body:    JSON.stringify(valid),
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-cron-secret': CRON_SECRET,
+      Authorization: `Bearer ${CRON_SECRET}`,
+    },
+    body: JSON.stringify(valid),
   });
 
-  const result = await response.json();
-  if (!response.ok) throw new Error(`Receiver ${response.status}: ${JSON.stringify(result)}`);
+  const text = await response.text();
+  let result;
+  try {
+    result = text ? JSON.parse(text) : {};
+  } catch {
+    result = { raw: text };
+  }
+  if (!response.ok) {
+    const hint =
+      response.status === 401
+        ? ' Check GitHub secret CRON_SECRET matches Vercel env CRON_SECRET exactly (no extra spaces).'
+        : response.status === 503
+          ? ' Set CRON_SECRET in Vercel → Project → Settings → Environment Variables (Production).'
+          : '';
+    throw new Error(`Receiver ${response.status}: ${JSON.stringify(result)}${hint}`);
+  }
 
   console.log(`  [send] inserted: ${result.inserted}, skipped: ${result.skipped}`);
   (result.errors || []).forEach(e => {

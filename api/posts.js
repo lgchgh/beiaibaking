@@ -1,4 +1,5 @@
 const auth = require('../lib/auth');
+const { cronAuthResult, readCronSecretFromRequest } = require('../lib/cronAuth');
 const { sql } = require('../lib/db');
 const { deriveSlug } = require('../lib/postSlug');
 const { getJsonBody } = require('../lib/parseBody');
@@ -91,9 +92,16 @@ module.exports = async (req, res) => {
   await ensurePostsSchema();
   if (req.method === 'GET') return handleGet(req, res);
   if (req.method === 'POST') {
-    const cron = req.headers['x-cron-secret'];
-    if (process.env.CRON_SECRET && cron && cron === process.env.CRON_SECRET) {
-      return require('./ingest')(req, res);
+    if (readCronSecretFromRequest(req)) {
+      const authz = cronAuthResult(req);
+      if (authz.ok) return require('./ingest')(req, res);
+      if (authz.reason === 'not_configured') {
+        return res.status(503).json({
+          error: 'Server misconfiguration',
+          detail: 'CRON_SECRET is not set in Vercel project env',
+        });
+      }
+      return res.status(401).json({ error: 'Unauthorized' });
     }
     return handlePost(req, res);
   }

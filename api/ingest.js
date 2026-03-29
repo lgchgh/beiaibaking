@@ -8,6 +8,7 @@
 const { sql } = require('../lib/db');
 const { ensurePostsSchema } = require('../lib/ensurePostsSchema');
 const { getJsonBody } = require('../lib/parseBody');
+const { cronAuthResult } = require('../lib/cronAuth');
 
 const ALLOWED_TYPES = ['news', 'recipe', 'blog'];
 const MIN_CONTENT_LENGTH = 100;
@@ -64,8 +65,14 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const secret = req.headers['x-cron-secret'];
-  if (!secret || secret !== process.env.CRON_SECRET) {
+  const authz = cronAuthResult(req);
+  if (!authz.ok) {
+    if (authz.reason === 'not_configured') {
+      return res.status(503).json({
+        error: 'Server misconfiguration',
+        detail: 'CRON_SECRET is not set in Vercel project env',
+      });
+    }
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
