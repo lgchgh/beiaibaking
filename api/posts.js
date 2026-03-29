@@ -90,6 +90,12 @@ async function handlePost(req, res) {
 module.exports = async (req, res) => {
   await ensurePostsSchema();
   if (req.method === 'GET') return handleGet(req, res);
-  if (req.method === 'POST') return handlePost(req, res);
+  if (req.method === 'POST') {
+    const cron = req.headers['x-cron-secret'];
+    if (process.env.CRON_SECRET && cron && cron === process.env.CRON_SECRET) {
+      return require('./ingest')(req, res);
+    }
+    return handlePost(req, res);
+  }
   res.status(405).json({ error: 'Method not allowed' });
 };

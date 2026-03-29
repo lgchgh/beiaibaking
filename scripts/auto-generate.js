@@ -3,7 +3,8 @@
  *
  * Run by GitHub Actions (weekly or manually for bulk historical fill).
  * Searches Tavily for real baking industry content, rewrites with DeepSeek,
- * then POSTs to BEIAI_API_URL (recommended: https://你的域名/api/ingest；兼容 /api/auto-generate-receiver).
+ * then POSTs to BEIAI_API_URL. Recommended: https://你的域名/api/posts（与后台同一接口，凭 x-cron-secret 走入库逻辑）；
+ * 也可使用 /api/ingest 或 /api/auto-generate-receiver。
  *
  * Anti-AI-tone measures:
  *   - Random mood + formatting mode per article
@@ -30,7 +31,7 @@ const CRON_SECRET      = process.env.CRON_SECRET;
 if (!DEEPSEEK_API_KEY || !TAVILY_API_KEY || !BEIAI_API_URL || !CRON_SECRET) {
   console.error('[auto-generate] Missing required environment variables.');
   console.error('Required: DEEPSEEK_API_KEY, TAVILY_API_KEY, BEIAI_API_URL, CRON_SECRET');
-  console.error('BEIAI_API_URL example: https://<your-domain>/api/ingest');
+  console.error('BEIAI_API_URL example: https://<your-domain>/api/posts');
   process.exit(1);
 }
 
