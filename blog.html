@@ -20,7 +20,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="assets/css/style.css?v=sharetabs1" />
+  <link rel="stylesheet" href="assets/css/style.css?v=sharecol1" />
   <style>
     .share-hero { margin-bottom: 2rem; }
     .share-hero-banner { margin-top: 14px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
@@ -31,7 +31,8 @@
     .share-tab:last-child { border-top-right-radius: var(--radius); border-bottom-right-radius: var(--radius); }
     .share-tab:hover, .share-tab.active { border-color: var(--primary-color); background-color: #fff3ec; color: #8b3b24; }
     /* News-style list: small square bullet + one line title */
-    .share-list { list-style: none; padding: 0; margin: 0; max-width: 720px; }
+    /* 宽度由 .reading-column 统一限制，列表铺满该列 */
+    .share-list { list-style: none; padding: 0; margin: 0; max-width: 100%; }
     .share-list > li { margin: 0; padding: 0; border: none; }
     .share-list-link {
       display: flex;
@@ -138,7 +139,7 @@
       </div>
     </section>
     <section class="container" style="padding: 0 2rem 64px;">
-      <div id="shareContent">
+      <div id="shareContent" class="reading-column">
         <ul class="share-list" id="shareList"></ul>
         <p class="share-empty" id="shareEmpty" style="display:none">No posts yet.</p>
       </div>

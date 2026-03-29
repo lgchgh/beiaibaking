@@ -1010,6 +1010,55 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
   overflow: hidden;
 }
 
+/* Share 列表（blog.html）+ 文章详情（post.html）：News / Recipes / Blog 共用左对齐阅读列 */
+.reading-column {
+  max-width: 720px;
+  margin: 0;
+  text-align: left;
+}
+
+.post-back {
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+.post-back a {
+  color: var(--primary-color);
+}
+
+.post-date {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+
+.post-body {
+  margin: 0;
+  padding: 0.5rem 0 4rem;
+  text-align: left;
+}
+.post-body h1,
+.post-body h2,
+.post-body h3 {
+  margin-top: 1.5rem;
+  text-align: left;
+}
+.post-body p,
+.post-body li {
+  margin-bottom: 1rem;
+  text-align: left;
+}
+.post-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--border-radius);
+  margin: 1rem 0;
+  display: block;
+}
+
+#postTitle {
+  text-align: left;
+}
+
 /* Legal pages (Privacy Policy, Terms of Use) */
 .legal-content {
   padding: 48px 2rem 64px;

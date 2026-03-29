@@ -20,16 +20,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="assets/css/style.css" />
-  <style>
-    .post-body { max-width: 720px; margin: 0 auto; padding: 2rem 0 4rem; }
-    .post-body h1, .post-body h2, .post-body h3 { margin-top: 1.5rem; }
-    .post-body p { margin-bottom: 1rem; }
-    .post-body img { max-width: 100%; height: auto; border-radius: var(--border-radius); margin: 1rem 0; }
-    .post-back { margin-bottom: 1.5rem; font-size: 0.9rem; }
-    .post-back a { color: var(--primary-color); }
-    .post-date { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem; }
-  </style>
+  <link rel="stylesheet" href="assets/css/style.css?v=sharecol1" />
 </head>
 <body>
   <header class="site-header">
@@ -66,15 +57,17 @@
 
   <main>
     <section class="container" style="padding: 48px 2rem 24px;">
-      <div class="post-back"><a id="postBackLink" href="blog.html">← Back to Share</a></div>
-      <div id="postContainer">
-        <p id="postLoading">Loading...</p>
-        <div id="postContent" style="display:none">
-          <h1 id="postTitle"></h1>
-          <p class="post-date" id="postDate"></p>
-          <div class="post-body" id="postBody"></div>
+      <div class="reading-column">
+        <div class="post-back"><a id="postBackLink" href="blog.html">← Back to Share</a></div>
+        <div id="postContainer">
+          <p id="postLoading">Loading...</p>
+          <div id="postContent" style="display:none">
+            <h1 id="postTitle"></h1>
+            <p class="post-date" id="postDate"></p>
+            <div class="post-body" id="postBody"></div>
+          </div>
+          <p id="postError" style="display:none; color: var(--text-muted);">Post not found.</p>
         </div>
-        <p id="postError" style="display:none; color: var(--text-muted);">Post not found.</p>
       </div>
     </section>
   </main>
