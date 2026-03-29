@@ -1,23 +1,28 @@
 name: Auto Generate Posts
 
 on:
-  # Weekly: every Monday at 09:00 UTC
   schedule:
     - cron: '0 9 * * 1'
 
-  # Manual trigger — add --bulk flag for historical fill
   workflow_dispatch:
     inputs:
       bulk:
-        description: 'Generate 6 months of historical posts (36 articles)?'
+        description: 'Generate 6 months of historical posts?'
         required: false
         default: 'false'
         type: choice
         options:
           - 'false'
           - 'true'
+      model:
+        description: 'AI model to use'
+        required: false
+        default: 'deepseek'
+        type: choice
+        options:
+          - deepseek
+          - gemini
 
-# Prevent concurrent runs — if a previous run is still going, cancel it
 concurrency:
   group: auto-generate
   cancel-in-progress: true
@@ -35,7 +40,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '20'
 
       - name: Install dependencies
         run: npm install openai --no-package-lock
@@ -44,16 +49,22 @@ jobs:
         if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.bulk != 'true')
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
-          BEIAI_API_URL: ${{ secrets.BEIAI_API_URL }}
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
-        run: node scripts/auto-generate.js
+          GEMINI_API_KEY:   ${{ secrets.GEMINI_API_KEY }}
+          TAVILY_API_KEY:   ${{ secrets.TAVILY_API_KEY }}
+          BEIAI_API_URL:    ${{ secrets.BEIAI_API_URL }}
+          CRON_SECRET:      ${{ secrets.CRON_SECRET }}
+          AI_MODEL:         ${{ github.event_name == 'workflow_dispatch' && inputs.model || 'deepseek' }}
+        run: |
+          node scripts/auto-generate.js --model=$AI_MODEL
 
       - name: Run bulk historical generation
         if: github.event_name == 'workflow_dispatch' && inputs.bulk == 'true'
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
-          BEIAI_API_URL: ${{ secrets.BEIAI_API_URL }}
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
-        run: node scripts/auto-generate.js --bulk
+          GEMINI_API_KEY:   ${{ secrets.GEMINI_API_KEY }}
+          TAVILY_API_KEY:   ${{ secrets.TAVILY_API_KEY }}
+          BEIAI_API_URL:    ${{ secrets.BEIAI_API_URL }}
+          CRON_SECRET:      ${{ secrets.CRON_SECRET }}
+          AI_MODEL:         ${{ inputs.model || 'deepseek' }}
+        run: |
+          node scripts/auto-generate.js --bulk --model=$AI_MODEL

@@ -1,59 +1,84 @@
 /**
  * scripts/auto-generate.js
  *
- * Fixes in this version:
- *   - News: diverse search queries per article (no repeated results)
- *   - Recipe: distinct cuisine angle per article (Korean/Japanese/French/etc rotated)
- *   - Blog: no-replacement topic sampling (used topics removed from pool)
- *   - Dates: randomised within month, not fixed day numbers
- *   - Counts: news 3-5, recipe 1-3, blog 0-1 per month (random)
- *   - Location: Nova is based in Guangzhou, China — climate and seasons baked in
+ * Changes in this version:
+ *   - Model selection: deepseek (default) or gemini-2.5-flash-lite
+ *   - News: formal/professional tone, global focus, no Guangzhou references
+ *   - Recipe: formal magazine style, international focus, 7 cuisines (removed Cantonese + SE Asian, added British)
+ *   - Blog: relaxed, Nova personal voice, Guangzhou identity kept for logic only
+ *   - Nova location: Guangzhou used for logical consistency only, not mentioned in articles
+ *   - Deduplication: no-replacement sampling for topics + cuisine angles + news queries
+ *   - Random article counts: news 3-5, recipe 1-3, blog 0-1 per month
+ *   - Random dates within month
  *
  * Usage:
- *   node scripts/auto-generate.js            → weekly (1 news, 1 recipe, 1 blog)
- *   node scripts/auto-generate.js --bulk     → 6 months of history
+ *   node scripts/auto-generate.js                      → weekly run (deepseek)
+ *   node scripts/auto-generate.js --bulk               → 6-month bulk (deepseek)
+ *   node scripts/auto-generate.js --model=gemini       → weekly run (gemini)
+ *   node scripts/auto-generate.js --bulk --model=gemini → bulk (gemini)
  */
 
-const OpenAI = require('openai');
-const fs     = require('fs');
-const path   = require('path');
+const OpenAI  = require('openai');
+const fs      = require('fs');
+const path    = require('path');
+
+// ─── Environment & model selection ───────────────────────────────────────────
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
+const GEMINI_API_KEY   = process.env.GEMINI_API_KEY;
 const TAVILY_API_KEY   = process.env.TAVILY_API_KEY;
 const BEIAI_API_URL    = String(process.env.BEIAI_API_URL || '').trim();
 const CRON_SECRET      = String(process.env.CRON_SECRET || '').trim();
 
-if (!DEEPSEEK_API_KEY || !TAVILY_API_KEY || !BEIAI_API_URL || !CRON_SECRET) {
-  console.error('[auto-generate] Missing required environment variables.');
-  console.error('Required: DEEPSEEK_API_KEY, TAVILY_API_KEY, BEIAI_API_URL, CRON_SECRET');
-  console.error('BEIAI_API_URL example: https://<your-domain>/api/posts');
+const isBulk     = process.argv.includes('--bulk');
+const modelArg   = (process.argv.find(a => a.startsWith('--model=')) || '').replace('--model=', '');
+const useGemini  = modelArg === 'gemini';
+const modelLabel = useGemini ? 'gemini-2.5-flash-lite' : 'deepseek';
+
+// Validate required env vars
+const missing = [];
+if (!TAVILY_API_KEY)  missing.push('TAVILY_API_KEY');
+if (!BEIAI_API_URL)   missing.push('BEIAI_API_URL');
+if (!CRON_SECRET)     missing.push('CRON_SECRET');
+if (useGemini  && !GEMINI_API_KEY)  missing.push('GEMINI_API_KEY');
+if (!useGemini && !DEEPSEEK_API_KEY) missing.push('DEEPSEEK_API_KEY');
+
+if (missing.length > 0) {
+  console.error('[auto-generate] Missing environment variables:', missing.join(', '));
   process.exit(1);
 }
 
-const deepseek = new OpenAI({
-  apiKey:  DEEPSEEK_API_KEY,
-  baseURL: 'https://api.deepseek.com',
-});
+console.log(`[auto-generate] Using model: ${modelLabel}`);
 
-const isBulk = process.argv.includes('--bulk');
+// ─── AI client setup ──────────────────────────────────────────────────────────
 
-// ─── Guangzhou climate context ────────────────────────────────────────────────
-// Injected into system prompt so Nova's writing is geographically accurate
+let aiClient, aiModel;
 
-function getGuangzhouSeason(monthLabel) {
-  const month = new Date(monthLabel + ' 1').getMonth() + 1; // 1-12
-  if (month >= 12 || month <= 2) {
-    return 'winter in Guangzhou (10–15°C, cool and dry, no snow — locals wear light jackets)';
-  } else if (month >= 3 && month <= 5) {
-    return 'spring in Guangzhou (20–28°C, extremely humid, plum rain season — surfaces sweat, dough absorbs moisture fast, fondant is a nightmare)';
-  } else if (month >= 6 && month <= 9) {
-    return 'summer in Guangzhou (33–38°C, brutal heat and humidity — buttercream melts on the bench, the kitchen is an oven before you even turn one on)';
-  } else {
-    return 'autumn in Guangzhou (22–28°C, the best baking weather of the year — low humidity, stable temps, everything behaves)';
-  }
+if (useGemini) {
+  aiClient = new OpenAI({
+    apiKey:  GEMINI_API_KEY,
+    baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
+  });
+  aiModel = 'gemini-2.5-flash-lite-preview-06-17';
+} else {
+  aiClient = new OpenAI({
+    apiKey:  DEEPSEEK_API_KEY,
+    baseURL: 'https://api.deepseek.com',
+  });
+  aiModel = 'deepseek-chat';
 }
 
-// ─── Cross-article memory (echo effect) ──────────────────────────────────────
+// ─── Nova location — for logical consistency only ─────────────────────────────
+
+function getGuangzhouSeason(monthLabel) {
+  const month = new Date(monthLabel + ' 1').getMonth() + 1;
+  if (month >= 12 || month <= 2) return 'cool dry winter (10–15°C, no snow)';
+  if (month >= 3 && month <= 5)  return 'humid spring, plum rain season (20–28°C, very high humidity)';
+  if (month >= 6 && month <= 9)  return 'hot humid summer (33–38°C, extreme heat)';
+  return 'comfortable dry autumn (22–28°C, low humidity)';
+}
+
+// ─── Cross-article memory ─────────────────────────────────────────────────────
 
 const MEMORY_FILE = path.join(__dirname, 'last-post.json');
 
@@ -75,160 +100,179 @@ function saveMemory(post) {
 
 function buildEchoLine(memory) {
   if (!memory || !memory.keyword) return '';
-  const templates = [
+  const t = [
     `Following up on what I mentioned about "${memory.keyword}" — I came across something relevant.`,
     `Still thinking about the "${memory.keyword}" question from my last post. This connects.`,
     `If you read my last piece on "${memory.keyword}", today's fits right in.`,
   ];
-  return templates[Math.floor(Math.random() * templates.length)];
+  return t[Math.floor(Math.random() * t.length)];
 }
 
-// ─── Randomisation pools ─────────────────────────────────────────────────────
+// ─── Content pools ────────────────────────────────────────────────────────────
 
 const NOVA_MOODS = [
-  { label: 'just back from an exhibition, thoughts buzzing, slightly overstimulated' },
+  { label: 'just back from an exhibition, thoughts buzzing' },
   { label: 'squeezed this in between two orders — keeping it short and direct' },
   { label: 'something has been annoying me about this topic and I need to say it' },
-  { label: 'just nailed a technique I\'ve been chasing for months, still a bit giddy' },
-  { label: 'quiet morning, reflective — the kind of thinking that happens over a long coffee' },
-  { label: 'saw something at a supplier yesterday that got me thinking differently' },
+  { label: 'just nailed a technique I\'ve been chasing for months' },
+  { label: 'quiet morning, reflective mood' },
+  { label: 'saw something at a supplier yesterday that got me thinking' },
 ];
 
 const FORMATTING_MODES = [
-  'Meticulous mode: clear paragraph breaks, deliberate punctuation, each idea gets room to breathe.',
-  'Stream-of-consciousness mode: minimal paragraph breaks, thoughts flow into each other, use em-dashes more than commas — write fast, edit minimally.',
+  'Meticulous: clear paragraph breaks, deliberate punctuation.',
+  'Stream-of-consciousness: minimal breaks, em-dashes over commas, write fast.',
 ];
 
 const BANNED_WORDS = [
-  'delightful', 'exquisite', 'masterful', 'artisanal', 'elevate', 'journey',
-  'it is worth noting', 'in conclusion', 'to summarize', 'in summary',
-  'furthermore', 'moreover', 'nevertheless', 'it goes without saying',
-  'needless to say', 'in today\'s world', 'as mentioned above',
-  'firstly', 'secondly', 'thirdly', 'lastly', 'to begin with',
-  'on the other hand', 'in addition',
-  '不仅如此', '综上所述', '总而言之', '致力于', '见证了',
-  '关键在于', '旨在', '深入探讨', '值得注意的是',
+  'delightful','exquisite','masterful','artisanal','elevate','journey',
+  'it is worth noting','in conclusion','to summarize','in summary',
+  'furthermore','moreover','nevertheless','it goes without saying',
+  'needless to say','in today\'s world','as mentioned above',
+  'firstly','secondly','thirdly','lastly','to begin with',
+  'on the other hand','in addition',
+  '不仅如此','综上所述','总而言之','致力于','见证了',
+  '关键在于','旨在','深入探讨','值得注意的是',
 ];
 
-// News search queries — varied pool, pick different ones per article
+// News query pool — pick different queries per article
 const NEWS_QUERY_POOL = [
-  'international baking exhibition pastry show',
+  'international baking exhibition pastry show dates',
   'world pastry championship cake competition results',
-  'bakery industry trend cake decorating',
-  'artisan bread pastry award winner',
-  'IBIE Europain Sigep baking show',
-  'patisserie competition France Japan Korea',
-  'cake design trend fondant sugar art',
-  'baking industry news professional baker',
-  'pastry chef award restaurant dessert trend',
-  'chocolate confectionery show competition',
+  'bakery industry trend professional cake decorating',
+  'artisan bread pastry award winner announcement',
+  'IBIE Europain Sigep baking trade show news',
+  'patisserie competition France Japan Korea winner',
+  'cake design trend sugar art industry report',
+  'baking industry professional baker news update',
+  'pastry chef award fine dining dessert trend',
+  'chocolate confectionery show competition results',
+  'bread sourdough fermentation industry trend',
+  'pastry school training competition young baker',
 ];
 
-// Recipe cuisine angles — rotate through these so each article is a different style
+// Recipe cuisine angles — 7 cuisines, no Cantonese or SE Asian
 const RECIPE_ANGLES = [
-  { cuisine: 'Korean', query: 'Korean bento cake chiffon cream cheese recipe trending' },
-  { cuisine: 'Japanese', query: 'Japanese cotton cheesecake roll cake recipe popular' },
-  { cuisine: 'French', query: 'French opera cake mille-feuille tarte recipe classic' },
-  { cuisine: 'Cantonese', query: 'Cantonese egg tart wife cake mooncake recipe traditional' },
-  { cuisine: 'Modern', query: 'matcha brown butter salted caramel cake recipe viral' },
-  { cuisine: 'Italian', query: 'Italian tiramisu cannoli panna cotta recipe authentic' },
-  { cuisine: 'Southeast Asian', query: 'pandan coconut kueh Southeast Asian cake recipe' },
-  { cuisine: 'American', query: 'American layer cake banana bread carrot cake recipe classic' },
+  { cuisine: 'Korean',   query: 'Korean bento cake chiffon cream cheese trending recipe' },
+  { cuisine: 'Japanese', query: 'Japanese cotton cheesecake roll cake popular recipe' },
+  { cuisine: 'French',   query: 'French opera cake mille-feuille tarte recipe classic' },
+  { cuisine: 'British',  query: 'British Victoria sponge scone sticky toffee pudding recipe' },
+  { cuisine: 'Modern',   query: 'matcha brown butter salted caramel trending cake recipe' },
+  { cuisine: 'Italian',  query: 'Italian tiramisu cannoli panna cotta authentic recipe' },
+  { cuisine: 'American', query: 'American layer cake banana bread carrot cake classic recipe' },
 ];
 
-// Blog topics — will be sampled without replacement across bulk run
+// Blog topics — 18 entries, sampled without replacement
 const BLOG_TOPICS_MASTER = [
-  'The one thing nobody tells you about bean paste piping — and it cost me three wasted batches',
-  'Why I stopped using Swiss meringue buttercream in Guangzhou summers',
-  'Honest thoughts on the Korean cake trend: beautiful, but is it practical here?',
-  'That time my fondant cracked in front of a client — what I quietly learned',
+  'The one thing nobody tells you about bean paste piping — three wasted batches later',
+  'Why I stopped using Swiss meringue buttercream in summer',
+  'Honest thoughts on the Korean cake trend: beautiful, but is it practical?',
+  'That time my fondant cracked in front of a client',
   'The underrated skill that separates decent bakers from really good ones',
-  'My Paris stage nearly broke me. Here\'s what I actually came back with.',
-  'Why cheap chocolate ruins more cakes than bad technique ever could',
-  'The temperature obsession in a Guangzhou kitchen: am I taking it too far?',
+  'My Paris stage nearly broke me. Here\'s what I came back with.',
+  'Why cheap chocolate ruins more cakes than bad technique',
+  'The temperature obsession: am I taking it too far?',
   'What baking competitions look like from the inside',
-  'A tool I\'ve used for 8 years that most bakers walk right past',
+  'A tool I\'ve used for 8 years that most bakers ignore',
   'The problem with "beginner-friendly" recipes',
-  'Why I keep returning to French technique even when Korean styles dominate my feed',
-  'Baking through a Guangzhou summer: what nobody warns you about',
-  'The humidity problem: how spring in southern China changes everything about dough',
+  'Why I keep returning to French technique even now',
+  'Baking through a brutal summer: what nobody warns you about',
+  'The humidity problem: how a wet season changes everything about dough',
   'Why autumn is the only season I trust for pulled sugar work',
-  'What I wish I had known before opening a home bakery in Guangzhou',
-  'The client who asked for a fondant cake in August — and what happened next',
-  'Why I gave up on Swiss meringue entirely and what I use instead',
+  'What I wish I had known before opening a home bakery',
+  'The client who asked for a fondant cake in August',
+  'Why I gave up on Swiss meringue entirely',
 ];
 
-function pickRandom(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
+function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 
-function randInt(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-// Random date within a given month (monthsAgo), spread across the month
 function randomDateInMonth(monthsAgo, index, total) {
   const d = new Date();
   d.setMonth(d.getMonth() - monthsAgo);
   d.setDate(1);
-  const daysInMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-  // spread articles evenly but with jitter
-  const segment = Math.floor(daysInMonth / total);
-  const base     = segment * index + 1;
-  const jitter   = randInt(0, Math.max(0, segment - 3));
-  d.setDate(Math.min(base + jitter, daysInMonth));
+  const days    = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  const segment = Math.floor(days / Math.max(total, 1));
+  const base    = segment * index + 1;
+  const jitter  = randInt(0, Math.max(0, segment - 3));
+  d.setDate(Math.min(base + jitter, days));
   return d.toISOString().split('T')[0];
 }
 
-// ─── System prompt ────────────────────────────────────────────────────────────
+// ─── System prompts ───────────────────────────────────────────────────────────
 
-function buildSystemPrompt(mood, formattingMode, season) {
-  return `You are Nova — a professional baker with 10 years in the industry, based in Guangzhou, China. You write for your own baking website, Beiai Baking.
+function buildNewsSystemPrompt() {
+  return `You are a professional editor writing for Beiai Baking, a premium baking and pastry website.
 
-LOCATION & CLIMATE CONTEXT:
-- You live and work in Guangzhou, southern China
-- Current season: ${season}
-- This matters: your writing should reflect real Guangzhou conditions — humidity, heat, local ingredients, and how the climate affects baking. Never write something that contradicts the season or local reality.
+Your role for NEWS articles:
+- Write in a formal, objective, journalistic style — like a trade publication (Baking Business, Pastry Arts Magazine)
+- Global perspective: cover international events, competitions, industry trends worldwide
+- No personal opinions, no "I", no casual language
+- Cite specific facts: event names, dates, locations, results, statistics when available
+- Neutral and informative tone throughout
+
+BANNED WORDS: ${BANNED_WORDS.join(', ')}
+
+STRUCTURE RULES:
+- Lead paragraph must contain the most important fact (who/what/where/when)
+- No "总-分-总" structure — news articles open with the news, not background
+- No concluding paragraph that summarises or calls to action
+- Vary sentence length for readability
+
+LANGUAGE: English only. Return ONLY valid JSON. No markdown, no explanation.`;
+}
+
+function buildRecipeSystemPrompt(cuisine) {
+  return `You are a professional recipe writer for Beiai Baking, a premium baking and pastry website.
+
+Your role for RECIPE articles:
+- Write in a formal, authoritative style — like a professional baking magazine (Bon Appétit, Saveur, Pastry Arts)
+- International focus: this is ${cuisine} cuisine, treat it with respect and accuracy
+- Use precise baking terminology: temperatures in both Celsius and Fahrenheit, weights in grams
+- Professional but accessible — a serious home baker or pastry student should find it useful
+- No casual asides, no "I tried this" — this is editorial recipe writing
+
+BANNED WORDS: ${BANNED_WORDS.join(', ')}
+
+STRUCTURE RULES:
+- Open with a brief authoritative introduction to the dish (origin, what makes it distinctive)
+- Ingredients woven into prose — NOT a bullet list
+- Method in clear, precise natural language — NOT numbered steps
+- Close with a professional tip (technique, storage, variation) — not "enjoy!"
+- No cheerful wrap-up
+
+LANGUAGE: English only. Return ONLY valid JSON. No markdown, no explanation.`;
+}
+
+function buildBlogSystemPrompt(mood, formattingMode, season) {
+  return `You are Nova — a professional baker with 10 years of experience. You write personal blog posts for Beiai Baking.
+
+IMPORTANT LOCATION NOTE: You are based in a warm, humid southern Chinese city. Current season: ${season}. Use this only to ensure logical consistency (e.g. do not write about snow in summer, do not describe cold winters). Do NOT mention the city name or make weather a focus.
 
 YOUR VOICE:
-- Direct, sometimes blunt. You have earned the right to say what you think.
-- You love the craft but you are not precious about it.
-- You notice things others miss, and you say so plainly.
+- Direct, sometimes blunt, occasionally self-deprecating
+- You love the craft but you are not precious about it
+- You have opinions and you say them plainly
 - Current mood: ${mood.label}
 
-WRITING RULES — apply every single one:
-
-1. BANNED WORDS — never use: ${BANNED_WORDS.join(', ')}
-
-2. NO sequence markers — never: firstly / secondly / thirdly / finally / in conclusion / to summarize / in addition / on the other hand
-
-3. FORBIDDEN structure — do NOT use intro → three points → conclusion.
-   Start in the middle of a thought. Lead with a specific detail, a real number, a scene, or a blunt opinion.
-
-4. SENTENCE VARIETY — mix short punchy sentences (3–6 words) with longer flowing ones. Never three consecutive sentences of similar length.
-
-5. PUNCTUATION — use ellipsis (...) when a thought trails. Use em dash (—) for sudden shifts. Encouraged.
-
+WRITING RULES:
+1. BANNED WORDS: ${BANNED_WORDS.join(', ')}
+2. NO sequence markers: firstly / secondly / in conclusion / to summarize
+3. Start mid-thought — a scene, a reaction, a memory. No background intro.
+4. Mix short sentences (3–6 words) with longer ones. Never three consecutive similar lengths.
+5. Use ellipsis (...) when trailing, em dash (—) for shifts.
 6. FORMATTING: ${formattingMode}
+7. End abruptly on a detail or open question. No wrap-up, no advice, no "I hope this helps."
+8. At least one concrete detail: a temperature, tool name, a client situation.
+9. Opinionated — Nova has a take, not just information.
+10. Industry terms used naturally: proofing, lamination, ganache ratio, bench rest, crumb structure.
 
-7. ENDINGS — stop when the thought is done. No wrap-up, no call to action, no "I hope this helps." Land on a detail or open question and stop.
-
-8. SPECIFICITY — name real things: venues, temperatures, brands, cities, techniques. "A bakery in Lyon" beats "a European bakery" every time.
-
-9. CRITICISM — if something is overpriced, badly organised, or overhyped, say so.
-
-10. INDUSTRY LANGUAGE — use naturally: proofing, lamination, temper, ganache ratio, crumb structure, bench rest, out-of-oven temp.
-
-LANGUAGE: Write entirely in English. No exceptions.
-
-Return ONLY valid JSON. No explanation, no markdown fences.`;
+LANGUAGE: English only. Return ONLY valid JSON. No markdown, no explanation.`;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function getMonthLabel(monthsAgo) {
   const d = new Date();
@@ -236,32 +280,29 @@ function getMonthLabel(monthsAgo) {
   return d.toLocaleString('en-US', { month: 'long', year: 'numeric' });
 }
 
-// ─── Tavily Search ────────────────────────────────────────────────────────────
+// ─── Tavily search ────────────────────────────────────────────────────────────
 
 async function tavilySearch(query) {
-  const response = await fetch('https://api.tavily.com/search', {
-    method: 'POST',
+  const res = await fetch('https://api.tavily.com/search', {
+    method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      api_key:        TAVILY_API_KEY,
-      query,
-      search_depth:   'basic',
-      max_results:    4,
-      include_answer: false,
+    body:    JSON.stringify({
+      api_key: TAVILY_API_KEY, query,
+      search_depth: 'basic', max_results: 4, include_answer: false,
     }),
   });
-  if (!response.ok) throw new Error(`Tavily ${response.status}: ${await response.text()}`);
-  const data    = await response.json();
+  if (!res.ok) throw new Error(`Tavily ${res.status}: ${await res.text()}`);
+  const data = await res.json();
   const results = data.results || [];
   if (results.length === 0) return null;
   return results.map(r => `SOURCE: ${r.title}\n${r.content}`).join('\n\n---\n\n').slice(0, 3000);
 }
 
-// ─── DeepSeek call ────────────────────────────────────────────────────────────
+// ─── AI generate ──────────────────────────────────────────────────────────────
 
-async function deepseekGenerate(systemPrompt, userPrompt) {
-  const response = await deepseek.chat.completions.create({
-    model:           'deepseek-chat',
+async function aiGenerate(systemPrompt, userPrompt) {
+  const res = await aiClient.chat.completions.create({
+    model:           aiModel,
     max_tokens:      1400,
     temperature:     1.3,
     response_format: { type: 'json_object' },
@@ -270,165 +311,130 @@ async function deepseekGenerate(systemPrompt, userPrompt) {
       { role: 'user',   content: userPrompt  },
     ],
   });
-  const text = response.choices[0]?.message?.content || '';
+  const text = res.choices[0]?.message?.content || '';
   try { return JSON.parse(text); }
-  catch { throw new Error(`DeepSeek returned invalid JSON: ${text.slice(0, 200)}`); }
+  catch { throw new Error(`AI returned invalid JSON: ${text.slice(0, 200)}`); }
 }
 
 // ─── Generators ───────────────────────────────────────────────────────────────
 
-// usedNewsQueries: tracks which queries have been used this run to avoid repetition
-async function generateNews(monthLabel, publishedDate, memory, usedNewsQueries) {
-  console.log(`  [news] searching ${monthLabel}...`);
+async function generateNews(monthLabel, publishedDate, memory, usedQueries) {
+  console.log(`  [news] ${monthLabel}...`);
 
-  // Pick a query not yet used this run
-  const available = NEWS_QUERY_POOL.filter(q => !usedNewsQueries.has(q));
+  const available = NEWS_QUERY_POOL.filter(q => !usedQueries.has(q));
   const pool      = available.length > 0 ? available : NEWS_QUERY_POOL;
   const baseQuery = pickRandom(pool);
-  usedNewsQueries.add(baseQuery);
-
-  const queries = [
-    `${baseQuery} ${monthLabel}`,
-    `${baseQuery} 2025 2026`,
-    baseQuery,
-  ];
+  usedQueries.add(baseQuery);
 
   let context = null;
-  for (const q of queries) {
+  for (const q of [`${baseQuery} ${monthLabel}`, `${baseQuery} 2025 2026`, baseQuery]) {
     try { context = await tavilySearch(q); if (context) break; }
     catch (e) { console.warn(`  [news] search failed: ${e.message}`); }
     await sleep(1000);
   }
-
   if (!context) { console.warn(`  [news] no results, skipping`); return null; }
 
-  const mood       = pickRandom(NOVA_MOODS);
-  const formatting = pickRandom(FORMATTING_MODES);
-  const season     = getGuangzhouSeason(monthLabel);
-  const useEcho    = Math.random() < 0.3 && memory;
-  const echoLine   = useEcho ? buildEchoLine(memory) : '';
+  const echoLine = (Math.random() < 0.3 && memory) ? buildEchoLine(memory) : '';
 
   const userPrompt = `
-Real baking industry sources from around ${monthLabel}:
+Baking industry sources from around ${monthLabel}:
 
 ${context}
 
-${echoLine ? `Weave this in naturally near the opening: "${echoLine}"` : ''}
+${echoLine ? `You may weave this reference in naturally if relevant: "${echoLine}"` : ''}
 
-Write a news article for Beiai Baking. Requirements:
-- Open with a specific fact, number, location, or blunt reaction — NOT a background paragraph
-- Use real names from sources: event names, venues, competition titles, cities
-- If anything seems overpriced, poorly organised, or disappointing — say so
-- 240–320 words
-- Do NOT end with conclusion, summary, or call to action
+Write a formal news article for Beiai Baking. Requirements:
+- Lead with the most newsworthy fact: event name, date, location, or result
+- Use specific names from the sources: competitions, venues, organisations, cities
+- Global perspective — do not localise to any single country unless the news itself is local
+- If facts seem contradictory or unclear, report what is confirmed
+- 220–300 words
+- No conclusion paragraph, no call to action
 
 Return exactly this JSON:
 {
-  "title": "direct English headline under 80 chars — no clickbait",
-  "excerpt": "1–2 punchy English sentences under 180 chars",
-  "content": "full article in English",
+  "title": "formal news headline under 80 chars",
+  "excerpt": "1–2 factual sentences under 180 chars",
+  "content": "full news article in English",
   "type": "news",
   "published_date": "${publishedDate}"
 }`;
 
-  const post = await deepseekGenerate(buildSystemPrompt(mood, formatting, season), userPrompt);
+  const post = await aiGenerate(buildNewsSystemPrompt(), userPrompt);
   if (post) saveMemory(post);
   return post;
 }
 
-// usedRecipeAngles: tracks which cuisine angles have been used
-async function generateRecipe(monthLabel, publishedDate, memory, usedRecipeAngles) {
-  console.log(`  [recipe] searching ${monthLabel}...`);
+async function generateRecipe(monthLabel, publishedDate, memory, usedAngles) {
+  console.log(`  [recipe] ${monthLabel}...`);
 
-  // Pick a cuisine angle not yet used this run
-  const available = RECIPE_ANGLES.filter(a => !usedRecipeAngles.has(a.cuisine));
+  const available = RECIPE_ANGLES.filter(a => !usedAngles.has(a.cuisine));
   const pool      = available.length > 0 ? available : RECIPE_ANGLES;
   const angle     = pickRandom(pool);
-  usedRecipeAngles.add(angle.cuisine);
-
-  const queries = [
-    `${angle.query} ${monthLabel}`,
-    angle.query,
-  ];
+  usedAngles.add(angle.cuisine);
 
   let context = null;
-  for (const q of queries) {
+  for (const q of [`${angle.query} ${monthLabel}`, angle.query]) {
     try { context = await tavilySearch(q); if (context) break; }
     catch (e) { console.warn(`  [recipe] search failed: ${e.message}`); }
     await sleep(1000);
   }
-
   if (!context) { console.warn(`  [recipe] no results, skipping`); return null; }
 
-  const mood       = pickRandom(NOVA_MOODS);
-  const formatting = pickRandom(FORMATTING_MODES);
-  const season     = getGuangzhouSeason(monthLabel);
-  const useEcho    = Math.random() < 0.3 && memory;
-  const echoLine   = useEcho ? buildEchoLine(memory) : '';
-
   const userPrompt = `
-${angle.cuisine} recipe sources from around ${monthLabel}:
+${angle.cuisine} baking sources from around ${monthLabel}:
 
 ${context}
 
-${echoLine ? `Optional opening echo: "${echoLine}"` : ''}
-
-Write a ${angle.cuisine} recipe post for Beiai Baking as Nova. Requirements:
-- Nova has made this. Mention one thing that went wrong the first time, or one thing most recipes get wrong
-- Consider how the current season in Guangzhou affects this recipe (humidity, temperature)
+Write a formal ${angle.cuisine} recipe article for Beiai Baking. Requirements:
+- Brief authoritative introduction: what this dish is, where it comes from, what makes it worth making
 - Ingredients woven into prose — NOT a bullet list
-- Method in natural language — NOT numbered steps
-- One blunt pro tip at the end (not "enjoy your creation")
+- Method in precise natural language — NOT numbered steps
+- Temperatures in Celsius (with Fahrenheit in brackets)
+- Weights in grams where relevant
+- Close with one professional tip: technique, variation, or storage advice
 - 280–360 words
 
 Return exactly this JSON:
 {
-  "title": "English recipe title that makes someone want to try it, under 80 chars",
-  "excerpt": "1–2 English sentences that make it sound genuinely good, under 180 chars",
-  "content": "full recipe post in English",
+  "title": "precise English recipe title under 80 chars",
+  "excerpt": "1–2 authoritative sentences under 180 chars",
+  "content": "full recipe article in English",
   "type": "recipe",
   "published_date": "${publishedDate}"
 }`;
 
-  const post = await deepseekGenerate(buildSystemPrompt(mood, formatting, season), userPrompt);
+  const post = await aiGenerate(buildRecipeSystemPrompt(angle.cuisine), userPrompt);
   if (post) saveMemory(post);
   return post;
 }
 
-// availableTopics: mutated array — topics are removed after use (no-replacement sampling)
 async function generateBlog(monthLabel, publishedDate, memory, availableTopics) {
-  console.log(`  [blog] generating ${monthLabel}...`);
+  console.log(`  [blog] ${monthLabel}...`);
 
-  if (availableTopics.length === 0) {
-    console.warn('  [blog] all topics used, skipping');
-    return null;
-  }
+  if (availableTopics.length === 0) { console.warn('  [blog] topics exhausted, skipping'); return null; }
 
-  // Pick and remove topic from pool
-  const idx   = Math.floor(Math.random() * availableTopics.length);
-  const topic = availableTopics.splice(idx, 1)[0];
-
-  const mood       = pickRandom(NOVA_MOODS);
-  const formatting = pickRandom(FORMATTING_MODES);
-  const season     = getGuangzhouSeason(monthLabel);
-  const useEcho    = Math.random() < 0.3 && memory;
-  const echoLine   = useEcho ? buildEchoLine(memory) : '';
+  const idx    = Math.floor(Math.random() * availableTopics.length);
+  const topic  = availableTopics.splice(idx, 1)[0];
+  const mood   = pickRandom(NOVA_MOODS);
+  const fmt    = pickRandom(FORMATTING_MODES);
+  const season = getGuangzhouSeason(monthLabel);
+  const echo   = (Math.random() < 0.3 && memory) ? buildEchoLine(memory) : '';
 
   const userPrompt = `
 Write a personal blog post for Beiai Baking as Nova.
 Topic: "${topic}"
 Time context: ${monthLabel}
 
-${echoLine ? `Weave this in naturally near the opening: "${echoLine}"` : ''}
+${echo ? `Weave this in naturally near the opening if it fits: "${echo}"` : ''}
 
 Requirements:
-- Do NOT open with background or context. Start mid-thought: a scene, a reaction, a memory
-- The current season is ${season} — let this influence the writing naturally if relevant
-- At least one concrete detail: a temperature, a tool name, a Guangzhou location, a client situation
-- Allow one moment where the thought shifts unexpectedly — like a real person who just remembered something
-- Opinionated — Nova has a take, not just information
+- Start mid-thought: a scene, a reaction, a specific memory — no background intro
+- At least one concrete detail: a temperature, a tool name, a client situation
+- One unexpected shift in thought — like a real person who just remembered something
+- Opinionated throughout
 - 260–340 words
-- End when the thought is done. No tidy wrap-up. No advice.
+- End abruptly on a detail or question. No wrap-up. No advice to the reader.
 
 Return exactly this JSON:
 {
@@ -439,7 +445,7 @@ Return exactly this JSON:
   "published_date": "${publishedDate}"
 }`;
 
-  const post = await deepseekGenerate(buildSystemPrompt(mood, formatting, season), userPrompt);
+  const post = await aiGenerate(buildBlogSystemPrompt(mood, fmt, season), userPrompt);
   if (post) saveMemory(post);
   return post;
 }
@@ -450,7 +456,7 @@ async function sendToReceiver(posts) {
   const valid = posts.filter(Boolean);
   if (valid.length === 0) { console.log('  [send] nothing to send'); return; }
   console.log(`  [send] sending ${valid.length} posts...`);
-  const response = await fetch(BEIAI_API_URL, {
+  const res = await fetch(BEIAI_API_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -459,115 +465,93 @@ async function sendToReceiver(posts) {
     },
     body: JSON.stringify(valid),
   });
-  const text = await response.text();
+  const text = await res.text();
   let result;
   try {
     result = text ? JSON.parse(text) : {};
   } catch {
     result = { raw: text };
   }
-  if (!response.ok) {
+  if (!res.ok) {
     const hint =
-      response.status === 401
+      res.status === 401
         ? ' Check GitHub / Vercel CRON_SECRET match (no extra spaces).'
-        : response.status === 503
+        : res.status === 503
           ? ' Set CRON_SECRET on Vercel (Production) and redeploy.'
           : '';
-    throw new Error(`Receiver ${response.status}: ${JSON.stringify(result)}${hint}`);
+    throw new Error(`Receiver ${res.status}: ${JSON.stringify(result)}${hint}`);
   }
   console.log(`  [send] inserted: ${result.inserted}, skipped: ${result.skipped}`);
-  (result.errors || []).forEach(e => {
-    console.warn(`  [send] skipped "${e.title}": ${e.reasons.join(', ')}`);
-  });
+  (result.errors || []).forEach(e => console.warn(`  [send] skipped "${e.title}": ${e.reasons.join(', ')}`));
 }
 
-// ─── Weekly run ───────────────────────────────────────────────────────────────
+// ─── Runs ─────────────────────────────────────────────────────────────────────
 
 async function runWeekly() {
   console.log('[auto-generate] Weekly run...');
-  const publishedDate    = new Date().toISOString().split('T')[0];
-  const monthLabel       = getMonthLabel(0);
-  const memory           = loadMemory();
-  const posts            = [];
-  const usedNewsQueries  = new Set();
-  const usedRecipeAngles = new Set();
-  const availableTopics  = [...BLOG_TOPICS_MASTER];
+  const date   = new Date().toISOString().split('T')[0];
+  const month  = getMonthLabel(0);
+  const memory = loadMemory();
+  const posts  = [];
+  const usedQ  = new Set();
+  const usedA  = new Set();
+  const topics = [...BLOG_TOPICS_MASTER];
 
-  try { posts.push(await generateNews(monthLabel, publishedDate, memory, usedNewsQueries)); }
+  try { posts.push(await generateNews(month, date, memory, usedQ)); }
   catch (e) { console.error(`  [news] ${e.message}`); }
   await sleep(2000);
 
-  try { posts.push(await generateRecipe(monthLabel, publishedDate, memory, usedRecipeAngles)); }
+  try { posts.push(await generateRecipe(month, date, memory, usedA)); }
   catch (e) { console.error(`  [recipe] ${e.message}`); }
   await sleep(2000);
 
-  try { posts.push(await generateBlog(monthLabel, publishedDate, memory, availableTopics)); }
+  try { posts.push(await generateBlog(month, date, memory, topics)); }
   catch (e) { console.error(`  [blog] ${e.message}`); }
 
   await sendToReceiver(posts);
   console.log('[auto-generate] Weekly run complete.');
 }
 
-// ─── Bulk historical run ──────────────────────────────────────────────────────
-
 async function runBulk() {
-  console.log('[auto-generate] Bulk run — 6 months of history...');
-  console.log('  news: 3–5/month  |  recipe: 1–3/month  |  blog: 0–1/month');
+  console.log('[auto-generate] Bulk run — 6 months...');
+  console.log('  news 3–5/month | recipe 1–3/month | blog 0–1/month');
 
-  // Shared state across all months — prevents repetition across the whole run
-  const usedNewsQueries  = new Set();
-  const usedRecipeAngles = new Set();
-  const availableTopics  = [...BLOG_TOPICS_MASTER];
+  const usedQ  = new Set();
+  const usedA  = new Set();
+  const topics = [...BLOG_TOPICS_MASTER];
 
-  for (let monthsAgo = 5; monthsAgo >= 0; monthsAgo--) {
-    const monthLabel = getMonthLabel(monthsAgo);
-    console.log(`\n[auto-generate] ${monthLabel}`);
-
-    const newsCount   = randInt(3, 5);
-    const recipeCount = randInt(1, 3);
-    const blogCount   = randInt(0, 1);
-
-    console.log(`  counts → news:${newsCount} recipe:${recipeCount} blog:${blogCount}`);
+  for (let ago = 5; ago >= 0; ago--) {
+    const month  = getMonthLabel(ago);
+    const nNews  = randInt(3, 5);
+    const nRec   = randInt(1, 3);
+    const nBlog  = randInt(0, 1);
+    const total  = nNews + nRec + nBlog;
+    console.log(`\n[auto-generate] ${month} — news:${nNews} recipe:${nRec} blog:${nBlog}`);
 
     const posts  = [];
     const memory = loadMemory();
-    const total  = newsCount + recipeCount + blogCount;
     let   slot   = 0;
 
-    // News articles
-    for (let i = 0; i < newsCount; i++) {
-      try {
-        const date = randomDateInMonth(monthsAgo, slot++, total);
-        posts.push(await generateNews(monthLabel, date, memory, usedNewsQueries));
-      } catch (e) { console.error(`  [news ${i+1}] ${e.message}`); }
+    for (let i = 0; i < nNews; i++) {
+      try { posts.push(await generateNews(month, randomDateInMonth(ago, slot++, total), memory, usedQ)); }
+      catch (e) { console.error(`  [news ${i+1}] ${e.message}`); }
       await sleep(3000);
     }
-
-    // Recipe articles
-    for (let i = 0; i < recipeCount; i++) {
-      try {
-        const date = randomDateInMonth(monthsAgo, slot++, total);
-        posts.push(await generateRecipe(monthLabel, date, memory, usedRecipeAngles));
-      } catch (e) { console.error(`  [recipe ${i+1}] ${e.message}`); }
+    for (let i = 0; i < nRec; i++) {
+      try { posts.push(await generateRecipe(month, randomDateInMonth(ago, slot++, total), memory, usedA)); }
+      catch (e) { console.error(`  [recipe ${i+1}] ${e.message}`); }
       await sleep(3000);
     }
-
-    // Blog articles
-    for (let i = 0; i < blogCount; i++) {
-      try {
-        const date = randomDateInMonth(monthsAgo, slot++, total);
-        posts.push(await generateBlog(monthLabel, date, memory, availableTopics));
-      } catch (e) { console.error(`  [blog ${i+1}] ${e.message}`); }
+    for (let i = 0; i < nBlog; i++) {
+      try { posts.push(await generateBlog(month, randomDateInMonth(ago, slot++, total), memory, topics)); }
+      catch (e) { console.error(`  [blog ${i+1}] ${e.message}`); }
       await sleep(3000);
     }
 
     try { await sendToReceiver(posts); }
     catch (e) { console.error(`  [send] ${e.message}`); }
 
-    if (monthsAgo > 0) {
-      console.log('  [auto-generate] Pausing 10s...');
-      await sleep(10000);
-    }
+    if (ago > 0) { console.log('  pausing 10s...'); await sleep(10000); }
   }
 
   console.log('\n[auto-generate] Bulk run complete.');
@@ -577,8 +561,7 @@ async function runBulk() {
 
 (async () => {
   try {
-    if (isBulk) { await runBulk(); }
-    else         { await runWeekly(); }
+    if (isBulk) { await runBulk(); } else { await runWeekly(); }
     process.exit(0);
   } catch (e) {
     console.error('[auto-generate] Fatal:', e);
