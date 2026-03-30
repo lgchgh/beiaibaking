@@ -164,24 +164,24 @@ const RECIPE_ANGLES = [
 
 // Blog topics — 18 entries, sampled without replacement
 const BLOG_TOPICS_MASTER = [
-  'The one thing nobody tells you about bean paste piping — three wasted batches later',
-  'Why I stopped using Swiss meringue buttercream in summer',
-  'Honest thoughts on the Korean cake trend: beautiful, but is it practical?',
-  'That time my fondant cracked in front of a client',
+  'The one thing nobody tells you about bean paste piping — and what I learned from it',
+  'Why I switched away from Swiss meringue buttercream in summer (and found something better)',
+  'The Korean cake trend: what I genuinely love about it, and one honest reservation',
+  'That time my fondant cracked in front of a client — and why it made me a better baker',
   'The underrated skill that separates decent bakers from really good ones',
-  'My Paris stage nearly broke me. Here\'s what I came back with.',
-  'Why cheap chocolate ruins more cakes than bad technique',
-  'The temperature obsession: am I taking it too far?',
-  'What baking competitions look like from the inside',
-  'A tool I\'ve used for 8 years that most bakers ignore',
-  'The problem with "beginner-friendly" recipes',
-  'Why I keep returning to French technique even now',
-  'Baking through a brutal summer: what nobody warns you about',
-  'The humidity problem: how a wet season changes everything about dough',
-  'Why autumn is the only season I trust for pulled sugar work',
-  'What I wish I had known before opening a home bakery',
-  'The client who asked for a fondant cake in August',
-  'Why I gave up on Swiss meringue entirely',
+  'My Paris stage was the hardest thing I\'ve done. Here\'s what I came back with.',
+  'Why ingredient quality changes everything — a chocolate story',
+  'The temperature obsession: why I think it\'s worth it',
+  'What baking competitions are really like — and why I think everyone should try one',
+  'A tool I\'ve used for 8 years that changed how I work',
+  'Why "beginner-friendly" recipes often do beginners a disservice',
+  'Why I keep returning to French technique — it never lets me down',
+  'Baking through a brutal summer: the lessons that stuck',
+  'How a wet season taught me things about dough I couldn\'t have learned any other way',
+  'Why autumn is my favourite time to work with sugar',
+  'What I wish someone had told me before I opened my home bakery',
+  'The fondant-in-August story: what went wrong and what I\'d do differently',
+  'Why I reformulated my buttercream — and how much better it got',
 ];
 
 function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
@@ -250,9 +250,10 @@ function buildBlogSystemPrompt(mood, formattingMode, season) {
 IMPORTANT LOCATION NOTE: You are based in a warm, humid southern Chinese city. Current season: ${season}. Use this only to ensure logical consistency (e.g. do not write about snow in summer, do not describe cold winters). Do NOT mention the city name or make weather a focus.
 
 YOUR VOICE:
-- Direct, sometimes blunt, occasionally self-deprecating
-- You love the craft but you are not precious about it
-- You have opinions and you say them plainly
+- Warm, enthusiastic, genuinely passionate about baking — this is your life's work and you love it
+- Encouraging without being saccharine — you celebrate the craft and the people in it
+- Occasionally blunt or self-deprecating (about 20% of the time) — a dry observation, a minor frustration, a moment of honesty
+- The overall feeling should be: someone who loves what they do and wants others to love it too
 - Current mood: ${mood.label}
 
 WRITING RULES:
@@ -513,14 +514,14 @@ async function runWeekly() {
 }
 
 async function runBulk() {
-  console.log('[auto-generate] Bulk run — 6 months...');
+  console.log('[auto-generate] Bulk run — 12 months...');
   console.log('  news 3–5/month | recipe 1–3/month | blog 0–1/month');
 
   const usedQ  = new Set();
   const usedA  = new Set();
   const topics = [...BLOG_TOPICS_MASTER];
 
-  for (let ago = 5; ago >= 0; ago--) {
+  for (let ago = 11; ago >= 0; ago--) {
     const month  = getMonthLabel(ago);
     const nNews  = randInt(3, 5);
     const nRec   = randInt(1, 3);
