@@ -366,10 +366,10 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
   font-family: var(--font-body);
   font-size: 0.78rem;
   font-weight: 600;
-  border: 1px solid rgba(180, 104, 86, 0.45);
+  border: 1px solid rgba(212, 129, 111, 0.4);
   background: #fff;
   margin-left: -1px;
-  color: var(--accent-color);
+  color: var(--primary-dark);
 }
 
 .gallery-page-pills > *:first-child {
@@ -393,9 +393,9 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
 }
 
 .gallery-page-nav:hover:not(.is-disabled) {
-  background: #fff3ec;
-  color: #8b3b24;
-  border-color: var(--primary-dark);
+  background: var(--secondary-color);
+  color: var(--primary-color);
+  border-color: var(--primary-light);
 }
 
 .gallery-page-nav.is-disabled {
@@ -410,14 +410,14 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
 }
 
 .gallery-page-pills a.gallery-page-num:hover {
-  background: #fff3ec;
-  color: #8b3b24;
-  border-color: var(--primary-dark);
+  background: var(--secondary-color);
+  color: var(--primary-color);
+  border-color: var(--primary-light);
 }
 
 .gallery-page-pills .gallery-page-num.is-current {
-  background: #7a3f32;
-  border-color: #6b362c;
+  background: var(--primary-color);
+  border-color: var(--primary-dark);
   color: #fff;
   z-index: 1;
 }
@@ -426,7 +426,7 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
   min-width: 2rem;
   padding: 0 8px;
   font-weight: 600;
-  color: var(--primary-dark);
+  color: var(--primary-light);
   background: #fff;
   cursor: default;
 }
