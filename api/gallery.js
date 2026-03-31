@@ -3,6 +3,22 @@ const { sql } = require('../lib/db');
 
 const HOME_CATEGORIES = ['decorated', 'fondant', 'french', 'cookies'];
 
+/** 法式马卡龙：库内可能为 macarons / macaron，查询时一并匹配；写入时统一为 macarons */
+function isFrenchMacaronSubFilter(category, sub) {
+  if (!category || !sub) return false;
+  if (String(category).toLowerCase() !== 'french') return false;
+  const s = String(sub).trim().toLowerCase();
+  return s === 'macaron' || s === 'macaroons' || s === 'macarons';
+}
+
+function normalizeSubcategoryForWrite(category, sub) {
+  if (!sub) return sub;
+  if (String(category).toLowerCase() !== 'french') return sub;
+  const s = String(sub).trim().toLowerCase();
+  if (s === 'macaron' || s === 'macaroons' || s === 'macarons') return 'macarons';
+  return sub;
+}
+
 function emptyHomeBundle() {
   const out = {};
   HOME_CATEGORIES.forEach((c) => {
@@ -50,6 +66,7 @@ async function handleGet(req, res) {
   const subcategory = req.query?.sub;
   const home = req.query?.home;
   const paged = req.query?.paged === '1' || req.query?.paged === 'true';
+  const macaronSubs = isFrenchMacaronSubFilter(category, subcategory);
   try {
     if (home === '1' || home === 'true') {
       const out = await queryHomeGalleryBundle();
@@ -65,10 +82,15 @@ async function handleGet(req, res) {
       const pageRequested = Math.max(parseInt(req.query.page, 10) || 1, 1);
       let totalR;
       if (subcategory) {
-        totalR = await sql`
-          SELECT COUNT(*)::int AS c FROM gallery_images
-          WHERE category = ${category} AND subcategory = ${subcategory}
-        `;
+        totalR = macaronSubs
+          ? await sql`
+              SELECT COUNT(*)::int AS c FROM gallery_images
+              WHERE category = ${category} AND subcategory IN ('macarons', 'macaron')
+            `
+          : await sql`
+              SELECT COUNT(*)::int AS c FROM gallery_images
+              WHERE category = ${category} AND subcategory = ${subcategory}
+            `;
       } else {
         totalR = await sql`
           SELECT COUNT(*)::int AS c FROM gallery_images WHERE category = ${category}
@@ -80,12 +102,19 @@ async function handleGet(req, res) {
       const offset = (page - 1) * limit;
       let rowsR;
       if (subcategory) {
-        rowsR = await sql`
-          SELECT * FROM gallery_images
-          WHERE category = ${category} AND subcategory = ${subcategory}
-          ORDER BY sort_order, id
-          LIMIT ${limit} OFFSET ${offset}
-        `;
+        rowsR = macaronSubs
+          ? await sql`
+              SELECT * FROM gallery_images
+              WHERE category = ${category} AND subcategory IN ('macarons', 'macaron')
+              ORDER BY sort_order, id
+              LIMIT ${limit} OFFSET ${offset}
+            `
+          : await sql`
+              SELECT * FROM gallery_images
+              WHERE category = ${category} AND subcategory = ${subcategory}
+              ORDER BY sort_order, id
+              LIMIT ${limit} OFFSET ${offset}
+            `;
       } else {
         rowsR = await sql`
           SELECT * FROM gallery_images WHERE category = ${category}
@@ -105,7 +134,9 @@ async function handleGet(req, res) {
     }
     let result;
     if (category && subcategory) {
-      result = await sql`SELECT * FROM gallery_images WHERE category = ${category} AND subcategory = ${subcategory} ORDER BY sort_order, id`;
+      result = macaronSubs
+        ? await sql`SELECT * FROM gallery_images WHERE category = ${category} AND subcategory IN ('macarons', 'macaron') ORDER BY sort_order, id`
+        : await sql`SELECT * FROM gallery_images WHERE category = ${category} AND subcategory = ${subcategory} ORDER BY sort_order, id`;
     } else if (category) {
       result = await sql`SELECT * FROM gallery_images WHERE category = ${category} ORDER BY sort_order, id`;
     } else {
@@ -133,7 +164,8 @@ async function handlePost(req, res) {
       return;
     }
     const so = sort_order !== undefined ? parseInt(sort_order) : 0;
-    const r = await sql`INSERT INTO gallery_images (category, subcategory, src, caption, alt, sort_order) VALUES (${category}, ${subcategory || category}, ${src}, ${caption}, ${alt || caption}, ${so}) RETURNING *`;
+    const subStored = normalizeSubcategoryForWrite(category, subcategory || category);
+    const r = await sql`INSERT INTO gallery_images (category, subcategory, src, caption, alt, sort_order) VALUES (${category}, ${subStored}, ${src}, ${caption}, ${alt || caption}, ${so}) RETURNING *`;
     res.status(201).json(r.rows[0]);
   } catch (e) {
     console.error(e);

@@ -409,12 +409,13 @@
                 src +
                 '" alt="' +
                 (r.alt || r.caption || '').replace(/"/g, '&quot;') +
-                '" onerror="this.style.display=\'none\'" /><figcaption>' +
+                '" loading="lazy" /><figcaption>' +
                 (r.caption || '').replace(/</g, '&lt;') +
                 '</figcaption></figure>'
               );
             })
             .join('');
+          bindHomeThumbImgRetry(grid);
           var totalPages =
             typeof data.totalPages === 'number' && data.totalPages > 0 ? data.totalPages : 1;
           var pageNum = typeof data.page === 'number' ? data.page : 1;
