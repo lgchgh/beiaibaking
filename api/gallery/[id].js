@@ -1,13 +1,6 @@
 const auth = require('../../lib/auth');
+const { canonicalCategorySubcategory } = require('../../lib/galleryCanonical');
 const { sql } = require('../../lib/db');
-
-function normalizeSubcategoryForWrite(category, sub) {
-  if (!sub) return sub;
-  if (String(category).toLowerCase() !== 'french') return sub;
-  const s = String(sub).trim().toLowerCase();
-  if (s === 'macaron' || s === 'macaroons' || s === 'macarons') return 'macarons';
-  return sub;
-}
 
 function getIdFromRequest(req) {
   let id = req.query?.id;
@@ -38,11 +31,10 @@ async function handlePut(req, res) {
       return;
     }
     const row = cur.rows[0];
-    const category = body.category ?? row.category;
-    const subcategory = normalizeSubcategoryForWrite(
-      category,
-      body.subcategory !== undefined ? body.subcategory : row.subcategory
-    );
+    const categoryRaw = body.category ?? row.category;
+    const subRaw =
+      body.subcategory !== undefined ? body.subcategory : row.subcategory;
+    const { category, subcategory } = canonicalCategorySubcategory(categoryRaw, subRaw);
     const src = body.src ?? row.src;
     const caption = body.caption ?? row.caption;
     const alt = body.alt ?? row.alt;

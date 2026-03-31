@@ -1,22 +1,15 @@
 const auth = require('../lib/auth');
+const { canonicalCategorySubcategory } = require('../lib/galleryCanonical');
 const { sql } = require('../lib/db');
 
 const HOME_CATEGORIES = ['decorated', 'fondant', 'french', 'cookies'];
 
-/** 法式马卡龙：库内可能为 macarons / macaron，查询时一并匹配；写入时统一为 macarons */
+/** 法式马卡龙：库内可能为 macarons / macaron，查询时一并匹配 */
 function isFrenchMacaronSubFilter(category, sub) {
   if (!category || !sub) return false;
   if (String(category).toLowerCase() !== 'french') return false;
   const s = String(sub).trim().toLowerCase();
   return s === 'macaron' || s === 'macaroons' || s === 'macarons';
-}
-
-function normalizeSubcategoryForWrite(category, sub) {
-  if (!sub) return sub;
-  if (String(category).toLowerCase() !== 'french') return sub;
-  const s = String(sub).trim().toLowerCase();
-  if (s === 'macaron' || s === 'macaroons' || s === 'macarons') return 'macarons';
-  return sub;
 }
 
 function emptyHomeBundle() {
@@ -37,6 +30,7 @@ async function queryHomeGalleryBundle() {
           ROW_NUMBER() OVER (PARTITION BY category ORDER BY sort_order ASC, id ASC) AS _rn
         FROM gallery_images
         WHERE category IN ('decorated', 'fondant', 'french', 'cookies')
+          AND NOT (category = 'fondant' AND subcategory IN ('macarons', 'macaron', 'macaroons'))
       ) AS ranked
       WHERE _rn <= 4
       ORDER BY category, sort_order, id
@@ -52,7 +46,11 @@ async function queryHomeGalleryBundle() {
     const out = emptyHomeBundle();
     for (let i = 0; i < HOME_CATEGORIES.length; i++) {
       const cat = HOME_CATEGORIES[i];
-      const r = await sql`SELECT * FROM gallery_images WHERE category = ${cat} ORDER BY sort_order, id LIMIT 4`;
+      const r = await sql`
+        SELECT * FROM gallery_images
+        WHERE category = ${cat}
+          AND NOT (category = 'fondant' AND subcategory IN ('macarons', 'macaron', 'macaroons'))
+        ORDER BY sort_order, id LIMIT 4`;
       out[cat] = r.rows || [];
     }
     return out;
@@ -68,6 +66,11 @@ async function handleGet(req, res) {
   const paged = req.query?.paged === '1' || req.query?.paged === 'true';
   const macaronSubs = isFrenchMacaronSubFilter(category, subcategory);
   try {
+    await sql`
+      UPDATE gallery_images
+      SET category = 'french', subcategory = 'macarons'
+      WHERE category = 'fondant' AND subcategory IN ('macarons', 'macaron', 'macaroons')
+    `;
     if (home === '1' || home === 'true') {
       const out = await queryHomeGalleryBundle();
       res.setHeader('Cache-Control', 'private, no-store, max-age=0');
@@ -93,7 +96,9 @@ async function handleGet(req, res) {
             `;
       } else {
         totalR = await sql`
-          SELECT COUNT(*)::int AS c FROM gallery_images WHERE category = ${category}
+          SELECT COUNT(*)::int AS c FROM gallery_images
+          WHERE category = ${category}
+            AND NOT (category = 'fondant' AND subcategory IN ('macarons', 'macaron', 'macaroons'))
         `;
       }
       const total = totalR.rows[0]?.c ?? 0;
@@ -117,7 +122,9 @@ async function handleGet(req, res) {
             `;
       } else {
         rowsR = await sql`
-          SELECT * FROM gallery_images WHERE category = ${category}
+          SELECT * FROM gallery_images
+          WHERE category = ${category}
+            AND NOT (category = 'fondant' AND subcategory IN ('macarons', 'macaron', 'macaroons'))
           ORDER BY sort_order, id
           LIMIT ${limit} OFFSET ${offset}
         `;
@@ -138,7 +145,11 @@ async function handleGet(req, res) {
         ? await sql`SELECT * FROM gallery_images WHERE category = ${category} AND subcategory IN ('macarons', 'macaron') ORDER BY sort_order, id`
         : await sql`SELECT * FROM gallery_images WHERE category = ${category} AND subcategory = ${subcategory} ORDER BY sort_order, id`;
     } else if (category) {
-      result = await sql`SELECT * FROM gallery_images WHERE category = ${category} ORDER BY sort_order, id`;
+      result = await sql`
+        SELECT * FROM gallery_images
+        WHERE category = ${category}
+          AND NOT (category = 'fondant' AND subcategory IN ('macarons', 'macaron', 'macaroons'))
+        ORDER BY sort_order, id`;
     } else {
       result = await sql`SELECT * FROM gallery_images ORDER BY category, subcategory, sort_order, id`;
     }
@@ -164,8 +175,11 @@ async function handlePost(req, res) {
       return;
     }
     const so = sort_order !== undefined ? parseInt(sort_order) : 0;
-    const subStored = normalizeSubcategoryForWrite(category, subcategory || category);
-    const r = await sql`INSERT INTO gallery_images (category, subcategory, src, caption, alt, sort_order) VALUES (${category}, ${subStored}, ${src}, ${caption}, ${alt || caption}, ${so}) RETURNING *`;
+    const { category: catW, subcategory: subW } = canonicalCategorySubcategory(
+      category,
+      subcategory || category
+    );
+    const r = await sql`INSERT INTO gallery_images (category, subcategory, src, caption, alt, sort_order) VALUES (${catW}, ${subW}, ${src}, ${caption}, ${alt || caption}, ${so}) RETURNING *`;
     res.status(201).json(r.rows[0]);
   } catch (e) {
     console.error(e);
