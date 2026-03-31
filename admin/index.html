@@ -523,9 +523,11 @@
         const body = { category: r.category, subcategory: r.subcategory, src: r.src, caption: r.caption, alt: r.alt || r.caption, sort_order: sortOrder };
         const res = await api('/gallery/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         if (res.ok) {
-          td.removeChild(input);
-          td.textContent = sortOrder;
-          td.dataset.order = sortOrder;
+          if (input.parentNode === td) td.removeChild(input);
+          if (td.isConnected) {
+            td.textContent = sortOrder;
+            td.dataset.order = sortOrder;
+          }
           r.sort_order = sortOrder;
         }
       };
@@ -558,8 +560,8 @@
         try {
           const res = await api('/gallery/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
           if (res.ok) {
-            td.removeChild(input);
-            td.textContent = caption || '';
+            if (input.parentNode === td) td.removeChild(input);
+            if (td.isConnected) td.textContent = caption || '';
             r.caption = caption;
           } else {
             const data = await res.json().catch(() => ({}));
