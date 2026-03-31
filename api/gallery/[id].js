@@ -31,13 +31,18 @@ async function handlePut(req, res) {
       return;
     }
     const row = cur.rows[0];
-    const categoryRaw = body.category ?? row.category;
-    const subRaw =
-      body.subcategory !== undefined ? body.subcategory : row.subcategory;
-    const { category, subcategory } = canonicalCategorySubcategory(categoryRaw, subRaw);
     const src = body.src ?? row.src;
     const caption = body.caption ?? row.caption;
     const alt = body.alt ?? row.alt;
+    const categoryRaw = body.category ?? row.category;
+    const subRaw =
+      body.subcategory !== undefined ? body.subcategory : row.subcategory;
+    const { category, subcategory } = canonicalCategorySubcategory(
+      categoryRaw,
+      subRaw,
+      caption,
+      alt
+    );
     const sort_order = body.sort_order ?? row.sort_order;
     const r = await sql`UPDATE gallery_images SET category=${category}, subcategory=${subcategory}, src=${src}, caption=${caption}, alt=${alt}, sort_order=${sort_order} WHERE id = ${numId} RETURNING *`;
     res.status(200).json(r.rows[0] || {});

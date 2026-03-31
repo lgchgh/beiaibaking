@@ -30,7 +30,14 @@ async function queryHomeGalleryBundle() {
           ROW_NUMBER() OVER (PARTITION BY category ORDER BY sort_order ASC, id ASC) AS _rn
         FROM gallery_images
         WHERE category IN ('decorated', 'fondant', 'french', 'cookies')
-          AND NOT (category = 'fondant' AND subcategory IN ('macarons', 'macaron', 'macaroons'))
+          AND NOT (
+            LOWER(TRIM(category::text)) = 'fondant'
+            AND (
+              LOWER(TRIM(subcategory::text)) IN ('macarons', 'macaron', 'macaroons')
+              OR LOWER(TRIM(COALESCE(caption::text, ''))) IN ('macaron', 'macarons', '马卡龙')
+              OR LOWER(TRIM(COALESCE(alt::text, ''))) IN ('macaron', 'macarons', '马卡龙')
+            )
+          )
       ) AS ranked
       WHERE _rn <= 4
       ORDER BY category, sort_order, id
@@ -49,7 +56,14 @@ async function queryHomeGalleryBundle() {
       const r = await sql`
         SELECT * FROM gallery_images
         WHERE category = ${cat}
-          AND NOT (category = 'fondant' AND subcategory IN ('macarons', 'macaron', 'macaroons'))
+          AND NOT (
+            LOWER(TRIM(category::text)) = 'fondant'
+            AND (
+              LOWER(TRIM(subcategory::text)) IN ('macarons', 'macaron', 'macaroons')
+              OR LOWER(TRIM(COALESCE(caption::text, ''))) IN ('macaron', 'macarons', '马卡龙')
+              OR LOWER(TRIM(COALESCE(alt::text, ''))) IN ('macaron', 'macarons', '马卡龙')
+            )
+          )
         ORDER BY sort_order, id LIMIT 4`;
       out[cat] = r.rows || [];
     }
@@ -69,7 +83,12 @@ async function handleGet(req, res) {
     await sql`
       UPDATE gallery_images
       SET category = 'french', subcategory = 'macarons'
-      WHERE category = 'fondant' AND subcategory IN ('macarons', 'macaron', 'macaroons')
+      WHERE LOWER(TRIM(category::text)) = 'fondant'
+        AND (
+          LOWER(TRIM(subcategory::text)) IN ('macarons', 'macaron', 'macaroons')
+          OR LOWER(TRIM(COALESCE(caption::text, ''))) IN ('macaron', 'macarons', '马卡龙')
+          OR LOWER(TRIM(COALESCE(alt::text, ''))) IN ('macaron', 'macarons', '马卡龙')
+        )
     `;
     if (home === '1' || home === 'true') {
       const out = await queryHomeGalleryBundle();
@@ -88,7 +107,8 @@ async function handleGet(req, res) {
         totalR = macaronSubs
           ? await sql`
               SELECT COUNT(*)::int AS c FROM gallery_images
-              WHERE category = ${category} AND subcategory IN ('macarons', 'macaron')
+              WHERE LOWER(TRIM(category::text)) = LOWER(TRIM(${category}))
+                AND LOWER(TRIM(subcategory::text)) IN ('macarons', 'macaron', 'macaroons')
             `
           : await sql`
               SELECT COUNT(*)::int AS c FROM gallery_images
@@ -98,7 +118,14 @@ async function handleGet(req, res) {
         totalR = await sql`
           SELECT COUNT(*)::int AS c FROM gallery_images
           WHERE category = ${category}
-            AND NOT (category = 'fondant' AND subcategory IN ('macarons', 'macaron', 'macaroons'))
+            AND NOT (
+              LOWER(TRIM(category::text)) = 'fondant'
+              AND (
+                LOWER(TRIM(subcategory::text)) IN ('macarons', 'macaron', 'macaroons')
+                OR LOWER(TRIM(COALESCE(caption::text, ''))) IN ('macaron', 'macarons', '马卡龙')
+                OR LOWER(TRIM(COALESCE(alt::text, ''))) IN ('macaron', 'macarons', '马卡龙')
+              )
+            )
         `;
       }
       const total = totalR.rows[0]?.c ?? 0;
@@ -110,7 +137,8 @@ async function handleGet(req, res) {
         rowsR = macaronSubs
           ? await sql`
               SELECT * FROM gallery_images
-              WHERE category = ${category} AND subcategory IN ('macarons', 'macaron')
+              WHERE LOWER(TRIM(category::text)) = LOWER(TRIM(${category}))
+                AND LOWER(TRIM(subcategory::text)) IN ('macarons', 'macaron', 'macaroons')
               ORDER BY sort_order, id
               LIMIT ${limit} OFFSET ${offset}
             `
@@ -124,7 +152,14 @@ async function handleGet(req, res) {
         rowsR = await sql`
           SELECT * FROM gallery_images
           WHERE category = ${category}
-            AND NOT (category = 'fondant' AND subcategory IN ('macarons', 'macaron', 'macaroons'))
+            AND NOT (
+              LOWER(TRIM(category::text)) = 'fondant'
+              AND (
+                LOWER(TRIM(subcategory::text)) IN ('macarons', 'macaron', 'macaroons')
+                OR LOWER(TRIM(COALESCE(caption::text, ''))) IN ('macaron', 'macarons', '马卡龙')
+                OR LOWER(TRIM(COALESCE(alt::text, ''))) IN ('macaron', 'macarons', '马卡龙')
+              )
+            )
           ORDER BY sort_order, id
           LIMIT ${limit} OFFSET ${offset}
         `;
@@ -142,13 +177,24 @@ async function handleGet(req, res) {
     let result;
     if (category && subcategory) {
       result = macaronSubs
-        ? await sql`SELECT * FROM gallery_images WHERE category = ${category} AND subcategory IN ('macarons', 'macaron') ORDER BY sort_order, id`
+        ? await sql`
+            SELECT * FROM gallery_images
+            WHERE LOWER(TRIM(category::text)) = LOWER(TRIM(${category}))
+              AND LOWER(TRIM(subcategory::text)) IN ('macarons', 'macaron', 'macaroons')
+            ORDER BY sort_order, id`
         : await sql`SELECT * FROM gallery_images WHERE category = ${category} AND subcategory = ${subcategory} ORDER BY sort_order, id`;
     } else if (category) {
       result = await sql`
         SELECT * FROM gallery_images
         WHERE category = ${category}
-          AND NOT (category = 'fondant' AND subcategory IN ('macarons', 'macaron', 'macaroons'))
+          AND NOT (
+            LOWER(TRIM(category::text)) = 'fondant'
+            AND (
+              LOWER(TRIM(subcategory::text)) IN ('macarons', 'macaron', 'macaroons')
+              OR LOWER(TRIM(COALESCE(caption::text, ''))) IN ('macaron', 'macarons', '马卡龙')
+              OR LOWER(TRIM(COALESCE(alt::text, ''))) IN ('macaron', 'macarons', '马卡龙')
+            )
+          )
         ORDER BY sort_order, id`;
     } else {
       result = await sql`SELECT * FROM gallery_images ORDER BY category, subcategory, sort_order, id`;
@@ -177,7 +223,9 @@ async function handlePost(req, res) {
     const so = sort_order !== undefined ? parseInt(sort_order) : 0;
     const { category: catW, subcategory: subW } = canonicalCategorySubcategory(
       category,
-      subcategory || category
+      subcategory || category,
+      caption,
+      alt || caption
     );
     const r = await sql`INSERT INTO gallery_images (category, subcategory, src, caption, alt, sort_order) VALUES (${catW}, ${subW}, ${src}, ${caption}, ${alt || caption}, ${so}) RETURNING *`;
     res.status(201).json(r.rows[0]);
