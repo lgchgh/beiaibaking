@@ -43,15 +43,64 @@ async function queryHomeGalleryBundle() {
   }
 }
 
+const GALLERY_MAX_PAGE_SIZE = 100;
+
 async function handleGet(req, res) {
   const category = req.query?.category;
   const subcategory = req.query?.sub;
   const home = req.query?.home;
+  const paged = req.query?.paged === '1' || req.query?.paged === 'true';
   try {
     if (home === '1' || home === 'true') {
       const out = await queryHomeGalleryBundle();
       res.setHeader('Cache-Control', 'private, no-store, max-age=0');
       res.status(200).json(out);
+      return;
+    }
+    if (paged && category) {
+      const limit = Math.min(
+        Math.max(parseInt(req.query.limit, 10) || 30, 1),
+        GALLERY_MAX_PAGE_SIZE
+      );
+      const pageRequested = Math.max(parseInt(req.query.page, 10) || 1, 1);
+      let totalR;
+      if (subcategory) {
+        totalR = await sql`
+          SELECT COUNT(*)::int AS c FROM gallery_images
+          WHERE category = ${category} AND subcategory = ${subcategory}
+        `;
+      } else {
+        totalR = await sql`
+          SELECT COUNT(*)::int AS c FROM gallery_images WHERE category = ${category}
+        `;
+      }
+      const total = totalR.rows[0]?.c ?? 0;
+      const totalPages = total > 0 ? Math.ceil(total / limit) : 1;
+      const page = Math.min(pageRequested, totalPages);
+      const offset = (page - 1) * limit;
+      let rowsR;
+      if (subcategory) {
+        rowsR = await sql`
+          SELECT * FROM gallery_images
+          WHERE category = ${category} AND subcategory = ${subcategory}
+          ORDER BY sort_order, id
+          LIMIT ${limit} OFFSET ${offset}
+        `;
+      } else {
+        rowsR = await sql`
+          SELECT * FROM gallery_images WHERE category = ${category}
+          ORDER BY sort_order, id
+          LIMIT ${limit} OFFSET ${offset}
+        `;
+      }
+      res.setHeader('Cache-Control', 'private, no-store, max-age=0');
+      res.status(200).json({
+        items: rowsR.rows || [],
+        total,
+        page,
+        limit,
+        totalPages,
+      });
       return;
     }
     let result;

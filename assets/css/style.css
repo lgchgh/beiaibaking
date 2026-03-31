@@ -335,6 +335,47 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
   row-gap: 22px;
 }
 
+.gallery-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 1.75rem auto 0;
+  padding: 0 12px;
+  max-width: 1200px;
+}
+
+.gallery-pagination .gallery-page-prev,
+.gallery-pagination .gallery-page-next {
+  padding: 0.45rem 1.1rem;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--text-dark);
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.gallery-pagination .gallery-page-prev:hover:not(:disabled),
+.gallery-pagination .gallery-page-next:hover:not(:disabled) {
+  border-color: var(--primary-color);
+  color: #8b3b24;
+  background: #fff3ec;
+}
+
+.gallery-pagination .gallery-page-prev:disabled,
+.gallery-pagination .gallery-page-next:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.gallery-pagination .gallery-page-status {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
 
 .category-item figcaption {
   margin-top: 6px;

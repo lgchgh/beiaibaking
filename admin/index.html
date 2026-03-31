@@ -597,12 +597,18 @@
     }
 
     document.getElementById('addGalleryBtn').addEventListener('click', async () => {
+      const msgEl = document.getElementById('galleryMsg');
       const src = document.getElementById('gallerySrc').value.trim();
       const caption = document.getElementById('galleryCaption').value.trim();
       const category = document.getElementById('galleryCategory').value;
       const sub = document.getElementById('gallerySub').value || category;
-      if (!src || !caption) return showMsg(document.getElementById('galleryMsg'), 'Src and caption required', true);
       const editId = document.getElementById('addGalleryBtn').dataset.editId;
+      const batchInput = document.getElementById('galleryFilesBatch');
+      const hasBatchPick = batchInput && batchInput.files && batchInput.files.length > 0;
+      if (!editId && hasBatchPick && (!src || !caption)) {
+        return showMsg(msgEl, '批量请点批量区里的「Upload & add batch」，不要点「Add Image」。「Add Image」只用于单张（需先填图片 URL/上传 + Caption）。', true);
+      }
+      if (!src || !caption) return showMsg(msgEl, 'Src and caption required', true);
       const rawOrder = document.getElementById('gallerySortOrder').value.trim();
       let sortOrder;
       if (editId) {
