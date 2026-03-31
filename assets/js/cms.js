@@ -278,6 +278,23 @@
     if (n && n.classList && n.classList.contains('gallery-pagination')) n.remove();
   }
 
+  function buildGalleryPaginationSequence(current, total) {
+    var delta = 4;
+    var windowStart = Math.max(1, current - delta);
+    var windowEnd = Math.min(total, current + delta);
+    var seq = [];
+    if (windowStart > 1) {
+      seq.push(1);
+      if (windowStart > 2) seq.push('ellipsis');
+    }
+    for (var i = windowStart; i <= windowEnd; i++) seq.push(i);
+    if (windowEnd < total) {
+      if (windowEnd < total - 1) seq.push('ellipsis');
+      seq.push(total);
+    }
+    return seq;
+  }
+
   function renderGalleryPagination(grid, meta) {
     removeGalleryPaginationAfter(grid);
     var totalPages = meta.totalPages;
@@ -286,33 +303,63 @@
     var nav = document.createElement('nav');
     nav.className = 'gallery-pagination';
     nav.setAttribute('aria-label', 'Gallery pages');
-    var prevDisabled = page <= 1;
-    var nextDisabled = page >= totalPages;
-    nav.innerHTML =
-      '<button type="button" class="gallery-page-prev"' +
-      (prevDisabled ? ' disabled' : '') +
-      '>Previous</button>' +
-      '<span class="gallery-page-status">Page ' +
-      page +
-      ' / ' +
-      totalPages +
-      '</span>' +
-      '<button type="button" class="gallery-page-next"' +
-      (nextDisabled ? ' disabled' : '') +
-      '>Next</button>';
+
+    var prevEl;
+    if (page <= 1) {
+      prevEl = document.createElement('span');
+      prevEl.className = 'gallery-page-nav gallery-page-prev is-disabled';
+      prevEl.textContent = '\u00ab PREVIOUS';
+      prevEl.setAttribute('aria-disabled', 'true');
+    } else {
+      prevEl = document.createElement('a');
+      prevEl.className = 'gallery-page-nav gallery-page-prev';
+      prevEl.href = galleryListPageHref(page - 1);
+      prevEl.textContent = '\u00ab PREVIOUS';
+    }
+
+    var mid = document.createElement('div');
+    mid.className = 'gallery-page-pills';
+    var seq = buildGalleryPaginationSequence(page, totalPages);
+    for (var s = 0; s < seq.length; s++) {
+      var item = seq[s];
+      if (item === 'ellipsis') {
+        var ell = document.createElement('span');
+        ell.className = 'gallery-page-ellipsis';
+        ell.textContent = '...';
+        ell.setAttribute('aria-hidden', 'true');
+        mid.appendChild(ell);
+      } else if (item === page) {
+        var cur = document.createElement('span');
+        cur.className = 'gallery-page-num is-current';
+        cur.textContent = String(item);
+        cur.setAttribute('aria-current', 'page');
+        mid.appendChild(cur);
+      } else {
+        var numLink = document.createElement('a');
+        numLink.className = 'gallery-page-num';
+        numLink.href = galleryListPageHref(item);
+        numLink.textContent = String(item);
+        mid.appendChild(numLink);
+      }
+    }
+
+    var nextEl;
+    if (page >= totalPages) {
+      nextEl = document.createElement('span');
+      nextEl.className = 'gallery-page-nav gallery-page-next is-disabled';
+      nextEl.textContent = 'NEXT \u00bb';
+      nextEl.setAttribute('aria-disabled', 'true');
+    } else {
+      nextEl = document.createElement('a');
+      nextEl.className = 'gallery-page-nav gallery-page-next';
+      nextEl.href = galleryListPageHref(page + 1);
+      nextEl.textContent = 'NEXT \u00bb';
+    }
+
+    nav.appendChild(prevEl);
+    nav.appendChild(mid);
+    nav.appendChild(nextEl);
     grid.insertAdjacentElement('afterend', nav);
-    var prevBtn = nav.querySelector('.gallery-page-prev');
-    var nextBtn = nav.querySelector('.gallery-page-next');
-    if (!prevDisabled && prevBtn) {
-      prevBtn.addEventListener('click', function () {
-        window.location.href = galleryListPageHref(page - 1);
-      });
-    }
-    if (!nextDisabled && nextBtn) {
-      nextBtn.addEventListener('click', function () {
-        window.location.href = galleryListPageHref(page + 1);
-      });
-    }
   }
 
   function loadGalleryThumbs() {

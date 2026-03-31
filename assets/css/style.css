@@ -335,45 +335,98 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
   row-gap: 22px;
 }
 
+/* Cake Gallery：横向 « PREVIOUS · 页码条 · NEXT »（参考经典分页条） */
 .gallery-pagination {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 8px;
+  row-gap: 10px;
   margin: 1.75rem auto 0;
   padding: 0 12px;
   max-width: 1200px;
 }
 
-.gallery-pagination .gallery-page-prev,
-.gallery-pagination .gallery-page-next {
-  padding: 0.45rem 1.1rem;
+.gallery-page-pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+
+.gallery-page-nav,
+.gallery-page-pills .gallery-page-num,
+.gallery-page-pills .gallery-page-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 38px;
+  padding: 0 12px;
   font-family: var(--font-body);
-  font-size: 0.9rem;
-  color: var(--text-dark);
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid #c5cdd5;
+  background: #fff;
+  margin-left: -1px;
+  color: #5b6f82;
+}
+
+.gallery-page-pills > *:first-child {
+  margin-left: 0;
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
+}
+
+.gallery-page-pills > *:last-child {
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px;
+}
+
+.gallery-page-nav {
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: 3px;
+  margin-left: 0;
   cursor: pointer;
 }
 
-.gallery-pagination .gallery-page-prev:hover:not(:disabled),
-.gallery-pagination .gallery-page-next:hover:not(:disabled) {
-  border-color: var(--primary-color);
-  color: #8b3b24;
-  background: #fff3ec;
+.gallery-page-nav:hover:not(.is-disabled) {
+  background: #f0f4f8;
+  color: #3d5266;
 }
 
-.gallery-pagination .gallery-page-prev:disabled,
-.gallery-pagination .gallery-page-next:disabled {
+.gallery-page-nav.is-disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
 
-.gallery-pagination .gallery-page-status {
-  font-size: 0.9rem;
-  color: var(--muted);
+.gallery-page-pills .gallery-page-num {
+  min-width: 2.35rem;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.gallery-page-pills a.gallery-page-num:hover {
+  background: #f0f4f8;
+  color: #3d5266;
+}
+
+.gallery-page-pills .gallery-page-num.is-current {
+  background: #3a3a3a;
+  border-color: #3a3a3a;
+  color: #fff;
+  z-index: 1;
+}
+
+.gallery-page-pills .gallery-page-ellipsis {
+  min-width: 2rem;
+  padding: 0 8px;
+  font-weight: 600;
+  color: #5b6f82;
+  background: #fff;
+  cursor: default;
 }
 
 
