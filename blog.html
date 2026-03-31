@@ -20,7 +20,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="assets/css/style.css?v=sharepage1" />
+  <link rel="stylesheet" href="assets/css/style.css?v=sharepage2" />
   <style>
     .share-hero { margin-bottom: 2rem; }
     .share-hero-banner { margin-top: 14px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
@@ -90,6 +90,15 @@
       letter-spacing: 0.02em;
     }
     .share-empty { color: var(--text-muted); padding: 2rem 0; }
+    /* 分页在 #shareContent 外挂载，占满 .container 宽度并在整页内容区居中 */
+    #sharePagination.gallery-pagination {
+      width: 100%;
+      max-width: none;
+      margin-left: auto;
+      margin-right: auto;
+      justify-content: center;
+      box-sizing: border-box;
+    }
   </style>
 </head>
 <body>
@@ -185,6 +194,7 @@
   <script>
   (function() {
     var listEl = document.getElementById('shareList');
+    var shareColumnEl = document.getElementById('shareContent');
     var emptyEl = document.getElementById('shareEmpty');
     var tabs = document.querySelectorAll('.share-tab');
     var currentType = 'news';
@@ -302,9 +312,9 @@
               },
               'Share list pages'
             );
-            if (nav) {
+            if (nav && shareColumnEl) {
               nav.id = 'sharePagination';
-              listEl.insertAdjacentElement('afterend', nav);
+              shareColumnEl.insertAdjacentElement('afterend', nav);
             }
           }
         })
