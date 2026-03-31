@@ -295,14 +295,14 @@
     return seq;
   }
 
-  function renderGalleryPagination(grid, meta) {
-    removeGalleryPaginationAfter(grid);
+  /** hrefForPage(n) 返回第 n 页的 location href */
+  function createPaginationNav(meta, hrefForPage, ariaLabel) {
     var totalPages = meta.totalPages;
-    if (totalPages <= 1) return;
     var page = meta.page;
+    if (totalPages <= 1) return null;
     var nav = document.createElement('nav');
     nav.className = 'gallery-pagination';
-    nav.setAttribute('aria-label', 'Gallery pages');
+    nav.setAttribute('aria-label', ariaLabel || 'Pages');
 
     var prevEl;
     if (page <= 1) {
@@ -313,7 +313,7 @@
     } else {
       prevEl = document.createElement('a');
       prevEl.className = 'gallery-page-nav gallery-page-prev';
-      prevEl.href = galleryListPageHref(page - 1);
+      prevEl.href = hrefForPage(page - 1);
       prevEl.textContent = '\u00ab PREVIOUS';
     }
 
@@ -337,7 +337,7 @@
       } else {
         var numLink = document.createElement('a');
         numLink.className = 'gallery-page-num';
-        numLink.href = galleryListPageHref(item);
+        numLink.href = hrefForPage(item);
         numLink.textContent = String(item);
         mid.appendChild(numLink);
       }
@@ -352,14 +352,20 @@
     } else {
       nextEl = document.createElement('a');
       nextEl.className = 'gallery-page-nav gallery-page-next';
-      nextEl.href = galleryListPageHref(page + 1);
+      nextEl.href = hrefForPage(page + 1);
       nextEl.textContent = 'NEXT \u00bb';
     }
 
     nav.appendChild(prevEl);
     nav.appendChild(mid);
     nav.appendChild(nextEl);
-    grid.insertAdjacentElement('afterend', nav);
+    return nav;
+  }
+
+  function renderGalleryPagination(grid, meta) {
+    removeGalleryPaginationAfter(grid);
+    var nav = createPaginationNav(meta, galleryListPageHref, 'Gallery pages');
+    if (nav) grid.insertAdjacentElement('afterend', nav);
   }
 
   function loadGalleryThumbs() {
@@ -434,4 +440,11 @@
   window.addEventListener('pageshow', function (ev) {
     if (ev.persisted && page === 'home') loadHomeThumbs();
   });
+
+  if (typeof window !== 'undefined') {
+    window.BeiaiUI = {
+      createPaginationNav: createPaginationNav,
+      SHARE_POSTS_PAGE_SIZE: 20,
+    };
+  }
 })();

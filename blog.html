@@ -20,7 +20,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="assets/css/style.css?v=sharecol1" />
+  <link rel="stylesheet" href="assets/css/style.css?v=sharepage1" />
   <style>
     .share-hero { margin-bottom: 2rem; }
     .share-hero-banner { margin-top: 14px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
@@ -181,7 +181,7 @@
   </footer>
 
   <script src="assets/js/main.js"></script>
-  <script src="assets/js/cms.js"></script>
+  <script src="assets/js/cms.js?v=sharepage1"></script>
   <script>
   (function() {
     var listEl = document.getElementById('shareList');
@@ -226,23 +226,90 @@
       } catch (e) { return ''; }
     }
 
+    function getShareListPage() {
+      var p = parseInt(new URLSearchParams(window.location.search).get('page') || '1', 10);
+      if (isNaN(p) || p < 1) return 1;
+      return p;
+    }
+
+    function sharePostsHref(pageNum, type) {
+      var q = new URLSearchParams();
+      q.set('type', type);
+      if (pageNum > 1) q.set('page', String(pageNum));
+      return window.location.pathname + '?' + q.toString();
+    }
+
+    function removeSharePagination() {
+      var el = document.getElementById('sharePagination');
+      if (el) el.remove();
+    }
+
     function loadPosts(type) {
-      var url = '/api/posts?published=true';
+      removeSharePagination();
+      var pageSize = (window.BeiaiUI && window.BeiaiUI.SHARE_POSTS_PAGE_SIZE) || 20;
+      var listPage = getShareListPage();
+      var url =
+        '/api/posts?published=true&paged=1&limit=' +
+        encodeURIComponent(String(pageSize)) +
+        '&page=' +
+        encodeURIComponent(String(listPage));
       if (type) url += '&type=' + encodeURIComponent(type);
-      fetch(url)
-        .then(function(r) { return r.ok ? r.json() : []; })
-        .then(function(rows) {
-          listEl.innerHTML = (rows || []).map(function(p) {
-            var href = 'post.html?slug=' + encodeURIComponent(p.slug || '') + '&type=' + encodeURIComponent(type);
-            var title = (p.title || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            var pin = p.pinned ? '<span class="share-pinned-badge">Pinned</span>' : '';
-            var date = formatDate(p.created_at);
-            return '<li><a class="share-list-link" href="' + href + '"><span class="share-list-body"><span class="share-list-title">' + title + '</span></span><span class="share-list-meta">' + pin + (date ? '<time>' + date + '</time>' : '') + '</span></a></li>';
-          }).join('');
-          listEl.style.display = (rows && rows.length) ? '' : 'none';
-          emptyEl.style.display = (rows && rows.length) ? 'none' : 'block';
+      fetch(url, { cache: 'no-store', credentials: 'same-origin' })
+        .then(function (r) {
+          return r.ok ? r.json() : null;
         })
-        .catch(function() {
+        .then(function (data) {
+          if (!data || !Array.isArray(data.items)) {
+            listEl.innerHTML = '';
+            listEl.style.display = 'none';
+            emptyEl.style.display = 'block';
+            return;
+          }
+          var rows = data.items;
+          listEl.innerHTML = rows
+            .map(function (p) {
+              var href =
+                'post.html?slug=' +
+                encodeURIComponent(p.slug || '') +
+                '&type=' +
+                encodeURIComponent(type);
+              var title = (p.title || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+              var pin = p.pinned ? '<span class="share-pinned-badge">Pinned</span>' : '';
+              var date = formatDate(p.created_at);
+              return (
+                '<li><a class="share-list-link" href="' +
+                href +
+                '"><span class="share-list-body"><span class="share-list-title">' +
+                title +
+                '</span></span><span class="share-list-meta">' +
+                pin +
+                (date ? '<time>' + date + '</time>' : '') +
+                '</span></a></li>'
+              );
+            })
+            .join('');
+          listEl.style.display = rows.length ? '' : 'none';
+          emptyEl.style.display = rows.length ? 'none' : 'block';
+          var totalPages =
+            typeof data.totalPages === 'number' && data.totalPages > 0 ? data.totalPages : 1;
+          var pageNum = typeof data.page === 'number' ? data.page : 1;
+          var makeNav = window.BeiaiUI && window.BeiaiUI.createPaginationNav;
+          if (makeNav) {
+            var nav = makeNav(
+              { page: pageNum, totalPages: totalPages },
+              function (n) {
+                return sharePostsHref(n, type);
+              },
+              'Share list pages'
+            );
+            if (nav) {
+              nav.id = 'sharePagination';
+              listEl.insertAdjacentElement('afterend', nav);
+            }
+          }
+        })
+        .catch(function () {
+          removeSharePagination();
           listEl.innerHTML = '';
           listEl.style.display = 'none';
           emptyEl.style.display = 'block';
@@ -266,14 +333,13 @@
       activateTab('news');
     }
 
-    tabs.forEach(function(tab) {
-      tab.addEventListener('click', function() {
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
         var type = tab.getAttribute('data-type');
+        var url =
+          window.location.pathname + '?type=' + encodeURIComponent(type);
+        window.history.replaceState({}, '', url);
         activateTab(type);
-        var url = window.location.pathname + '?type=' + type;
-        if (window.location.search !== '?type=' + type) {
-          window.history.replaceState({}, '', url);
-        }
       });
     });
   })();

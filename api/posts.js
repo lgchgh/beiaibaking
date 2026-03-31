@@ -6,12 +6,61 @@ const { getJsonBody } = require('../lib/parseBody');
 const { ensurePostsSchema } = require('../lib/ensurePostsSchema');
 const { clearOtherPinnedPosts } = require('../lib/uniquePinned');
 
+const POSTS_MAX_PAGE_SIZE = 100;
+
 async function handleGet(req, res) {
   const published = req.query?.published;
   const type = req.query?.type;
+  const paged = req.query?.paged === '1' || req.query?.paged === 'true';
   try {
     let result;
     if (published === 'true') {
+      if (paged) {
+        const limit = Math.min(
+          Math.max(parseInt(req.query.limit, 10) || 20, 1),
+          POSTS_MAX_PAGE_SIZE
+        );
+        const pageRequested = Math.max(parseInt(req.query.page, 10) || 1, 1);
+        let totalR;
+        if (type) {
+          totalR = await sql`
+            SELECT COUNT(*)::int AS c FROM posts
+            WHERE published = true AND type = ${type}
+          `;
+        } else {
+          totalR = await sql`
+            SELECT COUNT(*)::int AS c FROM posts WHERE published = true
+          `;
+        }
+        const total = totalR.rows[0]?.c ?? 0;
+        const totalPages = total > 0 ? Math.ceil(total / limit) : 1;
+        const page = Math.min(pageRequested, totalPages);
+        const offset = (page - 1) * limit;
+        let rowsR;
+        if (type) {
+          rowsR = await sql`
+            SELECT id, title, slug, type, excerpt, cover_image, pinned, created_at FROM posts
+            WHERE published = true AND type = ${type}
+            ORDER BY COALESCE(pinned, false) DESC, created_at DESC
+            LIMIT ${limit} OFFSET ${offset}
+          `;
+        } else {
+          rowsR = await sql`
+            SELECT id, title, slug, type, excerpt, cover_image, pinned, created_at FROM posts
+            WHERE published = true
+            ORDER BY COALESCE(pinned, false) DESC, created_at DESC
+            LIMIT ${limit} OFFSET ${offset}
+          `;
+        }
+        res.status(200).json({
+          items: rowsR.rows || [],
+          total,
+          page,
+          limit,
+          totalPages,
+        });
+        return;
+      }
       if (type) {
         result = await sql`SELECT id, title, slug, type, excerpt, cover_image, pinned, created_at FROM posts WHERE published = true AND type = ${type} ORDER BY COALESCE(pinned, false) DESC, created_at DESC`;
       } else {

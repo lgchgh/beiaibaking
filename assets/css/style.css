@@ -341,10 +341,10 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
   align-items: stretch;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 10px;
-  row-gap: 10px;
-  margin: 1.75rem auto 0;
-  padding: 0 12px;
+  gap: 6px;
+  row-gap: 8px;
+  margin: 1.35rem auto 0;
+  padding: 0 10px;
   max-width: 1200px;
 }
 
@@ -352,7 +352,7 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
   display: flex;
   flex-wrap: wrap;
   align-items: stretch;
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
 }
 
@@ -363,10 +363,10 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  min-height: 40px;
-  padding: 0 14px;
+  min-height: 32px;
+  padding: 0 10px;
   font-family: var(--font-body);
-  font-size: 0.78rem;
+  font-size: 0.68rem;
   font-weight: 600;
   border: 1px solid rgba(123, 63, 46, 0.22);
   background: #f5e6d8;
@@ -399,7 +399,7 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
 }
 
 .gallery-page-pills .gallery-page-num {
-  min-width: 2.35rem;
+  min-width: 2rem;
   text-decoration: none;
   font-weight: 600;
 }
@@ -418,8 +418,8 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
 }
 
 .gallery-page-pills .gallery-page-ellipsis {
-  min-width: 2rem;
-  padding: 0 8px;
+  min-width: 1.5rem;
+  padding: 0 5px;
   font-weight: 600;
   color: #7b3f2e;
   background: #f5e6d8;
