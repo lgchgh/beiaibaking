@@ -19,6 +19,10 @@
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
     },
     {
+      "source": "/gallery.html",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
+    },
+    {
       "source": "/admin",
       "headers": [
         { "key": "Cache-Control", "value": "private, no-store, max-age=0, must-revalidate" },

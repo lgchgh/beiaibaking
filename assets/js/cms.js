@@ -345,6 +345,9 @@
         .then(function (data) {
           if (!data || !Array.isArray(data.items)) return;
           var items = data.items;
+          if (items.length > GALLERY_PAGE_SIZE) {
+            items = items.slice(0, GALLERY_PAGE_SIZE);
+          }
           grid.innerHTML = items
             .map(function (r) {
               var src = resolveImgSrc(r.src || '');
