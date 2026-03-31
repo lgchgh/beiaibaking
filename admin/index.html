@@ -163,7 +163,7 @@
         <div class="form-group">
           <label>Batch upload (max 5 images)</label>
           <input type="file" id="galleryFilesBatch" accept="image/*" multiple style="margin-top:0.5rem" />
-          <small style="color:var(--text-muted);display:block;margin-top:4px">Uses Category / Subcategory / Sort Order above. Caption: optional prefix for every item; if empty, each image uses its file name. Each image gets sort order = base + 0, +1, …</small>
+          <small style="color:var(--text-muted);display:block;margin-top:4px">Uses Category / Subcategory above. Caption: optional prefix; if empty, file name. Sort Order below: leave empty to auto-number (next after max in this category+subcategory); or set the starting number for this batch (then +1 each).</small>
           <button type="button" class="btn btn-primary" id="batchAddGalleryBtn" style="margin-top:0.65rem">Upload &amp; add batch</button>
         </div>
         <div class="form-group">
@@ -171,8 +171,8 @@
           <input type="text" id="galleryCaption" />
         </div>
         <div class="form-group">
-          <label>Sort Order</label>
-          <input type="number" id="gallerySortOrder" placeholder="0" style="width:80px" title="数字越小越靠前" />
+          <label>Sort order <span style="font-weight:400;color:var(--text-muted)">(optional)</span></label>
+          <input type="number" id="gallerySortOrder" placeholder="auto" style="width:100px" title="Leave empty: auto next number (same category + subcategory). Smaller = shows first. Fill only to override." />
         </div>
         <button type="button" class="btn btn-primary" id="addGalleryBtn">Add Image</button>
         <button type="button" class="btn btn-danger" id="batchDelGalleryBtn" style="margin-left:0.5rem; display:none">Delete Selected</button>
@@ -417,6 +417,20 @@
     document.getElementById('galleryCategory').addEventListener('change', updateSubcategoryOptions);
 
     let galleryRows = [];
+    /** Next sort_order for new images: max within same category + subcategory, +1. */
+    function nextAutoSortOrder(category, subcategory) {
+      const sub = subcategory || category;
+      let max = -1;
+      for (let i = 0; i < galleryRows.length; i++) {
+        const r = galleryRows[i];
+        if (r.category !== category) continue;
+        const rs = r.subcategory || r.category;
+        if (rs !== sub) continue;
+        const o = parseInt(r.sort_order, 10);
+        if (!isNaN(o) && o > max) max = o;
+      }
+      return max + 1;
+    }
     async function loadGallery() {
       try {
         const res = await api('/gallery');
@@ -589,8 +603,20 @@
       const sub = document.getElementById('gallerySub').value || category;
       if (!src || !caption) return showMsg(document.getElementById('galleryMsg'), 'Src and caption required', true);
       const editId = document.getElementById('addGalleryBtn').dataset.editId;
-      const sortOrder = parseInt(document.getElementById('gallerySortOrder').value, 10);
-      const body = { category, subcategory: sub, src, caption, alt: caption, sort_order: isNaN(sortOrder) ? 0 : sortOrder };
+      const rawOrder = document.getElementById('gallerySortOrder').value.trim();
+      let sortOrder;
+      if (editId) {
+        const prev = galleryRows.find(x => x.id == editId);
+        const prevSo = prev ? parseInt(prev.sort_order, 10) : 0;
+        if (rawOrder === '') sortOrder = isNaN(prevSo) ? 0 : prevSo;
+        else { sortOrder = parseInt(rawOrder, 10); if (isNaN(sortOrder)) sortOrder = isNaN(prevSo) ? 0 : prevSo; }
+      } else if (rawOrder === '') {
+        sortOrder = nextAutoSortOrder(category, sub);
+      } else {
+        sortOrder = parseInt(rawOrder, 10);
+        if (isNaN(sortOrder)) sortOrder = nextAutoSortOrder(category, sub);
+      }
+      const body = { category, subcategory: sub, src, caption, alt: caption, sort_order: sortOrder };
       const res = editId
         ? await api('/gallery/' + editId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
         : await api('/gallery', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -689,8 +715,13 @@
       const category = document.getElementById('galleryCategory').value;
       const sub = document.getElementById('gallerySub').value || category;
       const captionPrefix = document.getElementById('galleryCaption').value.trim();
-      let baseOrder = parseInt(document.getElementById('gallerySortOrder').value, 10);
-      if (isNaN(baseOrder)) baseOrder = 0;
+      const rawOrder = document.getElementById('gallerySortOrder').value.trim();
+      let baseOrder;
+      if (rawOrder === '') baseOrder = nextAutoSortOrder(category, sub);
+      else {
+        baseOrder = parseInt(rawOrder, 10);
+        if (isNaN(baseOrder)) baseOrder = nextAutoSortOrder(category, sub);
+      }
       let ok = 0;
       let fail = 0;
       showMsg(msgEl, 'Batch: uploading 0/' + files.length + '...');
