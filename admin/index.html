@@ -537,7 +537,7 @@
     }
     async function loadGallery() {
       try {
-        const res = await api('/gallery');
+        const res = await api('/gallery?admin=1');
         if (!res.ok) {
           const t = await res.text().catch(() => '');
           throw new Error(t || ('HTTP ' + res.status));
@@ -1045,7 +1045,7 @@
       async function fillGalleryOptions() {
         galSelect.innerHTML = '<option value="">— Optional: choose a saved image —</option>';
         try {
-          const res = await api('/gallery');
+          const res = await api('/gallery?admin=1');
           const rows = await res.json();
           (Array.isArray(rows) ? rows : []).forEach(r => {
             if (!r || !r.src) return;

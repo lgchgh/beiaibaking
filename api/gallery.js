@@ -73,13 +73,44 @@ async function queryHomeGalleryBundle() {
 
 const GALLERY_MAX_PAGE_SIZE = 100;
 
+/** 后台需全表列表：部分托管/驱动对单次查询返回行数有隐性上限，用 LIMIT/OFFSET 分页拼齐。 */
+const ADMIN_GALLERY_PAGE_STEP = 200;
+
+async function fetchAllGalleryImagesForAdmin() {
+  const all = [];
+  for (let guard = 0; guard < 5000; guard++) {
+    const offset = all.length;
+    const r = await sql`
+      SELECT * FROM gallery_images
+      ORDER BY category, subcategory, sort_order, id
+      LIMIT ${ADMIN_GALLERY_PAGE_STEP} OFFSET ${offset}
+    `;
+    const rows = r.rows || [];
+    if (!rows.length) break;
+    all.push(...rows);
+  }
+  return all;
+}
+
 async function handleGet(req, res) {
   const category = req.query?.category;
   const subcategory = req.query?.sub;
   const home = req.query?.home;
   const paged = req.query?.paged === '1' || req.query?.paged === 'true';
+  const adminList = req.query?.admin === '1' || req.query?.admin === 'true';
   const macaronSubs = isFrenchMacaronSubFilter(category, subcategory);
   try {
+    if (adminList) {
+      const user = auth.requireAuth(req);
+      if (!user) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+      const rows = await fetchAllGalleryImagesForAdmin();
+      res.setHeader('Cache-Control', 'private, no-store, max-age=0');
+      res.status(200).json(rows);
+      return;
+    }
     await sql`
       UPDATE gallery_images
       SET category = 'french', subcategory = 'macarons'
