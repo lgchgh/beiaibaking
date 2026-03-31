@@ -335,13 +335,13 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
   row-gap: 22px;
 }
 
-/* Cake Gallery 分页：暖灰褐（降低主色珊瑚的红感） */
+/* Cake Gallery 分页：与导航「Cake Gallery」按钮一致的奶油底 + 褐字 */
 .gallery-pagination {
   display: flex;
   align-items: stretch;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
   row-gap: 10px;
   margin: 1.75rem auto 0;
   padding: 0 12px;
@@ -352,6 +352,8 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
   display: flex;
   flex-wrap: wrap;
   align-items: stretch;
+  border-radius: 16px;
+  overflow: hidden;
 }
 
 .gallery-page-nav,
@@ -361,41 +363,34 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  min-height: 38px;
-  padding: 0 12px;
+  min-height: 40px;
+  padding: 0 14px;
   font-family: var(--font-body);
   font-size: 0.78rem;
   font-weight: 600;
-  border: 1px solid rgba(156, 138, 124, 0.45);
-  background: #fff;
+  border: 1px solid rgba(123, 63, 46, 0.22);
+  background: #f5e6d8;
   margin-left: -1px;
-  color: #5a504a;
+  color: #7b3f2e;
 }
 
 .gallery-page-pills > *:first-child {
   margin-left: 0;
-  border-top-left-radius: 3px;
-  border-bottom-left-radius: 3px;
-}
-
-.gallery-page-pills > *:last-child {
-  border-top-right-radius: 3px;
-  border-bottom-right-radius: 3px;
 }
 
 .gallery-page-nav {
   text-decoration: none;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  border-radius: 3px;
+  border-radius: 16px;
   margin-left: 0;
   cursor: pointer;
 }
 
 .gallery-page-nav:hover:not(.is-disabled) {
-  background: var(--secondary-color);
-  color: #6b5d54;
-  border-color: #c9b8a9;
+  background: #efe0d0;
+  color: var(--accent-color);
+  border-color: rgba(139, 69, 19, 0.35);
 }
 
 .gallery-page-nav.is-disabled {
@@ -410,15 +405,15 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
 }
 
 .gallery-page-pills a.gallery-page-num:hover {
-  background: var(--secondary-color);
-  color: #6b5d54;
-  border-color: #c9b8a9;
+  background: #efe0d0;
+  color: var(--accent-color);
+  border-color: rgba(139, 69, 19, 0.35);
 }
 
 .gallery-page-pills .gallery-page-num.is-current {
-  background: #8f7f76;
-  border-color: #73655e;
-  color: #fff;
+  background: var(--accent-color);
+  border-color: #6b3510;
+  color: #f5e6d8;
   z-index: 1;
 }
 
@@ -426,8 +421,8 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
   min-width: 2rem;
   padding: 0 8px;
   font-weight: 600;
-  color: #9d8f86;
-  background: #fff;
+  color: #7b3f2e;
+  background: #f5e6d8;
   cursor: default;
 }
 
