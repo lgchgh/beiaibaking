@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS gallery_images (
   id SERIAL PRIMARY KEY,
   category VARCHAR(50) NOT NULL,
   subcategory VARCHAR(50) NOT NULL,
-  src VARCHAR(500) NOT NULL,
+  src TEXT NOT NULL,
   caption VARCHAR(200) NOT NULL,
   alt VARCHAR(200),
   sort_order INT DEFAULT 0,

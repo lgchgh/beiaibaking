@@ -12,7 +12,12 @@ async function init() {
     console.error('Database not configured. Run: npx vercel link && npx vercel env pull .env.local');
     process.exit(1);
   }
-  await sql`CREATE TABLE IF NOT EXISTS gallery_images (id SERIAL PRIMARY KEY, category VARCHAR(50) NOT NULL, subcategory VARCHAR(50) NOT NULL, src VARCHAR(500) NOT NULL, caption VARCHAR(200) NOT NULL, alt VARCHAR(200), sort_order INT DEFAULT 0, created_at TIMESTAMPTZ DEFAULT NOW())`;
+  await sql`CREATE TABLE IF NOT EXISTS gallery_images (id SERIAL PRIMARY KEY, category VARCHAR(50) NOT NULL, subcategory VARCHAR(50) NOT NULL, src TEXT NOT NULL, caption VARCHAR(200) NOT NULL, alt VARCHAR(200), sort_order INT DEFAULT 0, created_at TIMESTAMPTZ DEFAULT NOW())`;
+  try {
+    await sql`ALTER TABLE gallery_images ALTER COLUMN src TYPE TEXT`;
+  } catch (e) {
+    console.warn('gallery_images.src -> TEXT:', e.message || e);
+  }
   await sql`CREATE TABLE IF NOT EXISTS posts (id SERIAL PRIMARY KEY, title VARCHAR(200) NOT NULL, slug VARCHAR(200) UNIQUE NOT NULL, content TEXT NOT NULL, excerpt VARCHAR(500), cover_image VARCHAR(500), published BOOLEAN DEFAULT false, created_at TIMESTAMPTZ DEFAULT NOW(), updated_at TIMESTAMPTZ DEFAULT NOW())`;
   await sql`ALTER TABLE posts ADD COLUMN IF NOT EXISTS type VARCHAR(50) DEFAULT 'blog'`;
   await sql`ALTER TABLE posts ADD COLUMN IF NOT EXISTS pinned BOOLEAN DEFAULT false`;

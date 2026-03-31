@@ -21,12 +21,17 @@ module.exports = async (req, res) => {
       id SERIAL PRIMARY KEY,
       category VARCHAR(50) NOT NULL,
       subcategory VARCHAR(50) NOT NULL,
-      src VARCHAR(500) NOT NULL,
+      src TEXT NOT NULL,
       caption VARCHAR(200) NOT NULL,
       alt VARCHAR(200),
       sort_order INT DEFAULT 0,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )`;
+    try {
+      await sql`ALTER TABLE gallery_images ALTER COLUMN src TYPE TEXT`;
+    } catch (e) {
+      console.error('gallery_images.src -> TEXT migration', e);
+    }
     await sql`CREATE TABLE IF NOT EXISTS posts (
       id SERIAL PRIMARY KEY,
       title VARCHAR(200) NOT NULL,

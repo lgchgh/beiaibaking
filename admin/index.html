@@ -427,11 +427,6 @@
     /** After add/batch, jump to last page so new rows are visible. */
     let galleryPreferLastPage = false;
 
-    function escAttr(s) {
-      if (s == null || s === '') return '';
-      return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-    }
-
     function updateGalleryPaginationUI(total, totalPages) {
       const prev = document.getElementById('galleryPagePrev');
       const next = document.getElementById('galleryPageNext');
@@ -451,27 +446,77 @@
       if (galleryAdminPage < 1) galleryAdminPage = 1;
       const start = (galleryAdminPage - 1) * GALLERY_ADMIN_PAGE_SIZE;
       const pageRows = rows.slice(start, start + GALLERY_ADMIN_PAGE_SIZE);
-      tbody.innerHTML = pageRows.map(r => `
-        <tr>
-          <td><input type="checkbox" class="gallery-row-cb" data-id="${r.id}" /></td>
-          <td>${r.id}</td>
-          <td class="gallery-order-cell" data-id="${r.id}" data-order="${r.sort_order ?? 0}" style="cursor:pointer; min-width:36px" title="Click to edit">${r.sort_order ?? 0}</td>
-          <td><img src="${escAttr(r.src)}" alt="" style="max-width:60px;max-height:60px;object-fit:cover" onerror="this.style.display='none'" /></td>
-          <td class="gallery-caption-cell" data-id="${r.id}" style="cursor:pointer; max-width:180px" title="Click to edit">${(r.caption || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>
-          <td>
-            <button class="btn btn-sm" data-edit="${r.id}">Edit</button>
-            <button class="btn btn-sm btn-danger" data-del="${r.id}">Del</button>
-          </td>
-        </tr>
-      `).join('');
-      tbody.querySelectorAll('.gallery-order-cell').forEach(td => td.addEventListener('click', (e) => { e.stopPropagation(); inlineEditOrder(td); }));
-      tbody.querySelectorAll('.gallery-caption-cell').forEach(td => td.addEventListener('click', (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        if (!td.querySelector('input')) inlineEditCaption(td);
-      }));
-      tbody.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => editGallery(b.dataset.edit)));
-      tbody.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => delGallery(b.dataset.del)));
+      tbody.replaceChildren();
+      for (let i = 0; i < pageRows.length; i++) {
+        const r = pageRows[i];
+        const idStr = String(r.id);
+        const tr = document.createElement('tr');
+
+        const tdCb = document.createElement('td');
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.className = 'gallery-row-cb';
+        cb.dataset.id = idStr;
+        tdCb.appendChild(cb);
+        tr.appendChild(tdCb);
+
+        const tdId = document.createElement('td');
+        tdId.textContent = idStr;
+        tr.appendChild(tdId);
+
+        const tdOrder = document.createElement('td');
+        tdOrder.className = 'gallery-order-cell';
+        tdOrder.dataset.id = idStr;
+        tdOrder.dataset.order = String(r.sort_order ?? 0);
+        tdOrder.style.cursor = 'pointer';
+        tdOrder.style.minWidth = '36px';
+        tdOrder.title = 'Click to edit';
+        tdOrder.textContent = String(r.sort_order ?? 0);
+        tdOrder.addEventListener('click', (e) => { e.stopPropagation(); inlineEditOrder(tdOrder); });
+        tr.appendChild(tdOrder);
+
+        const tdImg = document.createElement('td');
+        const img = document.createElement('img');
+        img.src = r.src || '';
+        img.alt = '';
+        img.style.maxWidth = '60px';
+        img.style.maxHeight = '60px';
+        img.style.objectFit = 'cover';
+        img.addEventListener('error', () => { img.style.display = 'none'; });
+        tdImg.appendChild(img);
+        tr.appendChild(tdImg);
+
+        const tdCap = document.createElement('td');
+        tdCap.className = 'gallery-caption-cell';
+        tdCap.dataset.id = idStr;
+        tdCap.style.cursor = 'pointer';
+        tdCap.style.maxWidth = '180px';
+        tdCap.title = 'Click to edit';
+        tdCap.textContent = r.caption || '';
+        tdCap.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          if (!tdCap.querySelector('input')) inlineEditCaption(tdCap);
+        });
+        tr.appendChild(tdCap);
+
+        const tdAct = document.createElement('td');
+        const btnEdit = document.createElement('button');
+        btnEdit.className = 'btn btn-sm';
+        btnEdit.type = 'button';
+        btnEdit.textContent = 'Edit';
+        btnEdit.addEventListener('click', () => editGallery(idStr));
+        const btnDel = document.createElement('button');
+        btnDel.className = 'btn btn-sm btn-danger';
+        btnDel.type = 'button';
+        btnDel.textContent = 'Del';
+        btnDel.addEventListener('click', () => delGallery(idStr));
+        tdAct.appendChild(btnEdit);
+        tdAct.appendChild(btnDel);
+        tr.appendChild(tdAct);
+
+        tbody.appendChild(tr);
+      }
       updateGalleryPaginationUI(total, totalPages);
       bindGalleryCheckboxes();
     }
@@ -493,6 +538,10 @@
     async function loadGallery() {
       try {
         const res = await api('/gallery');
+        if (!res.ok) {
+          const t = await res.text().catch(() => '');
+          throw new Error(t || ('HTTP ' + res.status));
+        }
         const data = await res.json();
         galleryRows = Array.isArray(data) ? data : [];
         if (galleryPreferLastPage) {
