@@ -335,7 +335,7 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
   row-gap: 22px;
 }
 
-/* Cake Gallery：横向 « PREVIOUS · 页码条 · NEXT »（参考经典分页条） */
+/* Cake Gallery 分页：暖灰褐（降低主色珊瑚的红感） */
 .gallery-pagination {
   display: flex;
   align-items: stretch;
@@ -366,10 +366,10 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
   font-family: var(--font-body);
   font-size: 0.78rem;
   font-weight: 600;
-  border: 1px solid rgba(212, 129, 111, 0.4);
+  border: 1px solid rgba(156, 138, 124, 0.45);
   background: #fff;
   margin-left: -1px;
-  color: var(--primary-dark);
+  color: #5a504a;
 }
 
 .gallery-page-pills > *:first-child {
@@ -394,8 +394,8 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
 
 .gallery-page-nav:hover:not(.is-disabled) {
   background: var(--secondary-color);
-  color: var(--primary-color);
-  border-color: var(--primary-light);
+  color: #6b5d54;
+  border-color: #c9b8a9;
 }
 
 .gallery-page-nav.is-disabled {
@@ -411,13 +411,13 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
 
 .gallery-page-pills a.gallery-page-num:hover {
   background: var(--secondary-color);
-  color: var(--primary-color);
-  border-color: var(--primary-light);
+  color: #6b5d54;
+  border-color: #c9b8a9;
 }
 
 .gallery-page-pills .gallery-page-num.is-current {
-  background: var(--primary-color);
-  border-color: var(--primary-dark);
+  background: #8f7f76;
+  border-color: #73655e;
   color: #fff;
   z-index: 1;
 }
@@ -426,7 +426,7 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
   min-width: 2rem;
   padding: 0 8px;
   font-weight: 600;
-  color: var(--primary-light);
+  color: #9d8f86;
   background: #fff;
   cursor: default;
 }
