@@ -1,0 +1,3 @@
+# Hobby：每部署最多 12 个 Serverless Functions。排除仅手调一次的数据库初始化接口。
+# 初始化请用：本地 node scripts/init-db.js，或 Neon / Vercel Postgres 控制台执行 schema.sql / api/init-db.js 内 SQL。
+api/init-db.js
