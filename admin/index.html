@@ -157,24 +157,19 @@
         <div class="form-group">
           <label>Image URL (or upload)</label>
           <input type="text" id="gallerySrc" placeholder="assets/images/..." />
-          <input type="file" id="galleryFile" accept="image/*" style="margin-top:0.5rem" />
+          <input type="file" id="galleryFile" accept="image/*" multiple style="margin-top:0.5rem" />
+          <small style="color:var(--text-muted);display:block;margin-top:0.35rem">Paste a URL <strong>or</strong> choose up to <strong>5</strong> images (if both, files take priority). Caption below is optional: empty = file name without extension, or last segment of URL path. For multiple files, caption is an optional prefix before each file name.</small>
           <div id="gallerySrcPreview" style="margin-top:6px; display:none"><img src="" alt="" style="max-width:120px; max-height:120px; object-fit:cover; border-radius:6px" /></div>
         </div>
         <div class="form-group">
-          <label>Batch upload (max 5 images)</label>
-          <input type="file" id="galleryFilesBatch" accept="image/*" multiple style="margin-top:0.5rem" />
-          <small style="color:var(--text-muted);display:block;margin-top:4px">Uses Category / Subcategory above. Caption: optional prefix; if empty, file name. Sort Order below: leave empty to auto-number (next after max in this category+subcategory); or set the starting number for this batch (then +1 each).</small>
-          <button type="button" class="btn btn-primary" id="batchAddGalleryBtn" style="margin-top:0.65rem">Upload &amp; add batch</button>
-        </div>
-        <div class="form-group">
-          <label>Caption</label>
-          <input type="text" id="galleryCaption" />
+          <label>Caption <span style="font-weight:400;color:var(--text-muted)">(optional)</span></label>
+          <input type="text" id="galleryCaption" placeholder="Prefix for batch, or single title; leave blank to use file / URL name" />
         </div>
         <div class="form-group">
           <label>Sort order <span style="font-weight:400;color:var(--text-muted)">(optional)</span></label>
           <input type="number" id="gallerySortOrder" placeholder="auto" style="width:100px" title="Leave empty: auto next number (same category + subcategory). Smaller = shows first. Fill only to override." />
         </div>
-        <button type="button" class="btn btn-primary" id="addGalleryBtn">Add Image</button>
+        <button type="button" class="btn btn-primary" id="addGalleryBtn">保存到图库</button>
         <button type="button" class="btn btn-danger" id="batchDelGalleryBtn" style="margin-left:0.5rem; display:none">Delete Selected</button>
         <div id="galleryMsg"></div>
         <table id="galleryTable" style="margin-top:1.5rem">
@@ -680,6 +675,10 @@
       input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } });
     }
 
+    const BATCH_MAX = 5;
+    const GALLERY_SAVE_BTN_NEW = '保存到图库';
+    const GALLERY_SAVE_BTN_EDIT = '更新图库';
+
     function editGallery(id) {
       const r = galleryRows.find(x => x.id == id);
       if (!r) return;
@@ -691,7 +690,9 @@
       if (prev) { prev.style.display = r.src ? 'block' : 'none'; prev.querySelector('img').src = r.src || ''; }
       document.getElementById('galleryCaption').value = r.caption;
       document.getElementById('gallerySortOrder').value = r.sort_order ?? 0;
-      document.getElementById('addGalleryBtn').textContent = 'Update';
+      const gf = document.getElementById('galleryFile');
+      if (gf) gf.value = '';
+      document.getElementById('addGalleryBtn').textContent = GALLERY_SAVE_BTN_EDIT;
       document.getElementById('addGalleryBtn').dataset.editId = id;
     }
 
@@ -701,88 +702,26 @@
       if (res.ok) { loadGallery(); showMsg(document.getElementById('galleryMsg'), 'Deleted'); }
     }
 
-    document.getElementById('addGalleryBtn').addEventListener('click', async () => {
-      const msgEl = document.getElementById('galleryMsg');
-      const src = document.getElementById('gallerySrc').value.trim();
-      const caption = document.getElementById('galleryCaption').value.trim();
-      const category = document.getElementById('galleryCategory').value;
-      const sub = document.getElementById('gallerySub').value || category;
-      const editId = document.getElementById('addGalleryBtn').dataset.editId;
-      const batchInput = document.getElementById('galleryFilesBatch');
-      const hasBatchPick = batchInput && batchInput.files && batchInput.files.length > 0;
-      if (!editId && hasBatchPick && (!src || !caption)) {
-        return showMsg(msgEl, '批量请点批量区里的「Upload & add batch」，不要点「Add Image」。「Add Image」只用于单张（需先填图片 URL/上传 + Caption）。', true);
-      }
-      if (!src || !caption) return showMsg(msgEl, 'Src and caption required', true);
-      const rawOrder = document.getElementById('gallerySortOrder').value.trim();
-      let sortOrder;
-      if (editId) {
-        const prev = galleryRows.find(x => x.id == editId);
-        const prevSo = prev ? parseInt(prev.sort_order, 10) : 0;
-        if (rawOrder === '') sortOrder = isNaN(prevSo) ? 0 : prevSo;
-        else { sortOrder = parseInt(rawOrder, 10); if (isNaN(sortOrder)) sortOrder = isNaN(prevSo) ? 0 : prevSo; }
-      } else if (rawOrder === '') {
-        sortOrder = nextAutoSortOrder(category, sub);
-      } else {
-        sortOrder = parseInt(rawOrder, 10);
-        if (isNaN(sortOrder)) sortOrder = nextAutoSortOrder(category, sub);
-      }
-      const body = { category, subcategory: sub, src, caption, alt: caption, sort_order: sortOrder };
-      const res = editId
-        ? await api('/gallery/' + editId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-        : await api('/gallery', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      const data = await res.json();
-      if (res.ok) {
-        if (!editId) galleryPreferLastPage = true;
-        loadGallery();
-        document.getElementById('gallerySrc').value = document.getElementById('galleryCaption').value = '';
-        document.getElementById('gallerySortOrder').value = '';
-        document.getElementById('addGalleryBtn').textContent = 'Add Image';
-        delete document.getElementById('addGalleryBtn').dataset.editId;
-        showMsg(document.getElementById('galleryMsg'), 'Saved');
-      } else {
-        showMsg(document.getElementById('galleryMsg'), data.error || 'Failed', true);
-      }
-    });
-
-    document.getElementById('galleryFile').addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      showMsg(document.getElementById('galleryMsg'), 'Uploading...');
-      const reader = new FileReader();
-      reader.onload = async () => {
-        try {
-          const res = await api('/upload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ data: reader.result, filename: file.name, contentType: file.type }),
-          });
-          const data = await res.json();
-          if (res.ok) {
-            const url = data.url || '';
-            document.getElementById('gallerySrc').value = url;
-            const prev = document.getElementById('gallerySrcPreview');
-            if (prev && url) { prev.style.display = 'block'; prev.querySelector('img').src = url; }
-            showMsg(document.getElementById('galleryMsg'), 'Uploaded');
-          } else {
-            showMsg(document.getElementById('galleryMsg'), data.error || 'Upload failed', true);
-          }
-        } catch (err) {
-          console.error(err);
-          showMsg(document.getElementById('galleryMsg'), 'Upload failed: ' + (err.message || 'Network error'), true);
-        }
-        e.target.value = '';
-      };
-      reader.onerror = () => showMsg(document.getElementById('galleryMsg'), 'Failed to read file', true);
-      reader.readAsDataURL(file);
-    });
-
-    const BATCH_MAX = 5;
     function galleryFileStem(name) {
       const n = String(name || '').replace(/\\/g, '/').split('/').pop() || 'image';
       const i = n.lastIndexOf('.');
       return i > 0 ? n.slice(0, i) : n;
     }
+
+    /** Caption fallback when field empty: last path segment of URL, extension stripped */
+    function captionFromUrl(url) {
+      const u = String(url || '').trim();
+      if (!u) return 'image';
+      try {
+        const parsed = new URL(u, window.location.href);
+        const last = parsed.pathname.split('/').filter(Boolean).pop() || 'image';
+        return galleryFileStem(last);
+      } catch {
+        const tail = u.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').split('/').pop() || 'image';
+        return galleryFileStem(tail.split('?')[0]);
+      }
+    }
+
     function readFileAsDataURL(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -802,72 +741,142 @@
       if (!res.ok) throw new Error(payload.error || 'Upload failed');
       return payload.url || '';
     }
-    document.getElementById('galleryFilesBatch').addEventListener('change', (e) => {
-      const input = e.target;
-      if (input.files && input.files.length > BATCH_MAX) {
-        showMsg(document.getElementById('galleryMsg'), 'Only first ' + BATCH_MAX + ' files will be used (max ' + BATCH_MAX + ').', true);
-      }
-    });
-    document.getElementById('batchAddGalleryBtn').addEventListener('click', async () => {
+
+    document.getElementById('addGalleryBtn').addEventListener('click', async () => {
       const msgEl = document.getElementById('galleryMsg');
-      if (document.getElementById('addGalleryBtn').dataset.editId) {
-        showMsg(msgEl, 'Finish editing (Save or cancel edit) before batch upload.', true);
-        return;
-      }
-      const input = document.getElementById('galleryFilesBatch');
-      const fileList = input.files ? Array.from(input.files) : [];
-      if (fileList.length === 0) {
-        showMsg(msgEl, 'Choose at least one image.', true);
-        return;
-      }
-      const files = fileList.slice(0, BATCH_MAX);
-      if (fileList.length > BATCH_MAX) {
-        showMsg(msgEl, 'Using first ' + BATCH_MAX + ' images only.', true);
-      }
+      const srcField = document.getElementById('gallerySrc').value.trim();
+      const captionField = document.getElementById('galleryCaption').value.trim();
       const category = document.getElementById('galleryCategory').value;
       const sub = document.getElementById('gallerySub').value || category;
-      const captionPrefix = document.getElementById('galleryCaption').value.trim();
+      const editId = document.getElementById('addGalleryBtn').dataset.editId;
+      const fileInput = document.getElementById('galleryFile');
+      const fileList = fileInput.files && fileInput.files.length
+        ? Array.from(fileInput.files).slice(0, BATCH_MAX)
+        : [];
+
       const rawOrder = document.getElementById('gallerySortOrder').value.trim();
-      let baseOrder;
-      if (rawOrder === '') baseOrder = nextAutoSortOrder(category, sub);
-      else {
-        baseOrder = parseInt(rawOrder, 10);
-        if (isNaN(baseOrder)) baseOrder = nextAutoSortOrder(category, sub);
-      }
-      let ok = 0;
-      let fail = 0;
-      showMsg(msgEl, 'Batch: uploading 0/' + files.length + '...');
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const stem = galleryFileStem(file.name);
-        const caption = (captionPrefix ? (captionPrefix + ' · ' + stem) : stem).slice(0, 200);
-        try {
-          showMsg(msgEl, 'Batch: uploading ' + (i + 1) + '/' + files.length + '...');
-          const url = await uploadBlobFile(file);
-          const res = await api('/gallery', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              category,
-              subcategory: sub,
-              src: url,
-              caption,
-              alt: caption,
-              sort_order: baseOrder + i,
-            }),
-          });
-          const data = await res.json();
-          if (res.ok) ok++;
-          else { fail++; console.warn(data.error || 'gallery POST failed'); }
-        } catch (err) {
-          fail++;
-          console.error(err);
+
+      if (editId) {
+        if (fileList.length > 1) {
+          return showMsg(msgEl, '编辑时最多选择一张替换图，或只用上方 URL。', true);
         }
+        let finalSrc = srcField;
+        if (fileList.length === 1) {
+          showMsg(msgEl, '上传中...');
+          try {
+            finalSrc = await uploadBlobFile(fileList[0]);
+            document.getElementById('gallerySrc').value = finalSrc;
+            const prev = document.getElementById('gallerySrcPreview');
+            if (prev && finalSrc) { prev.style.display = 'block'; prev.querySelector('img').src = finalSrc; }
+          } catch (err) {
+            return showMsg(msgEl, err.message || 'Upload failed', true);
+          }
+        }
+        if (!finalSrc) return showMsg(msgEl, '请填写图片 URL 或选择一张图片。', true);
+        const capStem = fileList.length === 1 ? galleryFileStem(fileList[0].name) : captionFromUrl(finalSrc);
+        const caption = (captionField || capStem).slice(0, 200);
+        const rowPrev = galleryRows.find(x => x.id == editId);
+        const prevSo = rowPrev ? parseInt(rowPrev.sort_order, 10) : 0;
+        let sortOrder;
+        if (rawOrder === '') sortOrder = isNaN(prevSo) ? 0 : prevSo;
+        else { sortOrder = parseInt(rawOrder, 10); if (isNaN(sortOrder)) sortOrder = isNaN(prevSo) ? 0 : prevSo; }
+        const body = { category, subcategory: sub, src: finalSrc, caption, alt: caption, sort_order: sortOrder };
+        const res = await api('/gallery/' + editId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const data = await res.json();
+        if (res.ok) {
+          fileInput.value = '';
+          loadGallery();
+          document.getElementById('gallerySrc').value = document.getElementById('galleryCaption').value = '';
+          document.getElementById('gallerySortOrder').value = '';
+          document.getElementById('addGalleryBtn').textContent = GALLERY_SAVE_BTN_NEW;
+          delete document.getElementById('addGalleryBtn').dataset.editId;
+          const prevEl = document.getElementById('gallerySrcPreview');
+          if (prevEl) prevEl.style.display = 'none';
+          showMsg(msgEl, '已保存');
+        } else {
+          showMsg(msgEl, data.error || 'Failed', true);
+        }
+        return;
       }
-      input.value = '';
-      if (ok > 0) galleryPreferLastPage = true;
-      loadGallery();
-      showMsg(msgEl, 'Batch done: ' + ok + ' added' + (fail ? ', ' + fail + ' failed' : '') + '.', !!fail);
+
+      if (fileList.length > 0) {
+        let baseOrder;
+        if (rawOrder === '') baseOrder = nextAutoSortOrder(category, sub);
+        else {
+          baseOrder = parseInt(rawOrder, 10);
+          if (isNaN(baseOrder)) baseOrder = nextAutoSortOrder(category, sub);
+        }
+        let ok = 0;
+        let fail = 0;
+        for (let i = 0; i < fileList.length; i++) {
+          const file = fileList[i];
+          const stem = galleryFileStem(file.name);
+          const caption = (captionField ? (captionField + ' · ' + stem) : stem).slice(0, 200);
+          try {
+            showMsg(msgEl, '上传中 ' + (i + 1) + '/' + fileList.length + '...');
+            const url = await uploadBlobFile(file);
+            const sortOrder = baseOrder + i;
+            const res = await api('/gallery', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                category,
+                subcategory: sub,
+                src: url,
+                caption,
+                alt: caption,
+                sort_order: sortOrder,
+              }),
+            });
+            const data = await res.json();
+            if (res.ok) ok++;
+            else { fail++; console.warn(data.error || 'gallery POST failed'); }
+          } catch (err) {
+            fail++;
+            console.error(err);
+          }
+        }
+        fileInput.value = '';
+        if (ok > 0) galleryPreferLastPage = true;
+        loadGallery();
+        document.getElementById('gallerySrc').value = '';
+        document.getElementById('galleryCaption').value = '';
+        document.getElementById('gallerySortOrder').value = '';
+        const prevEl = document.getElementById('gallerySrcPreview');
+        if (prevEl) prevEl.style.display = 'none';
+        showMsg(msgEl, ok + ' 张已入库' + (fail ? '，' + fail + ' 张失败' : ''), !!fail);
+        return;
+      }
+
+      if (!srcField) return showMsg(msgEl, '请填写图片 URL 或选择文件（最多 5 张）。', true);
+      const caption = (captionField || captionFromUrl(srcField)).slice(0, 200);
+      let sortOrderOne;
+      if (rawOrder === '') sortOrderOne = nextAutoSortOrder(category, sub);
+      else {
+        sortOrderOne = parseInt(rawOrder, 10);
+        if (isNaN(sortOrderOne)) sortOrderOne = nextAutoSortOrder(category, sub);
+      }
+      const body = { category, subcategory: sub, src: srcField, caption, alt: caption, sort_order: sortOrderOne };
+      const res = await api('/gallery', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const data = await res.json();
+      if (res.ok) {
+        galleryPreferLastPage = true;
+        loadGallery();
+        document.getElementById('gallerySrc').value = document.getElementById('galleryCaption').value = '';
+        document.getElementById('gallerySortOrder').value = '';
+        const prevEl = document.getElementById('gallerySrcPreview');
+        if (prevEl) prevEl.style.display = 'none';
+        showMsg(msgEl, '已保存');
+      } else {
+        showMsg(msgEl, data.error || 'Failed', true);
+      }
+    });
+
+    document.getElementById('galleryFile').addEventListener('change', (e) => {
+      const input = e.target;
+      if (input.files && input.files.length > BATCH_MAX) {
+        showMsg(document.getElementById('galleryMsg'), '仅处理前 ' + BATCH_MAX + ' 张（最多 ' + BATCH_MAX + ' 张）。', true);
+      }
     });
 
     document.getElementById('gallerySrc').addEventListener('input', function () {
