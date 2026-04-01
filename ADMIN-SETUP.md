@@ -9,6 +9,11 @@
 
 若仓库已挂在该项目上，只需日常 `git push`，无需手动在 Vercel 点 Deploy。
 
+**正式域名（www）：** [https://www.beiaibaking.net/](https://www.beiaibaking.net/) — 常用检查链接：  
+首页 · [Gallery](https://www.beiaibaking.net/gallery.html) · [Share](https://www.beiaibaking.net/blog.html) · [后台](https://www.beiaibaking.net/admin) · [联系自检 /api/contact](https://www.beiaibaking.net/api/contact) · [站点地图](https://www.beiaibaking.net/api/sitemap) · [robots.txt](https://www.beiaibaking.net/robots.txt)
+
+（可选）在 Vercel 环境变量中设置 **`SITE_URL`** = `https://www.beiaibaking.net`，与动态 sitemap 生成的绝对 URL 一致。
+
 ---
 
 ## 0. 部署前准备（若构建失败）
@@ -50,26 +55,28 @@
 1. 注册 Resend → **API Keys** 新建 Key，填入 Vercel 环境变量 **`RESEND_API_KEY`**。
 2. **`CONTACT_TO_EMAIL`**：收到信的地址（建议与后台 Site 里的 Contact Email 一致）。不设置则默认为 `admin@beiaibaking.net`。
 3. **`RESEND_FROM`**：发件人展示名 + 地址。未完成域名验证前，可用官方测试发件人：  
-   `Beiai Baking <onboarding@resend.dev>`（Resend 文档可能有更新，以控制台说明为准）。验证你自己的域名后，改为例如 `Beiai Baking <hello@你的域名>`。
+   `Beiai Baking <onboarding@resend.dev>`（Resend 文档可能有更新，以控制台说明为准）。验证你自己的域名后，改为例如 `Beiai Baking <hello@beiaibaking.net>`。
 
    **重要：** 使用 `onboarding@resend.dev` 时，Resend **通常只允许把测试邮件发到你在 Resend 注册用的那个邮箱**。若 **`CONTACT_TO_EMAIL`** 填的是 `admin@beiaibaking.net` 但与注册邮箱不一致，API 会报错。解决办法二选一：把 **`CONTACT_TO_EMAIL`** 改成 **Resend 账号邮箱** 做测试；或在 Resend 里 **验证域名 beiaibaking.net**，并把 **`RESEND_FROM`** 改成该域名下的地址后再发到 `admin@...`。
 
    **域名已在 Resend 显示 “Domain verified” 后（你现在这一步）：** 在 Vercel 必须把 **`RESEND_FROM`** 改成 **`Beiai Baking <某个地址@beiaibaking.net>`**（发件地址必须是 Resend 里该域名下允许发送的邮箱，例如 `hello@` / `noreply@`，不要用 `onboarding@resend.dev`）。**`CONTACT_TO_EMAIL`** 可设为 **`admin@beiaibaking.net`** 等任意收件地址。保存环境变量后 **Redeploy**，再试联系表单。
 4. 保存环境变量后必须在 Vercel 对项目做一次 **Redeploy**（仅保存变量不会更新已在跑的函数）。  
 
-**自检：** 浏览器打开 `https://你的域名/api/contact`，应看到 JSON：`{"ok":true,"contactApi":true,"resendConfigured":true}`（最后项在已配置 Key 后为 `true`）。若 404，说明尚未部署含 `api/contact.js` 的版本或需 Redeploy。
+**自检：** 浏览器打开 [https://www.beiaibaking.net/api/contact](https://www.beiaibaking.net/api/contact)，应看到 JSON：`{"ok":true,"contactApi":true,"resendConfigured":true}`（最后项在已配置 Key 后为 `true`）。若 404，说明尚未部署含 `api/contact.js` 的版本或需 Redeploy。
 
 未配置 `RESEND_API_KEY` 时，提交会提示表单未就绪，仍可使用导航栏邮件图标。
 
 ## 3. 初始化数据库
 
-部署完成后，在浏览器访问：
+**说明：** 因 Vercel Hobby 套餐 **Serverless 函数数量上限（12 个）**，`api/init-db.js` 已写入 `.vercelignore`，**不会部署到线上**，请在本地或数据库控制台初始化：
 
-```
-https://www.beiaibaking.net/api/init-db?secret=你的INIT_SECRET
-```
+1. 本地：复制 Vercel 环境变量到 `.env.local` 后执行  
+   `npm install && node scripts/init-db.js`  
+2. 或在 **Neon / Vercel Postgres** 控制台执行仓库内 `schema.sql` 及所需 `INSERT`。
 
-看到 `{"success":true,"message":"Database initialized"}` 表示成功。之后可删除 `INIT_SECRET` 环境变量。
+（若迁至 Pro 或合并其他函数释放名额，可自行从 `.vercelignore` 中移除 `api/init-db.js` 并恢复通过 `GET /api/init-db?secret=…` 初始化。）
+
+初始化成功后可删除 `INIT_SECRET` 环境变量。
 
 ## 4. 登录后台
 
