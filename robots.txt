@@ -1,8 +1,9 @@
 # Beiai Baking — 规范域名为 www；若 apex 也开放访问，请在托管商做 301 到下方 Sitemap 所用主机名
 User-agent: *
 Allow: /
-
+Allow: /api/sitemap
 Disallow: /admin
 Disallow: /api/
 
-Sitemap: https://www.beiaibaking.net/sitemap.xml
+# 动态站点地图（Vercel 将 /sitemap.xml 308 到此处）；须 Allow，否则与 Disallow: /api/ 冲突
+Sitemap: https://www.beiaibaking.net/api/sitemap

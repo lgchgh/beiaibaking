@@ -11,11 +11,11 @@
     },
     "api/posts.js": {
       "maxDuration": 60
-    },
-    "api/sitemap.js": {
-      "maxDuration": 15
     }
   },
+  "redirects": [
+    { "source": "/sitemap.xml", "destination": "/api/sitemap", "permanent": true }
+  ],
   "headers": [
     {
       "source": "/blog.html",
@@ -41,7 +41,6 @@
     }
   ],
   "rewrites": [
-    { "source": "/sitemap.xml", "destination": "/api/sitemap" },
     { "source": "/admin", "destination": "/admin/index.html" },
     { "source": "/favicon.ico", "destination": "/assets/images/logo.png" }
   ]
