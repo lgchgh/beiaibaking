@@ -11,6 +11,9 @@
     },
     "api/posts.js": {
       "maxDuration": 60
+    },
+    "api/sitemap.js": {
+      "maxDuration": 15
     }
   },
   "headers": [
@@ -38,6 +41,7 @@
     }
   ],
   "rewrites": [
+    { "source": "/sitemap.xml", "destination": "/api/sitemap" },
     { "source": "/admin", "destination": "/admin/index.html" },
     { "source": "/favicon.ico", "destination": "/assets/images/logo.png" }
   ]

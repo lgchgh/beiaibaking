@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <title>Post | Beiai Baking</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Read news, recipes and blog posts from Beiai Baking." />
-  <link rel="canonical" href="https://www.beiaibaking.net/post.html" />
+  <meta name="description" id="seo-meta-description" content="Read news, recipes and blog posts from Beiai Baking." />
+  <link rel="canonical" id="seo-canonical" href="https://www.beiaibaking.net/post.html" />
   <meta property="og:type" content="article" />
   <meta property="og:url" content="https://www.beiaibaking.net/post.html" />
   <meta property="og:title" content="Post | Beiai Baking" />
@@ -14,6 +14,11 @@
   <meta property="og:image" content="https://www.beiaibaking.net/assets/images/logo.png" />
   <meta property="og:locale" content="en_US" />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Post | Beiai Baking" />
+  <meta name="twitter:description" content="Read news, recipes and blog posts from Beiai Baking." />
+  <meta name="twitter:image" content="https://www.beiaibaking.net/assets/images/logo.png" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="theme-color" content="#8b4513" />
   <link rel="icon" href="/assets/images/favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="/assets/images/logo.png" type="image/png" sizes="32x32" />
   <link rel="apple-touch-icon" href="/assets/images/logo.png" />
@@ -150,7 +155,64 @@
         loading.style.display = 'none';
         if (post) {
           if (!validShareType(typeFromUrl)) applyBackLink(post.type);
-          document.title = (post.title || 'Post') + ' | Beiai Baking';
+          var SITE = 'https://www.beiaibaking.net';
+          var slugParam = post.slug || slug || '';
+          var typeParam = (post.type || typeFromUrl || 'blog').toLowerCase();
+          if (!validShareType(typeParam)) typeParam = 'blog';
+          var pageUrl = SITE + '/post.html?slug=' + encodeURIComponent(slugParam) + '&type=' + encodeURIComponent(typeParam);
+          function setMetaProp(p, v) {
+            var m = document.querySelector('meta[property="' + p + '"]');
+            if (m) m.setAttribute('content', v);
+          }
+          function setMetaName(n, v) {
+            var m = document.querySelector('meta[name="' + n + '"]');
+            if (m) m.setAttribute('content', v);
+          }
+          function stripHtmlToText(html, max) {
+            var d = document.createElement('div');
+            d.innerHTML = html || '';
+            var t = (d.textContent || '').replace(/\s+/g, ' ').trim();
+            if (max && t.length > max) t = t.slice(0, max - 1) + '\u2026';
+            return t;
+          }
+          var excerpt = (post.excerpt && String(post.excerpt).trim()) ? String(post.excerpt).trim().slice(0, 160) : '';
+          var desc = excerpt || stripHtmlToText(post.content, 160);
+          if (!desc) desc = 'Read this post on Beiai Baking: ' + (post.title || 'Share') + '.';
+          var titleFull = (post.title || 'Post') + ' | Beiai Baking';
+          document.title = titleFull;
+          document.getElementById('seo-meta-description').setAttribute('content', desc);
+          var can = document.getElementById('seo-canonical');
+          if (can) can.setAttribute('href', pageUrl);
+          setMetaProp('og:url', pageUrl);
+          setMetaProp('og:title', titleFull);
+          setMetaProp('og:description', desc);
+          var ogImg = (post.cover_image && String(post.cover_image).trim()) ? String(post.cover_image).trim() : SITE + '/assets/images/logo.png';
+          if (ogImg.indexOf('http') !== 0 && ogImg.indexOf('//') !== 0) {
+            try { ogImg = new URL(ogImg, SITE + '/').href; } catch (e1) { ogImg = SITE + '/assets/images/logo.png'; }
+          }
+          setMetaProp('og:image', ogImg);
+          setMetaName('twitter:title', titleFull);
+          setMetaName('twitter:description', desc);
+          setMetaName('twitter:image', ogImg);
+          var ld = {
+            '@context': 'https://schema.org',
+            '@type': 'Article',
+            headline: post.title || '',
+            datePublished: post.created_at || undefined,
+            dateModified: post.updated_at || post.created_at || undefined,
+            author: { '@type': 'Organization', name: 'Beiai Baking' },
+            publisher: { '@type': 'Organization', name: 'Beiai Baking', logo: { '@type': 'ImageObject', url: SITE + '/assets/images/logo.png' } },
+            mainEntityOfPage: { '@type': 'WebPage', '@id': pageUrl },
+            image: ogImg
+          };
+          var ldEl = document.getElementById('seo-article-jsonld');
+          if (!ldEl) {
+            ldEl = document.createElement('script');
+            ldEl.type = 'application/ld+json';
+            ldEl.id = 'seo-article-jsonld';
+            document.head.appendChild(ldEl);
+          }
+          ldEl.textContent = JSON.stringify(ld);
           document.getElementById('postTitle').textContent = post.title || '';
           document.getElementById('postDate').textContent = post.created_at ? new Date(post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
           var bodyEl = document.getElementById('postBody');
