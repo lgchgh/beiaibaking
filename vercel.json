@@ -11,6 +11,9 @@
     },
     "api/posts.js": {
       "maxDuration": 60
+    },
+    "api/sitemap.js": {
+      "maxDuration": 15
     }
   },
   "redirects": [
