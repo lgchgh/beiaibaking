@@ -1,0 +1,25 @@
+name: Publish scheduled posts
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+jobs:
+  publish:
+    name: Publish due drafts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call publish-scheduled API
+        env:
+          BEIAI_API_URL: ${{ secrets.BEIAI_API_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          BASE="${BEIAI_API_URL%/api/posts}"
+          if [ -z "$BASE" ] || [ "$BASE" = "$BEIAI_API_URL" ]; then
+            echo "BEIAI_API_URL must end with /api/posts (e.g. https://your-site.com/api/posts)"
+            exit 1
+          fi
+          curl -sS -f -X POST "${BASE}/api/publish-scheduled" \
+            -H "x-cron-secret: ${CRON_SECRET}" \
+            -H "Authorization: Bearer ${CRON_SECRET}"

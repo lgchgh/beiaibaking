@@ -11,6 +11,10 @@
  *   - Random article counts: news 3-5, recipe 1-3, blog 0-1 per month
  *   - Random dates within month
  *
+ * Weekly run: 3 drafts (news + recipe + blog) with distinct UTC weekdays and random
+ * times in [00:00,16:00) UTC; POST to /api/posts for cron ingest; GitHub
+ * publish-scheduled triggers unlock at scheduled_publish_at.
+ *
  * Usage:
  *   node scripts/auto-generate.js                      → weekly run (deepseek)
  *   node scripts/auto-generate.js --bulk               → 6-month bulk (deepseek)
@@ -186,6 +190,56 @@ const BLOG_TOPICS_MASTER = [
 
 function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+function shuffleInPlace(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const t = a[i];
+    a[i] = a[j];
+    a[j] = t;
+  }
+  return a;
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  shuffleInPlace(a);
+  return a;
+}
+
+/** Next Monday 00:00:00 UTC (strictly after “this” UTC calendar week’s Monday if today is Mon). */
+function upcomingWeekMondayMidnightUtc(now = new Date()) {
+  const y = now.getUTCFullYear();
+  const m = now.getUTCMonth();
+  const day = now.getUTCDate();
+  const d = new Date(Date.UTC(y, m, day, 0, 0, 0, 0));
+  const dow = d.getUTCDay();
+  let delta = (1 - dow + 7) % 7;
+  if (delta === 0) delta = 7;
+  d.setUTCDate(d.getUTCDate() + delta);
+  return d;
+}
+
+function pickThreeDistinctDayOffsets() {
+  const a = shuffle([0, 1, 2, 3, 4, 5, 6]);
+  return [a[0], a[1], a[2]];
+}
+
+/** Random time on that weekday; UTC hour in [0,15], so always < 16:00 UTC. */
+function randomTimeOnWeekdayUtc(weekMondayMidnight, dayOffset) {
+  const d = new Date(weekMondayMidnight.getTime());
+  d.setUTCDate(d.getUTCDate() + dayOffset);
+  const h = randInt(0, 15);
+  const mi = randInt(0, 59);
+  const se = randInt(0, 59);
+  d.setUTCHours(h, mi, se, 0);
+  return d;
+}
+
+function monthLabelFromYmdUtc(ymd) {
+  const d = new Date(`${ymd}T12:00:00.000Z`);
+  return d.toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+}
 
 function randomDateInMonth(monthsAgo, index, total) {
   const d = new Date();
@@ -457,57 +511,98 @@ async function sendToReceiver(posts) {
   const valid = posts.filter(Boolean);
   if (valid.length === 0) { console.log('  [send] nothing to send'); return; }
   console.log(`  [send] sending ${valid.length} posts...`);
-  const res = await fetch(BEIAI_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-cron-secret': CRON_SECRET,
-      Authorization: `Bearer ${CRON_SECRET}`,
-    },
-    body: JSON.stringify(valid),
-  });
-  const text = await res.text();
-  let result;
-  try {
-    result = text ? JSON.parse(text) : {};
-  } catch {
-    result = { raw: text };
+  let lastErr;
+  for (let wave = 0; wave < 3; wave++) {
+    try {
+      const res = await fetch(BEIAI_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-cron-secret': CRON_SECRET,
+          Authorization: `Bearer ${CRON_SECRET}`,
+        },
+        body: JSON.stringify(valid),
+      });
+      const text = await res.text();
+      let result;
+      try {
+        result = text ? JSON.parse(text) : {};
+      } catch {
+        result = { raw: text };
+      }
+      if (!res.ok) {
+        const hint =
+          res.status === 401
+            ? ' Check GitHub / Vercel CRON_SECRET match (no extra spaces).'
+            : res.status === 503
+              ? ' Set CRON_SECRET on Vercel (Production) and redeploy.'
+              : '';
+        throw new Error(`Receiver ${res.status}: ${JSON.stringify(result)}${hint}`);
+      }
+      console.log(`  [send] inserted: ${result.inserted}, skipped: ${result.skipped}`);
+      (result.errors || []).forEach(e => console.warn(`  [send] skipped "${e.title}": ${e.reasons.join(', ')}`));
+      return;
+    } catch (e) {
+      lastErr = e;
+      if (wave < 2) {
+        const wait = 4000 * (wave + 1);
+        console.warn(`  [send] retry in ${wait}ms: ${e.message}`);
+        await sleep(wait);
+      }
+    }
   }
-  if (!res.ok) {
-    const hint =
-      res.status === 401
-        ? ' Check GitHub / Vercel CRON_SECRET match (no extra spaces).'
-        : res.status === 503
-          ? ' Set CRON_SECRET on Vercel (Production) and redeploy.'
-          : '';
-    throw new Error(`Receiver ${res.status}: ${JSON.stringify(result)}${hint}`);
-  }
-  console.log(`  [send] inserted: ${result.inserted}, skipped: ${result.skipped}`);
-  (result.errors || []).forEach(e => console.warn(`  [send] skipped "${e.title}": ${e.reasons.join(', ')}`));
+  throw lastErr;
 }
 
 // ─── Runs ─────────────────────────────────────────────────────────────────────
 
 async function runWeekly() {
-  console.log('[auto-generate] Weekly run...');
-  const date   = new Date().toISOString().split('T')[0];
-  const month  = getMonthLabel(0);
+  console.log('[auto-generate] Weekly run (staggered UTC schedule, drafts until publish)...');
+  const weekMonday = upcomingWeekMondayMidnightUtc(new Date());
+  const dayOffsets = pickThreeDistinctDayOffsets();
+  const typeOrder = shuffle(['news', 'recipe', 'blog']);
+  const plan = typeOrder.map((type, i) => {
+    const slot = randomTimeOnWeekdayUtc(weekMonday, dayOffsets[i]);
+    const ymd = slot.toISOString().split('T')[0];
+    return { type, slot, ymd, month: monthLabelFromYmdUtc(ymd) };
+  });
+  console.log('  [plan]', plan.map(p => `${p.type} @ ${p.slot.toISOString()}`).join(' | '));
+
   const memory = loadMemory();
   const posts  = [];
   const usedQ  = new Set();
   const usedA  = new Set();
   const topics = [...BLOG_TOPICS_MASTER];
 
-  try { posts.push(await generateNews(month, date, memory, usedQ)); }
-  catch (e) { console.error(`  [news] ${e.message}`); }
-  await sleep(2000);
-
-  try { posts.push(await generateRecipe(month, date, memory, usedA)); }
-  catch (e) { console.error(`  [recipe] ${e.message}`); }
-  await sleep(2000);
-
-  try { posts.push(await generateBlog(month, date, memory, topics)); }
-  catch (e) { console.error(`  [blog] ${e.message}`); }
+  for (const p of plan) {
+    await sleep(2000);
+    try {
+      if (p.type === 'news') {
+        const post = await generateNews(p.month, p.ymd, memory, usedQ);
+        if (post) {
+          post.published = false;
+          post.scheduled_publish_at = p.slot.toISOString();
+          posts.push(post);
+        }
+      } else if (p.type === 'recipe') {
+        const post = await generateRecipe(p.month, p.ymd, memory, usedA);
+        if (post) {
+          post.published = false;
+          post.scheduled_publish_at = p.slot.toISOString();
+          posts.push(post);
+        }
+      } else {
+        const post = await generateBlog(p.month, p.ymd, memory, topics);
+        if (post) {
+          post.published = false;
+          post.scheduled_publish_at = p.slot.toISOString();
+          posts.push(post);
+        }
+      }
+    } catch (e) {
+      console.error(`  [${p.type}] ${e.message}`);
+    }
+  }
 
   await sendToReceiver(posts);
   console.log('[auto-generate] Weekly run complete.');

@@ -11,6 +11,13 @@ function xmlEsc(s) {
     .replace(/"/g, '&quot;');
 }
 
+function safeLastmod(ts) {
+  if (ts == null || ts === '') return '';
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toISOString().slice(0, 10);
+}
+
 const STATIC_PAGES = [
   { path: '/', changefreq: 'weekly', priority: '1.0' },
   { path: '/gallery.html', changefreq: 'weekly', priority: '0.9' },
@@ -37,8 +44,8 @@ function buildXml(postRows) {
       ? String(row.type).toLowerCase()
       : 'blog';
     const loc = `${ORIGIN}/post.html?slug=${encodeURIComponent(slug)}&type=${encodeURIComponent(type)}`;
-    const ts = row.updated_at || row.created_at;
-    const lastmod = ts ? new Date(ts).toISOString().slice(0, 10) : '';
+    const ts = row.published_at || row.updated_at || row.created_at;
+    const lastmod = safeLastmod(ts);
     body += '  <url>';
     body += `<loc>${xmlEsc(loc)}</loc>`;
     if (lastmod) body += `<lastmod>${lastmod}</lastmod>`;
@@ -49,28 +56,44 @@ function buildXml(postRows) {
   return body;
 }
 
-module.exports = async (req, res) => {
-  if (req.method !== 'GET') {
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    return res.status(405).end('Method not allowed');
-  }
+function sendXml(res, body) {
+  res.writeHead(200, {
+    'Content-Type': 'application/xml; charset=utf-8',
+    'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+  });
+  return res.end(body);
+}
 
-  let postRows = [];
+module.exports = async (req, res) => {
   try {
-    await ensurePostsSchema();
-    const postsR = await sql`
-      SELECT slug, type, updated_at, created_at
+    if (req.method !== 'GET') {
+      res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8' });
+      return res.end('Method not allowed');
+    }
+
+    let postRows = [];
+    try {
+      await ensurePostsSchema();
+      const postsR = await sql`
+      SELECT slug, type, updated_at, created_at, published_at
       FROM posts
       WHERE published = true AND slug IS NOT NULL AND TRIM(BOTH FROM slug::text) <> ''
-      ORDER BY updated_at DESC NULLS LAST, created_at DESC
+      ORDER BY COALESCE(published_at, updated_at) DESC NULLS LAST, created_at DESC
     `;
-    postRows = postsR.rows || [];
-  } catch (e) {
-    console.error('sitemap: skipping post URLs (database error), static pages only', e.message || e);
-  }
+      postRows = postsR.rows || [];
+    } catch (e) {
+      console.error('sitemap: skipping post URLs (database error), static pages only', e.message || e);
+    }
 
-  const body = buildXml(postRows);
-  res.setHeader('Content-Type', 'application/xml; charset=utf-8');
-  res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
-  return res.status(200).end(body, 'utf8');
+    return sendXml(res, buildXml(postRows));
+  } catch (e) {
+    console.error('sitemap: fatal, serving static URLs only', e.message || e);
+    try {
+      return sendXml(res, buildXml([]));
+    } catch (e2) {
+      console.error('sitemap: fallback failed', e2.message || e2);
+      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+      return res.end('Sitemap error');
+    }
+  }
 };

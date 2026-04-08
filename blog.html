@@ -290,7 +290,7 @@
                 encodeURIComponent(type);
               var title = (p.title || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
               var pin = p.pinned ? '<span class="share-pinned-badge">Pinned</span>' : '';
-              var date = formatDate(p.created_at);
+              var date = formatDate(p.published_at || p.created_at);
               return (
                 '<li><a class="share-list-link" href="' +
                 href +

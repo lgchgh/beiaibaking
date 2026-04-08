@@ -39,16 +39,16 @@ async function handleGet(req, res) {
         let rowsR;
         if (type) {
           rowsR = await sql`
-            SELECT id, title, slug, type, excerpt, cover_image, pinned, created_at FROM posts
+            SELECT id, title, slug, type, excerpt, cover_image, pinned, created_at, published_at FROM posts
             WHERE published = true AND type = ${type}
-            ORDER BY COALESCE(pinned, false) DESC, created_at DESC
+            ORDER BY COALESCE(pinned, false) DESC, COALESCE(published_at, created_at) DESC
             LIMIT ${limit} OFFSET ${offset}
           `;
         } else {
           rowsR = await sql`
-            SELECT id, title, slug, type, excerpt, cover_image, pinned, created_at FROM posts
+            SELECT id, title, slug, type, excerpt, cover_image, pinned, created_at, published_at FROM posts
             WHERE published = true
-            ORDER BY COALESCE(pinned, false) DESC, created_at DESC
+            ORDER BY COALESCE(pinned, false) DESC, COALESCE(published_at, created_at) DESC
             LIMIT ${limit} OFFSET ${offset}
           `;
         }
@@ -62,9 +62,9 @@ async function handleGet(req, res) {
         return;
       }
       if (type) {
-        result = await sql`SELECT id, title, slug, type, excerpt, cover_image, pinned, created_at FROM posts WHERE published = true AND type = ${type} ORDER BY COALESCE(pinned, false) DESC, created_at DESC`;
+        result = await sql`SELECT id, title, slug, type, excerpt, cover_image, pinned, created_at, published_at FROM posts WHERE published = true AND type = ${type} ORDER BY COALESCE(pinned, false) DESC, COALESCE(published_at, created_at) DESC`;
       } else {
-        result = await sql`SELECT id, title, slug, type, excerpt, cover_image, pinned, created_at FROM posts WHERE published = true ORDER BY COALESCE(pinned, false) DESC, created_at DESC`;
+        result = await sql`SELECT id, title, slug, type, excerpt, cover_image, pinned, created_at, published_at FROM posts WHERE published = true ORDER BY COALESCE(pinned, false) DESC, COALESCE(published_at, created_at) DESC`;
       }
     } else {
       const user = auth.requireAuth(req);
@@ -110,7 +110,9 @@ async function handlePost(req, res) {
       const s = attempt === 0 ? baseSlug : `${baseSlug}-${attempt + 1}`;
       try {
         const cov = String(cover_image || '').slice(0, 500);
-        const r = await sql`INSERT INTO posts (title, slug, content, type, excerpt, cover_image, published, pinned) VALUES (${String(title).slice(0, 200)}, ${s}, ${content}, ${postType}, ${ex}, ${cov}, ${!!published}, ${!!pinned}) RETURNING *`;
+        const pub = !!published;
+        const publishedAt = pub ? new Date() : null;
+        const r = await sql`INSERT INTO posts (title, slug, content, type, excerpt, cover_image, published, pinned, published_at) VALUES (${String(title).slice(0, 200)}, ${s}, ${content}, ${postType}, ${ex}, ${cov}, ${pub}, ${!!pinned}, ${publishedAt}) RETURNING *`;
         const row = r.rows[0];
         if (row && row.pinned) await clearOtherPinnedPosts(postType, row.id);
         res.status(201).json(row);

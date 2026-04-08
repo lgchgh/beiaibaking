@@ -198,8 +198,8 @@
             '@context': 'https://schema.org',
             '@type': 'Article',
             headline: post.title || '',
-            datePublished: post.created_at || undefined,
-            dateModified: post.updated_at || post.created_at || undefined,
+            datePublished: post.published_at || post.created_at || undefined,
+            dateModified: post.updated_at || post.published_at || post.created_at || undefined,
             author: { '@type': 'Organization', name: 'Beiai Baking' },
             publisher: { '@type': 'Organization', name: 'Beiai Baking', logo: { '@type': 'ImageObject', url: SITE + '/assets/images/logo.png' } },
             mainEntityOfPage: { '@type': 'WebPage', '@id': pageUrl },
@@ -214,7 +214,7 @@
           }
           ldEl.textContent = JSON.stringify(ld);
           document.getElementById('postTitle').textContent = post.title || '';
-          document.getElementById('postDate').textContent = post.created_at ? new Date(post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+          document.getElementById('postDate').textContent = (post.published_at || post.created_at) ? new Date(post.published_at || post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
           var bodyEl = document.getElementById('postBody');
           bodyEl.innerHTML = post.content || '';
           // Third-party hotlinking: some hosts block requests with a foreign Referer; Google is often unreachable in some regions.

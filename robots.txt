@@ -5,5 +5,5 @@ Allow: /api/sitemap
 Disallow: /admin
 Disallow: /api/
 
-# 动态站点地图（Vercel 将 /sitemap.xml 308 到此处）；须 Allow，否则与 Disallow: /api/ 冲突
-Sitemap: https://www.beiaibaking.net/api/sitemap
+# 动态站点地图由 /sitemap.xml 经 rewrite 指向 /api/sitemap；抓取器请用 canonical URL
+Sitemap: https://www.beiaibaking.net/sitemap.xml

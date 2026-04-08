@@ -921,6 +921,17 @@
       const res = await api('/posts');
       const rows = await res.json();
       const tbody = document.querySelector('#postsTable tbody');
+      function postStatusCell(r) {
+        if (r.schedule_abandoned) return 'Abandoned (draft)';
+        if (r.published) return 'Published';
+        if (r.scheduled_publish_at) {
+          try {
+            var d = new Date(r.scheduled_publish_at);
+            return 'Scheduled · ' + d.toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+          } catch (e) { return 'Scheduled'; }
+        }
+        return 'Draft';
+      }
       tbody.innerHTML = (rows || []).map(r => `
         <tr>
           <td><input type="checkbox" class="posts-row-cb" data-id="${r.id}" /></td>
@@ -928,7 +939,7 @@
           <td>${(r.type || 'news').charAt(0).toUpperCase() + (r.type || 'news').slice(1)}</td>
           <td>${(r.title || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>
           <td>${r.pinned ? 'Yes' : ''}</td>
-          <td>${r.published ? 'Published' : 'Draft'}</td>
+          <td>${postStatusCell(r).replace(/</g, '&lt;')}</td>
           <td>
             <button class="btn btn-sm" data-edit="${r.id}">Edit</button>
             <button class="btn btn-sm btn-danger" data-del="${r.id}">Del</button>

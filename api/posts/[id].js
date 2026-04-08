@@ -72,7 +72,16 @@ async function handlePut(req, res) {
     const cover_image = String(body.cover_image ?? row.cover_image ?? '').slice(0, 500);
     const published = body.published !== undefined ? !!body.published : row.published;
     const pinned = body.pinned !== undefined ? !!body.pinned : !!row.pinned;
-    const r = await sql`UPDATE posts SET title=${title}, slug=${slug}, content=${content}, type=${typeVal}, excerpt=${excerpt}, cover_image=${cover_image}, published=${published}, pinned=${pinned}, updated_at=NOW() WHERE id = ${numId} RETURNING *`;
+    const turningOn = published && !row.published;
+    const r = turningOn
+      ? await sql`
+          UPDATE posts SET
+            title=${title}, slug=${slug}, content=${content}, type=${typeVal}, excerpt=${excerpt}, cover_image=${cover_image},
+            published=${published}, pinned=${pinned}, updated_at=NOW(),
+            published_at=COALESCE(published_at, NOW()),
+            scheduled_publish_at=NULL, schedule_abandoned=false, scheduled_publish_fail_count=0
+          WHERE id = ${numId} RETURNING *`
+      : await sql`UPDATE posts SET title=${title}, slug=${slug}, content=${content}, type=${typeVal}, excerpt=${excerpt}, cover_image=${cover_image}, published=${published}, pinned=${pinned}, updated_at=NOW() WHERE id = ${numId} RETURNING *`;
     const updated = r.rows[0];
     if (updated && updated.pinned) await clearOtherPinnedPosts(typeVal, numId);
     res.status(200).json(updated || {});
