@@ -6,6 +6,12 @@ module.exports = async (req, res) => {
     return;
   }
 
+  if (req.query?.__action === 'logout') {
+    auth.clearAuthCookie(res);
+    res.status(200).json({ success: true });
+    return;
+  }
+
   try {
     const { username, password } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
     if (!username || !password) {

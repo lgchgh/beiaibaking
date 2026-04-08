@@ -141,6 +141,13 @@ async function handlePost(req, res) {
 
 module.exports = async (req, res) => {
   await ensurePostsSchema();
+
+  const publishDue =
+    req.query?.__publishDue === '1' || String(req.query?.__publishDue || '').toLowerCase() === 'true';
+  if (publishDue && (req.method === 'GET' || req.method === 'POST')) {
+    return require('../lib/publishScheduledCron')(req, res);
+  }
+
   if (req.method === 'GET') return handleGet(req, res);
   if (req.method === 'POST') {
     if (readCronSecretFromRequest(req)) {

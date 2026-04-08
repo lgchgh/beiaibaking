@@ -14,9 +14,6 @@
     },
     "api/sitemap.js": {
       "maxDuration": 15
-    },
-    "api/publish-scheduled.js": {
-      "maxDuration": 60
     }
   },
   "headers": [
@@ -45,6 +42,8 @@
   ],
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
+    { "source": "/api/publish-scheduled", "destination": "/api/posts?__publishDue=1" },
+    { "source": "/api/logout", "destination": "/api/login?__action=logout" },
     { "source": "/admin", "destination": "/admin/index.html" },
     { "source": "/favicon.ico", "destination": "/assets/images/logo.png" }
   ]
