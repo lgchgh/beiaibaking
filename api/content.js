@@ -13,22 +13,40 @@ function mergeLegacyHomeIntro(data) {
 }
 
 /**
- * DB may still hold older legal copy with mailto:. Rewrite on read so the live site
- * matches the static HTML defaults (links to contact.html).
+ * DB may still hold older legal copy. Rewrite on read so legal pages consistently
+ * show the current support mailbox.
  */
 function rewriteLegalContactHtml(html) {
   if (!html || typeof html !== 'string') return html;
   let s = html;
   s = s.replace(
     /<a\s+href=['"]mailto:admin@beiaibaking\.net['"][^>]*>[\s\S]*?<\/a>/gi,
-    '<a href="contact.html">contact us</a>'
+    '<a href="mailto:info@beiaibaking.net">info@beiaibaking.net</a>'
+  );
+  s = s.replace(
+    /<a\s+href=['"]contact\.html['"][^>]*>\s*contact us\s*<\/a>/gi,
+    '<a href="mailto:info@beiaibaking.net">info@beiaibaking.net</a>'
+  );
+  s = s.replace(
+    /<a\s+href=['"]contact\.html['"][^>]*>\s*Contact page\s*<\/a>/gi,
+    '<a href="mailto:info@beiaibaking.net">info@beiaibaking.net</a>'
   );
   s = s.replace(
     /when you contact us by email \(e\.g\. admin@beiaibaking\.net\)/gi,
-    'when you contact us through our <a href="contact.html">Contact page</a>'
+    'when you email us at <a href="mailto:info@beiaibaking.net">info@beiaibaking.net</a>'
   );
-  s = s.replace(/please contact us at admin@beiaibaking\.net/gi, 'please <a href="contact.html">contact us</a>');
-  s = s.replace(/contact us at admin@beiaibaking\.net/gi, 'please <a href="contact.html">contact us</a>');
+  s = s.replace(
+    /please contact us at admin@beiaibaking\.net/gi,
+    'please email us at <a href="mailto:info@beiaibaking.net">info@beiaibaking.net</a>'
+  );
+  s = s.replace(
+    /contact us at admin@beiaibaking\.net/gi,
+    'email us at <a href="mailto:info@beiaibaking.net">info@beiaibaking.net</a>'
+  );
+  s = s.replace(
+    /<a\s+href=['"]mailto:info@beiaibaking\.net['"][^>]*>\s*contact us\s*<\/a>/gi,
+    '<a href="mailto:info@beiaibaking.net">info@beiaibaking.net</a>'
+  );
   return s;
 }
 
