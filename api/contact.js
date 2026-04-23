@@ -104,7 +104,7 @@ module.exports = (req, res) => {
     return reply(400, { error: fields.error });
   }
 
-  const to = (process.env.CONTACT_TO_EMAIL || 'admin@beiaibaking.net').trim();
+  const to = (process.env.CONTACT_TO_EMAIL || 'info@beiaibaking.net').trim();
   const from = (process.env.RESEND_FROM || 'Beiai Baking <onboarding@resend.dev>').trim();
   const plain = `From: ${fields.email}\nSubject: ${fields.subject}\n\n${fields.message}`;
   const html = `<p><strong>From:</strong> ${esc(fields.email)}</p><p><strong>Subject:</strong> ${esc(fields.subject)}</p><p style="white-space:pre-wrap">${esc(fields.message)}</p>`;

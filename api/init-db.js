@@ -105,7 +105,7 @@ module.exports = async (req, res) => {
         ['about','story_title','Our Story'],
         ['about','story_content',"Hi, I'm Nova. As a mother of three, my journey from a home baking enthusiast to a full-time professional instructor has been a path filled with unexpected joy.\n\nIt all began between 2001 and 2011. Driven by the simple desire to provide variety for my children's meals, I started following videos to bake simple cakes and cookies. What started as a parenting necessity soon sparked a deep passion. I found myself creating birthday cakes for friends and family, and as my curiosity grew, so did my ambition to master the craft.\n\nIn 2012, I decided to take my skills to the next level. My pursuit of excellence led me to Paris, France, to study classical pastry arts, followed by a journey to Seoul, South Korea, to master the latest trends in Korean flower piping. Two years later, I became a certified Wilton instructor, officially launching my professional career.\n\nSince 2014, I have had the privilege of teaching over 10,000 students. My work and journey have been featured on national television and captured in a personal documentary, aimed at inspiring homemakers to discover their own passions and careers.\n\nI am profoundly grateful to my family and friends—their support has shaped who I am today. Baking is a journey of endless surprises; through this website, I hope to share that energy with you. I invite you to join me on this wonderful baking adventure!"],
         ['contact','title','Send Us a Message'],
-        ['site','site_email','admin@beiaibaking.net'],
+        ['site','site_email','info@beiaibaking.net'],
         ['site','site_email_label',''],
         ['site','site_instagram',''],
         ['site','site_pinterest',''],
