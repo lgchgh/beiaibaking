@@ -20,6 +20,10 @@ function rewriteLegalContactHtml(html) {
   if (!html || typeof html !== 'string') return html;
   let s = html;
   s = s.replace(
+    /Beiai Baking\s*[（(]?\s*[“"]we[”"]\s*,\s*[“"]our[”"]\s*,\s*or\s*[“"]us[”"]\s*[)）]?\s*operates this website\.\s*This Privacy Policy explains how we collect, use, and protect information when you visit our site\./gi,
+    'This website, beiaibaking.net, is owned and operated by Guangzhou Beiai Baking Utensils Trading Co., Ltd. (referred to as "Beiai Baking", "we", "our", or "us"). This Privacy Policy explains how we collect, use, and protect information when you visit our site.'
+  );
+  s = s.replace(
     /<a\s+href=['"]mailto:admin@beiaibaking\.net['"][^>]*>[\s\S]*?<\/a>/gi,
     '<a href="mailto:info@beiaibaking.net">info@beiaibaking.net</a>'
   );
