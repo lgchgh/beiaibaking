@@ -1,6 +1,6 @@
 /**
  * Public contact form → email via Resend (https://resend.com).
- * Env: RESEND_API_KEY (required), CONTACT_TO_EMAIL, RESEND_FROM
+ * Env: RESEND_API_KEY (required)
  *
  * POST body: only uses req.body (Vercel-parsed). Do not read req stream again —
  * attaching data/end listeners after Vercel consumed the body can break POST on some setups.
@@ -105,7 +105,7 @@ module.exports = (req, res) => {
   }
 
   const to = 'info@beiaibaking.net';
-  const from = (process.env.RESEND_FROM || 'Beiai Baking <onboarding@resend.dev>').trim();
+  const from = 'Beiai Baking <info@beiaibaking.net>';
   const plain = `From: ${fields.email}\nSubject: ${fields.subject}\n\n${fields.message}`;
   const html = `<p><strong>From:</strong> ${esc(fields.email)}</p><p><strong>Subject:</strong> ${esc(fields.subject)}</p><p style="white-space:pre-wrap">${esc(fields.message)}</p>`;
 
@@ -144,7 +144,7 @@ module.exports = (req, res) => {
         return;
       }
 
-      reply(200, { success: true, recipient: to });
+      reply(200, { success: true });
     })
     .catch((e) => {
       console.error('contact handler error', e);
