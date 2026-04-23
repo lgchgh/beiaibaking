@@ -144,7 +144,7 @@ module.exports = (req, res) => {
         return;
       }
 
-      reply(200, { success: true });
+      reply(200, { success: true, recipient: to });
     })
     .catch((e) => {
       console.error('contact handler error', e);
