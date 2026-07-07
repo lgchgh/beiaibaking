@@ -189,6 +189,10 @@
         <button type="button" class="btn btn-primary" id="newPostBtn">New Post</button>
         <button type="button" class="btn" id="batchEditPostsBtn" style="margin-left:0.5rem;display:none">Edit Selected</button>
         <button type="button" class="btn btn-danger" id="batchDelPostsBtn" style="margin-left:0.5rem;display:none">Delete Selected</button>
+        <div class="form-group" style="margin-top:1rem">
+          <label for="postsSearch">Search posts</label>
+          <input type="search" id="postsSearch" placeholder="Search title, slug, type, status, or ID" />
+        </div>
         <div id="postForm" style="display:none; margin-top:1rem; padding:1rem; border:1px solid #eee; border-radius:8px">
           <input type="hidden" id="postId" />
           <div class="form-group">
@@ -925,7 +929,7 @@
       const res = await api('/posts');
       const rows = await res.json();
       const tbody = document.querySelector('#postsTable tbody');
-      const displayRows = Array.isArray(rows) ? rows.slice() : [];
+      let displayRows = Array.isArray(rows) ? rows.slice() : [];
       if (postsSortByType) {
         const rank = { news: 0, recipe: 1, blog: 2 };
         displayRows.sort((a, b) => {
@@ -945,6 +949,16 @@
           } catch (e) { return 'Scheduled'; }
         }
         return 'Draft';
+      }
+      const postsSearch = (document.getElementById('postsSearch')?.value || '').trim().toLowerCase();
+      if (postsSearch) {
+        displayRows = displayRows.filter(r => [
+          r.id,
+          r.type,
+          r.title,
+          r.slug,
+          postStatusCell(r)
+        ].some(v => String(v || '').toLowerCase().includes(postsSearch)));
       }
       tbody.innerHTML = displayRows.map(r => `
         <tr>
@@ -966,6 +980,8 @@
       const sortBtn = document.getElementById('sortPostsByTypeBtn');
       if (sortBtn) sortBtn.textContent = 'Type' + (postsSortByType ? (postsSortTypeDir > 0 ? ' ↑' : ' ↓') : '');
     }
+
+    document.getElementById('postsSearch').addEventListener('input', () => loadPosts());
 
     document.getElementById('sortPostsByTypeBtn').addEventListener('click', () => {
       if (postsSortByType) postsSortTypeDir *= -1;
