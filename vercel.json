@@ -14,9 +14,21 @@
     },
     "api/sitemap.js": {
       "maxDuration": 15
+    },
+    "api/post-page.js": {
+      "maxDuration": 30,
+      "includeFiles": "post.html"
     }
   },
   "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
+      ]
+    },
     {
       "source": "/blog.html",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
@@ -41,6 +53,7 @@
     }
   ],
   "rewrites": [
+    { "source": "/post.html", "destination": "/api/post-page" },
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
     { "source": "/api/publish-scheduled", "destination": "/api/posts?__publishDue=1" },
     { "source": "/api/logout", "destination": "/api/login?__action=logout" },

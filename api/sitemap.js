@@ -66,7 +66,7 @@ function sendXml(res, body) {
 
 module.exports = async (req, res) => {
   try {
-    if (req.method !== 'GET') {
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
       res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8' });
       return res.end('Method not allowed');
     }
@@ -85,7 +85,15 @@ module.exports = async (req, res) => {
       console.error('sitemap: skipping post URLs (database error), static pages only', e.message || e);
     }
 
-    return sendXml(res, buildXml(postRows));
+    const body = buildXml(postRows);
+    if (req.method === 'HEAD') {
+      res.writeHead(200, {
+        'Content-Type': 'application/xml; charset=utf-8',
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+      });
+      return res.end();
+    }
+    return sendXml(res, body);
   } catch (e) {
     console.error('sitemap: fatal, serving static URLs only', e.message || e);
     try {

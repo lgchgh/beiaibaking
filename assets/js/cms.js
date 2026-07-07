@@ -143,7 +143,14 @@
         el.setAttribute('href', 'mailto:' + val);
       });
       document.querySelectorAll('[data-href="' + key + '"]').forEach(function (el) {
-        el.setAttribute('href', val || '#');
+        var href = String(val || '').trim();
+        if (href) {
+          el.setAttribute('href', href);
+          el.removeAttribute('aria-disabled');
+        } else {
+          el.removeAttribute('href');
+          el.setAttribute('aria-disabled', 'true');
+        }
       });
     });
   }
