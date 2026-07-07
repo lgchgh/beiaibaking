@@ -3,6 +3,7 @@
  * Set INIT_SECRET in Vercel env. After init, remove or change the secret.
  */
 const { sql } = require('../lib/db');
+const { buildGalleryAlt } = require('../lib/galleryAlt');
 
 const HOME_INTRO_MAIN_DEFAULT = "Hi, I'm Nova.\n\nMy baking journey began with a simple cookie for my children and evolved into a global pursuit of mastery. From studying in Paris and Seoul to being featured on national TV, I've dedicated my life to inspiring others through the art of baking. I invite you to join me on this wonderful adventure.";
 
@@ -89,7 +90,8 @@ module.exports = async (req, res) => {
       ];
       for (let i = 0; i < seed.length; i++) {
         const [cat, sub, src, cap] = seed[i];
-        await sql`INSERT INTO gallery_images (category, subcategory, src, caption, alt, sort_order) VALUES (${cat}, ${sub}, ${src}, ${cap}, ${cap}, ${i})`;
+        const alt = buildGalleryAlt({ category: cat, subcategory: sub, src, caption: cap, alt: cap });
+        await sql`INSERT INTO gallery_images (category, subcategory, src, caption, alt, sort_order) VALUES (${cat}, ${sub}, ${src}, ${cap}, ${alt}, ${i})`;
       }
     }
     const { rows: scRows } = await sql`SELECT COUNT(*) as c FROM site_content`;

@@ -1,4 +1,5 @@
 const auth = require('../lib/auth');
+const { buildGalleryAlt } = require('../lib/galleryAlt');
 const { canonicalCategorySubcategory } = require('../lib/galleryCanonical');
 const { sql } = require('../lib/db');
 
@@ -258,7 +259,14 @@ async function handlePost(req, res) {
       caption,
       alt || caption
     );
-    const r = await sql`INSERT INTO gallery_images (category, subcategory, src, caption, alt, sort_order) VALUES (${catW}, ${subW}, ${src}, ${caption}, ${alt || caption}, ${so}) RETURNING *`;
+    const finalAlt = buildGalleryAlt({
+      category: catW,
+      subcategory: subW,
+      src,
+      caption,
+      alt,
+    });
+    const r = await sql`INSERT INTO gallery_images (category, subcategory, src, caption, alt, sort_order) VALUES (${catW}, ${subW}, ${src}, ${caption}, ${finalAlt}, ${so}) RETURNING *`;
     res.status(201).json(r.rows[0]);
   } catch (e) {
     console.error(e);

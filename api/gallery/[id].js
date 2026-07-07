@@ -1,4 +1,5 @@
 const auth = require('../../lib/auth');
+const { buildGalleryAlt } = require('../../lib/galleryAlt');
 const { canonicalCategorySubcategory } = require('../../lib/galleryCanonical');
 const { sql } = require('../../lib/db');
 
@@ -44,7 +45,14 @@ async function handlePut(req, res) {
       alt
     );
     const sort_order = body.sort_order ?? row.sort_order;
-    const r = await sql`UPDATE gallery_images SET category=${category}, subcategory=${subcategory}, src=${src}, caption=${caption}, alt=${alt}, sort_order=${sort_order} WHERE id = ${numId} RETURNING *`;
+    const finalAlt = buildGalleryAlt({
+      category,
+      subcategory,
+      src,
+      caption,
+      alt,
+    });
+    const r = await sql`UPDATE gallery_images SET category=${category}, subcategory=${subcategory}, src=${src}, caption=${caption}, alt=${finalAlt}, sort_order=${sort_order} WHERE id = ${numId} RETURNING *`;
     res.status(200).json(r.rows[0] || {});
   } catch (e) {
     console.error(e);

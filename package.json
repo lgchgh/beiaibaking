@@ -9,7 +9,8 @@
     "dev": "vercel dev",
     "build": "echo 'Static site'",
     "init-db": "node scripts/init-db.js",
-    "audit:content": "node scripts/audit-content-quality.js"
+    "audit:content": "node scripts/audit-content-quality.js",
+    "backfill:gallery-alt": "node scripts/backfill-gallery-alt.js"
   },
   "devDependencies": {
     "dotenv": "^16.0.0"

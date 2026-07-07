@@ -46,6 +46,52 @@
       .replace(/</g, '&lt;');
   }
 
+  function normalizeAltKey(s) {
+    return String(s == null ? '' : s)
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ');
+  }
+
+  var galleryAltFallbacks = {
+    decorated: {
+      'bean paste piping': 'Decorated cake with bean paste piping',
+      'blossoms': 'Decorated cake with blossom details',
+      'buttercream piping': 'Buttercream cake with piped details',
+      'cute bear': 'Cute bear themed decorated cake',
+    },
+    fondant: {
+      'beer': 'Beer themed fondant cake',
+      'sleeper': 'Sleeping baby fondant cake',
+      'wedding': 'Fondant wedding cake',
+    },
+    french: {
+      heart: 'Heart shaped French pastry',
+      macaron: 'French pastry topped with macarons',
+      mirror: 'Mirror glaze French pastry',
+    },
+    cookies: {
+      cookie: 'Decorated iced cookie',
+      love: 'Love themed decorated iced cookie',
+    },
+  };
+
+  var galleryAltCategoryDefaults = {
+    cookies: 'Decorated iced cookie',
+    decorated: 'Custom decorated cake',
+    fondant: 'Custom fondant cake',
+    french: 'French pastry',
+  };
+
+  function buildGalleryImageAlt(row, category) {
+    var raw = String((row && (row.alt || row.caption)) || '').trim();
+    var key = normalizeAltKey(raw);
+    var mapped = (galleryAltFallbacks[category] || {})[key];
+    if (mapped) return mapped;
+    if (raw) return raw;
+    return galleryAltCategoryDefaults[category] || 'Gallery image';
+  }
+
   /** 首页多区块并行请求易撞上无服务器冷启动/DB 瞬时失败，做有限次重试 */
   function fetchGalleryRows(category) {
     var url = '/api/gallery?category=' + encodeURIComponent(category);
@@ -166,13 +212,13 @@
       .catch(function () {});
   }
 
-  function renderHomeThumbGrid(grid, rows) {
+  function renderHomeThumbGrid(grid, rows, category) {
     if (!Array.isArray(rows)) rows = [];
     var items = rows.slice(0, 4);
     grid.innerHTML = items
       .map(function (r) {
         var src = resolveImgSrc(r.src || '');
-        var alt = escAttr(r.alt || r.caption || '');
+        var alt = escAttr(buildGalleryImageAlt(r, category));
         var cap = (r.caption || '').replace(/</g, '&lt;');
         return (
           '<figure class="home-thumb-item"><img class="thumb-image" src="' +
@@ -233,7 +279,7 @@
       if (!cat) return;
       setTimeout(function () {
         fetchGalleryRows(cat).then(function (rows) {
-          renderHomeThumbGrid(grid, rows);
+          renderHomeThumbGrid(grid, rows, cat);
         });
       }, idx * 75);
     });
@@ -251,7 +297,7 @@
         var section = grid.closest('[data-category]');
         var cat = section ? section.getAttribute('data-category') : '';
         if (!cat) return;
-        renderHomeThumbGrid(grid, bundle[cat] || []);
+        renderHomeThumbGrid(grid, bundle[cat] || [], cat);
       });
     });
   }
@@ -413,9 +459,9 @@
               var src = resolveImgSrc(r.src || '');
               return (
                 '<figure class="category-item"><img class="thumb-image" src="' +
-                src +
+                escAttr(src) +
                 '" alt="' +
-                (r.alt || r.caption || '').replace(/"/g, '&quot;') +
+                escAttr(buildGalleryImageAlt(r, cat)) +
                 '" loading="lazy" /><figcaption>' +
                 (r.caption || '').replace(/</g, '&lt;') +
                 '</figcaption></figure>'
