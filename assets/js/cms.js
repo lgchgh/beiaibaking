@@ -8,6 +8,12 @@
     'about.html': 'about', 'about': 'about',
     'contact.html': 'contact', 'contact': 'contact',
     'gallery.html': 'gallery', 'gallery': 'gallery',
+    'chocolate.html': 'gallery', 'chocolate': 'gallery',
+    'cookies.html': 'gallery', 'cookies': 'gallery',
+    'fondant-cakes.html': 'gallery', 'fondant-cakes': 'gallery',
+    'french-pastries.html': 'gallery', 'french-pastries': 'gallery',
+    'piped-cakes.html': 'gallery', 'piped-cakes': 'gallery',
+    'copyright.html': 'copyright', 'copyright': 'copyright',
     'blog.html': 'share', 'blog': 'share', 'share': 'share',
     'post.html': 'post', 'post': 'post',
     'privacy-policy.html': 'privacy', 'privacy-policy': 'privacy',
@@ -482,7 +488,7 @@
     logVisit();
     loadContent();
     if (page === 'home') loadHomeThumbs();
-    if (page === 'gallery') loadGalleryThumbs();
+    if (page === 'gallery' || document.querySelector('[data-gallery-api]')) loadGalleryThumbs();
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);

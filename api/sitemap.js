@@ -25,8 +25,14 @@ const STATIC_PAGES = [
   { path: '/about.html', changefreq: 'monthly', priority: '0.8' },
   { path: '/contact.html', changefreq: 'monthly', priority: '0.75' },
   { path: '/decorated-cakes.html', changefreq: 'monthly', priority: '0.65' },
+  { path: '/piped-cakes.html', changefreq: 'monthly', priority: '0.65' },
+  { path: '/fondant-cakes.html', changefreq: 'monthly', priority: '0.65' },
+  { path: '/french-pastries.html', changefreq: 'monthly', priority: '0.65' },
+  { path: '/cookies.html', changefreq: 'monthly', priority: '0.65' },
+  { path: '/chocolate.html', changefreq: 'monthly', priority: '0.55' },
   { path: '/privacy-policy.html', changefreq: 'yearly', priority: '0.3' },
   { path: '/terms-of-use.html', changefreq: 'yearly', priority: '0.3' },
+  { path: '/copyright.html', changefreq: 'yearly', priority: '0.3' },
 ];
 
 function buildXml(postRows) {
