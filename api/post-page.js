@@ -72,19 +72,56 @@ function replaceMeta(html, post) {
   const modified = post.updated_at || published;
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: title,
-    description,
-    datePublished: published || undefined,
-    dateModified: modified || undefined,
-    author: { '@type': 'Organization', name: 'Beiai Baking' },
-    publisher: {
-      '@type': 'Organization',
-      name: 'Beiai Baking',
-      logo: { '@type': 'ImageObject', url: `${ORIGIN}/assets/images/logo.png` },
-    },
-    mainEntityOfPage: { '@type': 'WebPage', '@id': pageUrl },
-    image,
+    '@graph': [
+      {
+        '@type': 'Organization',
+        '@id': `${ORIGIN}/#organization`,
+        name: 'Beiai Baking',
+        url: `${ORIGIN}/`,
+        logo: { '@type': 'ImageObject', url: `${ORIGIN}/assets/images/logo.png` },
+      },
+      {
+        '@type': 'WebSite',
+        '@id': `${ORIGIN}/#website`,
+        name: 'Beiai Baking',
+        url: `${ORIGIN}/`,
+        inLanguage: 'en',
+      },
+      {
+        '@type': 'WebPage',
+        '@id': `${pageUrl}#webpage`,
+        url: pageUrl,
+        name: fullTitle,
+        description,
+        isPartOf: { '@id': `${ORIGIN}/#website` },
+        about: { '@id': `${ORIGIN}/#organization` },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        '@id': `${pageUrl}#breadcrumb`,
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: `${ORIGIN}/` },
+          { '@type': 'ListItem', position: 2, name: 'Share', item: `${ORIGIN}/blog.html` },
+          { '@type': 'ListItem', position: 3, name: title, item: pageUrl },
+        ],
+      },
+      {
+        '@type': 'Article',
+        '@id': `${pageUrl}#article`,
+        headline: title,
+        description,
+        datePublished: published || undefined,
+        dateModified: modified || undefined,
+        author: { '@type': 'Organization', name: 'Beiai Baking' },
+        publisher: {
+          '@type': 'Organization',
+          name: 'Beiai Baking',
+          logo: { '@type': 'ImageObject', url: `${ORIGIN}/assets/images/logo.png` },
+        },
+        mainEntityOfPage: { '@id': `${pageUrl}#webpage` },
+        image,
+      },
+    ],
   };
 
   let out = html
@@ -106,7 +143,7 @@ function replaceMeta(html, post) {
 
   out = out.replace(
     /<\/head>/i,
-    `<script type="application/ld+json" id="seo-article-jsonld">${JSON.stringify(jsonLd)}</script>\n</head>`
+    `<script type="application/ld+json" id="seo-page-jsonld">${JSON.stringify(jsonLd)}</script>\n</head>`
   );
   return out;
 }
