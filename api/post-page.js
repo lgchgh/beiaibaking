@@ -4,7 +4,7 @@ const { sql } = require('../lib/db');
 const { ensurePostsSchema } = require('../lib/ensurePostsSchema');
 
 const ORIGIN = (process.env.SITE_URL || 'https://www.beiaibaking.net').replace(/\/$/, '');
-const TEMPLATE_PATH = path.join(process.cwd(), 'post.html');
+const TEMPLATE_PATH = path.join(process.cwd(), 'templates', 'post.html');
 
 function escapeHtml(value) {
   return String(value == null ? '' : value)

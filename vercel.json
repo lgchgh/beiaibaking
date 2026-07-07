@@ -17,7 +17,7 @@
     },
     "api/post-page.js": {
       "maxDuration": 30,
-      "includeFiles": "post.html"
+      "includeFiles": "templates/post.html"
     }
   },
   "headers": [
