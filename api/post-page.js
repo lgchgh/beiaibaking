@@ -30,6 +30,12 @@ function truncateText(value, max) {
   return text.slice(0, max - 3).trimEnd() + '...';
 }
 
+function repairMojibakeText(value) {
+  return String(value || '')
+    .replace(/\u9225\u650A/g, '-i')
+    .replace(/\u9225\u6503/g, '-c');
+}
+
 function validType(value) {
   const type = String(value || '').toLowerCase();
   return ['news', 'recipe', 'blog'].includes(type) ? type : 'blog';
@@ -56,9 +62,11 @@ function replaceMeta(html, post) {
   const type = validType(post.type);
   const slug = String(post.slug || '').trim();
   const pageUrl = `${ORIGIN}/post.html?slug=${encodeURIComponent(slug)}&type=${encodeURIComponent(type)}`;
-  const title = String(post.title || 'Post').trim();
+  const title = repairMojibakeText(post.title || 'Post').trim();
   const fullTitle = `${title} | Beiai Baking`;
-  const description = truncateText(post.excerpt || stripHtml(post.content), 160) || `Read this post on Beiai Baking: ${title}.`;
+  const content = repairMojibakeText(post.content || '');
+  const excerpt = repairMojibakeText(post.excerpt || '');
+  const description = truncateText(excerpt || stripHtml(content), 160) || `Read this post on Beiai Baking: ${title}.`;
   const image = absoluteUrl(post.cover_image);
   const published = post.published_at || post.created_at || '';
   const modified = post.updated_at || published;
@@ -94,7 +102,7 @@ function replaceMeta(html, post) {
     .replace(/<div id="postContent" style="display:none">/i, '<div id="postContent">')
     .replace(/<h1 id="postTitle"><\/h1>/i, `<h1 id="postTitle">${escapeHtml(title)}</h1>`)
     .replace(/<p class="post-date" id="postDate"><\/p>/i, `<p class="post-date" id="postDate">${escapeHtml(formatDate(published))}</p>`)
-    .replace(/<div class="post-body" id="postBody"><\/div>/i, `<div class="post-body" id="postBody">${post.content || ''}</div>`);
+    .replace(/<div class="post-body" id="postBody"><\/div>/i, `<div class="post-body" id="postBody">${content}</div>`);
 
   out = out.replace(
     /<\/head>/i,

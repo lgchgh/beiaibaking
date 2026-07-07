@@ -183,10 +183,17 @@
             if (max && t.length > max) t = t.slice(0, max - 1) + '\u2026';
             return t;
           }
-          var excerpt = (post.excerpt && String(post.excerpt).trim()) ? String(post.excerpt).trim().slice(0, 160) : '';
-          var desc = excerpt || stripHtmlToText(post.content, 160);
-          if (!desc) desc = 'Read this post on Beiai Baking: ' + (post.title || 'Share') + '.';
-          var titleFull = (post.title || 'Post') + ' | Beiai Baking';
+          function repairMojibakeText(value) {
+            return String(value || '')
+              .replace(/\u9225\u650A/g, '-i')
+              .replace(/\u9225\u6503/g, '-c');
+          }
+          var postTitle = repairMojibakeText(post.title || '');
+          var postContent = repairMojibakeText(post.content || '');
+          var excerpt = (post.excerpt && String(post.excerpt).trim()) ? repairMojibakeText(post.excerpt).trim().slice(0, 160) : '';
+          var desc = excerpt || stripHtmlToText(postContent, 160);
+          if (!desc) desc = 'Read this post on Beiai Baking: ' + (postTitle || 'Share') + '.';
+          var titleFull = (postTitle || 'Post') + ' | Beiai Baking';
           document.title = titleFull;
           document.getElementById('seo-meta-description').setAttribute('content', desc);
           var can = document.getElementById('seo-canonical');
@@ -205,7 +212,7 @@
           var ld = {
             '@context': 'https://schema.org',
             '@type': 'Article',
-            headline: post.title || '',
+            headline: postTitle || '',
             datePublished: post.published_at || post.created_at || undefined,
             dateModified: post.updated_at || post.published_at || post.created_at || undefined,
             author: { '@type': 'Organization', name: 'Beiai Baking' },
@@ -221,10 +228,10 @@
             document.head.appendChild(ldEl);
           }
           ldEl.textContent = JSON.stringify(ld);
-          document.getElementById('postTitle').textContent = post.title || '';
+          document.getElementById('postTitle').textContent = postTitle || '';
           document.getElementById('postDate').textContent = (post.published_at || post.created_at) ? new Date(post.published_at || post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
           var bodyEl = document.getElementById('postBody');
-          bodyEl.innerHTML = post.content || '';
+          bodyEl.innerHTML = postContent;
           // Third-party hotlinking: some hosts block requests with a foreign Referer; Google is often unreachable in some regions.
           bodyEl.querySelectorAll('img').forEach(function (img) {
             var raw = img.getAttribute('src');
