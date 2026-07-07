@@ -26,6 +26,7 @@
     .btn-primary { background: var(--primary-color); color: white; }
     .btn-danger { background: #c44; color: white; }
     .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.85rem; }
+    .link-btn { padding: 0; border: none; background: transparent; color: inherit; font: inherit; font-weight: 700; cursor: pointer; }
     table { width: 100%; border-collapse: collapse; }
     th, td { padding: 0.5rem; border-bottom: 1px solid #eee; text-align: left; }
     .login-form { max-width: 320px; margin: 4rem auto; }
@@ -234,7 +235,7 @@
         </div>
         <div id="postsMsg"></div>
         <table id="postsTable" style="margin-top:1.5rem">
-          <thead><tr><th><input type="checkbox" id="postsSelectAll" title="Select all" /></th><th>ID</th><th>Type</th><th>Title</th><th>Pin</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th><input type="checkbox" id="postsSelectAll" title="Select all" /></th><th>ID</th><th><button type="button" class="link-btn" id="sortPostsByTypeBtn">Type</button></th><th>Title</th><th>Pin</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -889,6 +890,9 @@
     });
 
     // Posts
+    let postsSortByType = false;
+    let postsSortTypeDir = 1;
+
     function getSelectedPostIds() {
       return Array.from(document.querySelectorAll('.posts-row-cb:checked')).map(cb => cb.dataset.id);
     }
@@ -921,6 +925,16 @@
       const res = await api('/posts');
       const rows = await res.json();
       const tbody = document.querySelector('#postsTable tbody');
+      const displayRows = Array.isArray(rows) ? rows.slice() : [];
+      if (postsSortByType) {
+        const rank = { news: 0, recipe: 1, blog: 2 };
+        displayRows.sort((a, b) => {
+          const ta = rank[String(a.type || 'news').toLowerCase()] ?? 99;
+          const tb = rank[String(b.type || 'news').toLowerCase()] ?? 99;
+          if (ta !== tb) return (ta - tb) * postsSortTypeDir;
+          return (Number(b.id) || 0) - (Number(a.id) || 0);
+        });
+      }
       function postStatusCell(r) {
         if (r.schedule_abandoned) return 'Abandoned (draft)';
         if (r.published) return 'Published';
@@ -932,7 +946,7 @@
         }
         return 'Draft';
       }
-      tbody.innerHTML = (rows || []).map(r => `
+      tbody.innerHTML = displayRows.map(r => `
         <tr>
           <td><input type="checkbox" class="posts-row-cb" data-id="${r.id}" /></td>
           <td>${r.id}</td>
@@ -949,7 +963,15 @@
       tbody.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => editPost(b.dataset.edit)));
       tbody.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => delPost(b.dataset.del, b)));
       bindPostsCheckboxes();
+      const sortBtn = document.getElementById('sortPostsByTypeBtn');
+      if (sortBtn) sortBtn.textContent = 'Type' + (postsSortByType ? (postsSortTypeDir > 0 ? ' ↑' : ' ↓') : '');
     }
+
+    document.getElementById('sortPostsByTypeBtn').addEventListener('click', () => {
+      if (postsSortByType) postsSortTypeDir *= -1;
+      else postsSortByType = true;
+      loadPosts();
+    });
 
     document.getElementById('batchEditPostsBtn').addEventListener('click', () => {
       const ids = getSelectedPostIds();
