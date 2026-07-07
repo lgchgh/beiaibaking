@@ -8,7 +8,6 @@
     'about.html': 'about', 'about': 'about',
     'contact.html': 'contact', 'contact': 'contact',
     'gallery.html': 'gallery', 'gallery': 'gallery',
-    'chocolate.html': 'gallery', 'chocolate': 'gallery',
     'cookies.html': 'gallery', 'cookies': 'gallery',
     'fondant-cakes.html': 'gallery', 'fondant-cakes': 'gallery',
     'french-pastries.html': 'gallery', 'french-pastries': 'gallery',

@@ -58,6 +58,9 @@
       ]
     }
   ],
+  "redirects": [
+    { "source": "/chocolate.html", "destination": "/gallery.html", "permanent": true }
+  ],
   "rewrites": [
     { "source": "/post.html", "destination": "/api/post-page" },
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },

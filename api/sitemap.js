@@ -29,19 +29,69 @@ const STATIC_PAGES = [
   { path: '/fondant-cakes.html', changefreq: 'monthly', priority: '0.65' },
   { path: '/french-pastries.html', changefreq: 'monthly', priority: '0.65' },
   { path: '/cookies.html', changefreq: 'monthly', priority: '0.65' },
-  { path: '/chocolate.html', changefreq: 'monthly', priority: '0.55' },
   { path: '/privacy-policy.html', changefreq: 'yearly', priority: '0.3' },
   { path: '/terms-of-use.html', changefreq: 'yearly', priority: '0.3' },
   { path: '/copyright.html', changefreq: 'yearly', priority: '0.3' },
 ];
 
-function buildXml(postRows) {
+const GALLERY_IMAGE_PAGE_RULES = [
+  { path: '/decorated-cakes.html', category: 'decorated' },
+  { path: '/piped-cakes.html', category: 'decorated', subcategory: 'decorated-floral' },
+  { path: '/fondant-cakes.html', category: 'fondant' },
+  { path: '/french-pastries.html', category: 'french' },
+  { path: '/cookies.html', category: 'cookies' },
+];
+
+
+function imageLoc(src) {
+  const s = String(src || '').trim();
+  if (!s || /^data:/i.test(s)) return '';
+  if (/^https?:\/\//i.test(s)) return s;
+  return ORIGIN + (s[0] === '/' ? s : '/' + s);
+}
+
+function imageTagsForPage(path, galleryRows) {
+  const out = [];
+  const seen = new Set();
+  function addImage(src, caption) {
+    const loc = imageLoc(src);
+    if (!loc || seen.has(loc)) return;
+    seen.add(loc);
+    out.push({ loc, caption: String(caption || '').trim() });
+  }
+
+  const rule = GALLERY_IMAGE_PAGE_RULES.find((r) => r.path === path);
+  if (rule && Array.isArray(galleryRows)) {
+    galleryRows.forEach((row) => {
+      if (row.category !== rule.category) return;
+      if (rule.subcategory && row.subcategory !== rule.subcategory) return;
+      addImage(row.src, row.alt || row.caption);
+    });
+  }
+
+  return out
+    .slice(0, 1000)
+    .map((img) => {
+      let tag = `<image:image><image:loc>${xmlEsc(img.loc)}</image:loc>`;
+      if (img.caption) tag += `<image:caption>${xmlEsc(img.caption)}</image:caption>`;
+      tag += '</image:image>';
+      return tag;
+    })
+    .join('');
+}
+
+
+function buildXml(postRows, galleryRows) {
   const rows = Array.isArray(postRows) ? postRows : [];
   let body = '<?xml version="1.0" encoding="UTF-8"?>\n';
-  body += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+  body += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n';
   for (const p of STATIC_PAGES) {
     const loc = p.path === '/' ? ORIGIN + '/' : ORIGIN + p.path;
-    body += `  <url><loc>${xmlEsc(loc)}</loc><changefreq>${p.changefreq}</changefreq><priority>${p.priority}</priority></url>\n`;
+    body += '  <url>';
+    body += `<loc>${xmlEsc(loc)}</loc>`;
+    body += `<changefreq>${p.changefreq}</changefreq><priority>${p.priority}</priority>`;
+    body += imageTagsForPage(p.path, galleryRows);
+    body += '</url>\n';
   }
   for (const row of rows) {
     const slug = String(row.slug || '').trim();
@@ -78,6 +128,7 @@ module.exports = async (req, res) => {
     }
 
     let postRows = [];
+    let galleryRows = [];
     try {
       await ensurePostsSchema();
       const postsR = await sql`
@@ -91,7 +142,19 @@ module.exports = async (req, res) => {
       console.error('sitemap: skipping post URLs (database error), static pages only', e.message || e);
     }
 
-    const body = buildXml(postRows);
+    try {
+      const galleryR = await sql`
+        SELECT category, subcategory, src, caption, alt
+        FROM gallery_images
+        WHERE src IS NOT NULL AND TRIM(BOTH FROM src::text) <> ''
+        ORDER BY category, subcategory, sort_order, id
+      `;
+      galleryRows = galleryR.rows || [];
+    } catch (e) {
+      console.error('sitemap: skipping image URLs (database error)', e.message || e);
+    }
+
+    const body = buildXml(postRows, galleryRows);
     if (req.method === 'HEAD') {
       res.writeHead(200, {
         'Content-Type': 'application/xml; charset=utf-8',
@@ -103,7 +166,7 @@ module.exports = async (req, res) => {
   } catch (e) {
     console.error('sitemap: fatal, serving static URLs only', e.message || e);
     try {
-      return sendXml(res, buildXml([]));
+      return sendXml(res, buildXml([], []));
     } catch (e2) {
       console.error('sitemap: fallback failed', e2.message || e2);
       res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
