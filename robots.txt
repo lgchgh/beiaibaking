@@ -1,9 +1,9 @@
-# Beiai Baking — 规范域名为 www；若 apex 也开放访问，请在托管商做 301 到下方 Sitemap 所用主机名
+# Beiai Baking canonical host is www. Keep sitemap on the canonical host.
 User-agent: *
 Allow: /
 Allow: /api/sitemap
 Disallow: /admin
 Disallow: /api/
 
-# 动态站点地图由 /sitemap.xml 经 rewrite 指向 /api/sitemap；抓取器请用 canonical URL
+# Dynamic sitemap is served through /sitemap.xml.
 Sitemap: https://www.beiaibaking.net/sitemap.xml
