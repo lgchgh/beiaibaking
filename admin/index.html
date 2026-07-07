@@ -947,7 +947,7 @@
         </tr>
       `).join('');
       tbody.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => editPost(b.dataset.edit)));
-      tbody.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => delPost(b.dataset.del)));
+      tbody.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => delPost(b.dataset.del, b)));
       bindPostsCheckboxes();
     }
 
@@ -965,15 +965,28 @@
       const ids = getSelectedPostIds();
       if (!ids.length) return;
       if (!confirm('Delete ' + ids.length + ' post(s)?')) return;
+      const btn = document.getElementById('batchDelPostsBtn');
+      btn.disabled = true;
       showMsg(document.getElementById('postsMsg'), 'Deleting...');
-      let ok = 0, err = 0;
-      for (const id of ids) {
-        const res = await api('/posts/' + id, { method: 'DELETE' });
-        res.ok ? ok++ : err++;
+      try {
+        const res = await api('/posts', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids })
+        });
+        const data = await res.json().catch(() => ({}));
+        document.getElementById('postForm').style.display = 'none';
+        await loadPosts();
+        if (res.ok) {
+          showMsg(document.getElementById('postsMsg'), (data.deleted || 0) + ' deleted');
+        } else {
+          showMsg(document.getElementById('postsMsg'), (data.detail || data.error || 'Delete failed'), true);
+        }
+      } catch (e) {
+        showMsg(document.getElementById('postsMsg'), e.message || 'Delete failed', true);
+      } finally {
+        btn.disabled = false;
       }
-      document.getElementById('postForm').style.display = 'none';
-      await loadPosts();
-      showMsg(document.getElementById('postsMsg'), ok + ' deleted' + (err ? ', ' + err + ' failed' : ''), !!err);
     });
 
     async function editPost(id) {
@@ -992,10 +1005,31 @@
       document.getElementById('postForm').style.display = 'block';
     }
 
-    async function delPost(id) {
+    async function delPost(id, btn) {
       if (!confirm('Delete this post?')) return;
-      const res = await api('/posts/' + id, { method: 'DELETE' });
-      if (res.ok) { loadPosts(); document.getElementById('postForm').style.display = 'none'; showMsg(document.getElementById('postsMsg'), 'Deleted'); }
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Deleting...';
+      }
+      showMsg(document.getElementById('postsMsg'), 'Deleting...');
+      try {
+        const res = await api('/posts/' + id, { method: 'DELETE' });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          await loadPosts();
+          document.getElementById('postForm').style.display = 'none';
+          showMsg(document.getElementById('postsMsg'), 'Deleted');
+        } else {
+          showMsg(document.getElementById('postsMsg'), (data.detail || data.error || 'Delete failed'), true);
+        }
+      } catch (e) {
+        showMsg(document.getElementById('postsMsg'), e.message || 'Delete failed', true);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Del';
+        }
+      }
     }
 
     document.getElementById('newPostBtn').addEventListener('click', () => {

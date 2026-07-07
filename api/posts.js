@@ -139,6 +139,45 @@ async function handlePost(req, res) {
   }
 }
 
+async function handleDelete(req, res) {
+  const user = auth.requireAuth(req);
+  if (!user) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+
+  try {
+    const body = getJsonBody(req);
+    const ids = Array.isArray(body?.ids)
+      ? body.ids.map((id) => parseInt(id, 10)).filter((id) => Number.isInteger(id) && id > 0)
+      : [];
+
+    if (!ids.length) {
+      res.status(400).json({ error: 'ids array required' });
+      return;
+    }
+
+    const result = await sql`
+      DELETE FROM posts
+      WHERE id = ANY(${ids}::int[])
+      RETURNING id
+    `;
+
+    res.status(200).json({
+      success: true,
+      deleted: result.rowCount || 0,
+      ids: (result.rows || []).map((row) => row.id),
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({
+      error: 'Failed to delete posts',
+      detail: e.message || String(e),
+      code: e.code,
+    });
+  }
+}
+
 module.exports = async (req, res) => {
   await ensurePostsSchema();
 
@@ -149,6 +188,7 @@ module.exports = async (req, res) => {
   }
 
   if (req.method === 'GET') return handleGet(req, res);
+  if (req.method === 'DELETE') return handleDelete(req, res);
   if (req.method === 'POST') {
     if (readCronSecretFromRequest(req)) {
       const authz = cronAuthResult(req);
