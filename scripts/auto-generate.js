@@ -2,7 +2,7 @@
  * scripts/auto-generate.js
  *
  * Changes in this version:
- *   - Model selection: deepseek (default) or gemini-2.5-flash-lite
+ *   - Model routing: DeepSeek for news/recipe, Claude Sonnet for blog
  *   - News: formal/professional tone, global focus, no Guangzhou references
  *   - Recipe: formal magazine style, international focus, 7 cuisines (removed Cantonese + SE Asian, added British)
  *   - Blog: relaxed, Nova personal voice, Guangzhou identity kept for logic only
@@ -16,10 +16,8 @@
  * publish-scheduled triggers unlock at scheduled_publish_at.
  *
  * Usage:
- *   node scripts/auto-generate.js                      → weekly run (deepseek)
- *   node scripts/auto-generate.js --bulk               → 6-month bulk (deepseek)
- *   node scripts/auto-generate.js --model=gemini       → weekly run (gemini)
- *   node scripts/auto-generate.js --bulk --model=gemini → bulk (gemini)
+ *   node scripts/auto-generate.js                      → weekly run
+ *   node scripts/auto-generate.js --bulk               → 12-month bulk run
  */
 
 const OpenAI  = require('openai');
@@ -29,48 +27,43 @@ const path    = require('path');
 // ─── Environment & model selection ───────────────────────────────────────────
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
-const GEMINI_API_KEY   = process.env.GEMINI_API_KEY;
+const CLAUDE_API_KEY   = String(process.env.CLAUDE_API_KEY || '').trim();
+const CLAUDE_BASE_URL  = String(process.env.CLAUDE_BASE_URL || 'https://api.apikey.fun/v1').trim();
+const CLAUDE_MODEL     = String(process.env.CLAUDE_MODEL || 'claude-sonnet-5').trim();
 const TAVILY_API_KEY   = process.env.TAVILY_API_KEY;
 const BEIAI_API_URL    = String(process.env.BEIAI_API_URL || '').trim();
 const CRON_SECRET      = String(process.env.CRON_SECRET || '').trim();
 
 const isBulk     = process.argv.includes('--bulk');
-const modelArg   = (process.argv.find(a => a.startsWith('--model=')) || '').replace('--model=', '');
-const useGemini  = modelArg === 'gemini';
-const modelLabel = useGemini ? 'gemini-2.5-flash-lite' : 'deepseek';
+const deepseekModel = String(process.env.DEEPSEEK_MODEL || 'deepseek-v4-pro').trim();
 
 // Validate required env vars
 const missing = [];
 if (!TAVILY_API_KEY)  missing.push('TAVILY_API_KEY');
 if (!BEIAI_API_URL)   missing.push('BEIAI_API_URL');
 if (!CRON_SECRET)     missing.push('CRON_SECRET');
-if (useGemini  && !GEMINI_API_KEY)  missing.push('GEMINI_API_KEY');
-if (!useGemini && !DEEPSEEK_API_KEY) missing.push('DEEPSEEK_API_KEY');
+if (!DEEPSEEK_API_KEY) missing.push('DEEPSEEK_API_KEY');
+if (!CLAUDE_API_KEY)   missing.push('CLAUDE_API_KEY');
 
 if (missing.length > 0) {
   console.error('[auto-generate] Missing environment variables:', missing.join(', '));
   process.exit(1);
 }
 
-console.log(`[auto-generate] Using model: ${modelLabel}`);
+console.log(`[auto-generate] Using DeepSeek for news/recipe: ${deepseekModel}`);
+console.log(`[auto-generate] Using Claude for blog: ${CLAUDE_MODEL}`);
 
 // ─── AI client setup ──────────────────────────────────────────────────────────
 
-let aiClient, aiModel;
+const deepseekClient = new OpenAI({
+  apiKey:  DEEPSEEK_API_KEY,
+  baseURL: 'https://api.deepseek.com',
+});
 
-if (useGemini) {
-  aiClient = new OpenAI({
-    apiKey:  GEMINI_API_KEY,
-    baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
-  });
-  aiModel = 'gemini-2.5-flash-lite-preview-06-17';
-} else {
-  aiClient = new OpenAI({
-    apiKey:  DEEPSEEK_API_KEY,
-    baseURL: 'https://api.deepseek.com',
-  });
-  aiModel = 'deepseek-chat';
-}
+const claudeClient = new OpenAI({
+  apiKey:  CLAUDE_API_KEY,
+  baseURL: CLAUDE_BASE_URL,
+});
 
 // ─── Nova location — for logical consistency only ─────────────────────────────
 
@@ -259,6 +252,11 @@ function buildNewsSystemPrompt() {
   return `You are a professional editor writing for Beiai Baking, a premium baking and pastry website.
 
 Your role for NEWS articles:
+- Current format: Industry Note, not a hard news report.
+- Write only when the source material supports a clear industry signal: event, trend, product category, competition, training, or market movement.
+- Do not pretend to have original reporting. Attribute carefully with phrases like "industry reports indicate" or "organisers announced" when the source context supports it.
+- Avoid repeating the same event or competition angle in multiple posts. If sources mostly discuss a familiar event, choose a different angle or make the article narrower.
+- The useful part is what changed and why it matters to bakers, cake decorators, pastry students, or small bakery owners.
 - Write in a formal, objective, journalistic style — like a trade publication (Baking Business, Pastry Arts Magazine)
 - Global perspective: cover international events, competitions, industry trends worldwide
 - No personal opinions, no "I", no casual language
@@ -280,6 +278,10 @@ function buildRecipeSystemPrompt(cuisine) {
   return `You are a professional recipe writer for Beiai Baking, a premium baking and pastry website.
 
 Your role for RECIPE articles:
+- Current format: Recipe / Technique Note with practical baking guidance.
+- Avoid first-person testing claims such as "we tested" or "I tried"; do not add a disclaimer about not testing.
+- Make the article useful by explaining ratios, temperatures, texture cues, common failure points, and one practical adjustment.
+- Avoid repeating common internet recipe summaries. Choose a specific technique angle for the dish.
 - Write in a formal, authoritative style — like a professional baking magazine (Bon Appétit, Saveur, Pastry Arts)
 - International focus: this is ${cuisine} cuisine, treat it with respect and accuracy
 - Use precise baking terminology: temperatures in both Celsius and Fahrenheit, weights in grams
@@ -300,6 +302,13 @@ LANGUAGE: English only. Return ONLY valid JSON. No markdown, no explanation.`;
 
 function buildBlogSystemPrompt(mood, formattingMode, season) {
   return `You are Nova — a professional baker with 10 years of experience. You write personal blog posts for Beiai Baking.
+
+Nova persona baseline:
+- Nova is practical, observant, and craft-focused.
+- She notices texture, humidity, timing, tools, client expectations, and tiny process mistakes.
+- She is not inspirational, not poetic, and not trying to sound like a marketing writer.
+- She can admit uncertainty, change her mind, or leave a thought unfinished.
+- She never says she is an AI and never writes generic life lessons.
 
 IMPORTANT LOCATION NOTE: You are based in a warm, humid southern Chinese city. Current season: ${season}. Use this only to ensure logical consistency (e.g. do not write about snow in summer, do not describe cold winters). Do NOT mention the city name or make weather a focus.
 
@@ -355,17 +364,18 @@ async function tavilySearch(query) {
 
 // ─── AI generate ──────────────────────────────────────────────────────────────
 
-async function aiGenerate(systemPrompt, userPrompt) {
-  const res = await aiClient.chat.completions.create({
-    model:           aiModel,
-    max_tokens:      1400,
-    temperature:     1.3,
-    response_format: { type: 'json_object' },
+async function aiGenerate(systemPrompt, userPrompt, options = {}) {
+  const payload = {
+    model:       options.model,
+    max_tokens:  1400,
+    temperature: 1.3,
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user',   content: userPrompt  },
     ],
-  });
+  };
+  if (options.jsonMode) payload.response_format = { type: 'json_object' };
+  const res = await options.client.chat.completions.create(payload);
   const text = res.choices[0]?.message?.content || '';
   try { return JSON.parse(text); }
   catch { throw new Error(`AI returned invalid JSON: ${text.slice(0, 200)}`); }
@@ -398,7 +408,11 @@ ${context}
 
 ${echoLine ? `You may weave this reference in naturally if relevant: "${echoLine}"` : ''}
 
-Write a formal news article for Beiai Baking. Requirements:
+Write an industry note for Beiai Baking. Requirements:
+- Do not present this as original reporting by Beiai Baking
+- Focus on one clear angle from the sources, not a roundup of everything found
+- Explain why this matters for professional baking, cake decorating, pastry training, or bakery operations
+- If this is about a recurring event, make the angle specific enough that it does not duplicate previous coverage
 - Lead with the most newsworthy fact: event name, date, location, or result
 - Use specific names from the sources: competitions, venues, organisations, cities
 - Global perspective — do not localise to any single country unless the news itself is local
@@ -408,14 +422,18 @@ Write a formal news article for Beiai Baking. Requirements:
 
 Return exactly this JSON:
 {
-  "title": "formal news headline under 80 chars",
+  "title": "specific industry note headline under 80 chars",
   "excerpt": "1–2 factual sentences under 180 chars",
-  "content": "full news article in English",
+  "content": "full industry note in English",
   "type": "news",
   "published_date": "${publishedDate}"
 }`;
 
-  const post = await aiGenerate(buildNewsSystemPrompt(), userPrompt);
+  const post = await aiGenerate(buildNewsSystemPrompt(), userPrompt, {
+    client: deepseekClient,
+    model: deepseekModel,
+    jsonMode: true,
+  });
   if (post) saveMemory(post);
   return post;
 }
@@ -441,7 +459,10 @@ ${angle.cuisine} baking sources from around ${monthLabel}:
 
 ${context}
 
-Write a formal ${angle.cuisine} recipe article for Beiai Baking. Requirements:
+Write a ${angle.cuisine} recipe / technique note for Beiai Baking. Requirements:
+- Avoid first-person testing claims; do not write a disclaimer about whether it was tested
+- Treat source material as research context, then write an original practical technique note
+- Pick one technique angle: texture, mixing, baking temperature, filling stability, storage, or failure prevention
 - Brief authoritative introduction: what this dish is, where it comes from, what makes it worth making
 - Ingredients woven into prose — NOT a bullet list
 - Method in precise natural language — NOT numbered steps
@@ -452,14 +473,18 @@ Write a formal ${angle.cuisine} recipe article for Beiai Baking. Requirements:
 
 Return exactly this JSON:
 {
-  "title": "precise English recipe title under 80 chars",
+  "title": "precise recipe or technique title under 80 chars",
   "excerpt": "1–2 authoritative sentences under 180 chars",
-  "content": "full recipe article in English",
+  "content": "full recipe / technique note in English",
   "type": "recipe",
   "published_date": "${publishedDate}"
 }`;
 
-  const post = await aiGenerate(buildRecipeSystemPrompt(angle.cuisine), userPrompt);
+  const post = await aiGenerate(buildRecipeSystemPrompt(angle.cuisine), userPrompt, {
+    client: deepseekClient,
+    model: deepseekModel,
+    jsonMode: true,
+  });
   if (post) saveMemory(post);
   return post;
 }
@@ -480,6 +505,10 @@ async function generateBlog(monthLabel, publishedDate, memory, availableTopics) 
 Write a personal blog post for Beiai Baking as Nova.
 Topic: "${topic}"
 Time context: ${monthLabel}
+Voice direction:
+- Keep Nova's voice practical and specific, like a baker making notes after real work.
+- Avoid generic motivation, broad advice, or polished essay structure.
+- Include one sensory or process detail: texture, smell, timing, bowl temperature, bench condition, tool behaviour, or customer constraint.
 
 ${echo ? `Weave this in naturally near the opening if it fits: "${echo}"` : ''}
 
@@ -500,7 +529,11 @@ Return exactly this JSON:
   "published_date": "${publishedDate}"
 }`;
 
-  const post = await aiGenerate(buildBlogSystemPrompt(mood, fmt, season), userPrompt);
+  const post = await aiGenerate(buildBlogSystemPrompt(mood, fmt, season), userPrompt, {
+    client: claudeClient,
+    model: CLAUDE_MODEL,
+    jsonMode: false,
+  });
   if (post) saveMemory(post);
   return post;
 }
