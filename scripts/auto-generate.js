@@ -426,10 +426,31 @@ async function tavilySearch(query, domains = []) {
 
 // ─── AI generate ──────────────────────────────────────────────────────────────
 
+function parseAiJson(text) {
+  const raw = String(text || '').trim();
+  if (!raw) return null;
+
+  const candidates = [raw];
+  const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (fenced?.[1]) candidates.push(fenced[1].trim());
+
+  const firstBrace = raw.indexOf('{');
+  const lastBrace = raw.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    candidates.push(raw.slice(firstBrace, lastBrace + 1).trim());
+  }
+
+  for (const candidate of candidates) {
+    try { return JSON.parse(candidate); }
+    catch {}
+  }
+  return null;
+}
+
 async function aiGenerate(systemPrompt, userPrompt, options = {}) {
   const payload = {
     model:       options.model,
-    max_tokens:  1400,
+    max_tokens:  options.maxTokens || 2600,
     temperature: 1.3,
     messages: [
       { role: 'system', content: systemPrompt },
@@ -439,8 +460,9 @@ async function aiGenerate(systemPrompt, userPrompt, options = {}) {
   if (options.jsonMode) payload.response_format = { type: 'json_object' };
   const res = await options.client.chat.completions.create(payload);
   const text = res.choices[0]?.message?.content || '';
-  try { return JSON.parse(text); }
-  catch { throw new Error(`AI returned invalid JSON: ${text.slice(0, 200)}`); }
+  const parsed = parseAiJson(text);
+  if (parsed) return parsed;
+  throw new Error(`AI returned invalid JSON: ${text.slice(0, 200)}`);
 }
 
 // ─── Generators ───────────────────────────────────────────────────────────────
@@ -453,8 +475,17 @@ async function generateNews(monthLabel, publishedDate, memory, usedQueries) {
   const baseQuery = pickRandom(pool);
   usedQueries.add(baseQuery);
 
+  const searchQueries = [
+    `${baseQuery} ${monthLabel}`,
+    `${baseQuery} 2025 2026`,
+    baseQuery,
+    'baking industry news professional bakers 2026',
+    'pastry competition bakery trade news 2026',
+    'bakery association training competition pastry 2026',
+  ];
+
   let context = null;
-  for (const q of [`${baseQuery} ${monthLabel}`, `${baseQuery} 2025 2026`, baseQuery]) {
+  for (const q of searchQueries) {
     try { context = await tavilySearch(q, NEWS_SEARCH_DOMAINS); if (context) break; }
     catch (e) { console.warn(`  [news] search failed: ${e.message}`); }
     await sleep(1000);
