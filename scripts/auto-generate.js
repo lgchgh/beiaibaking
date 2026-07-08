@@ -148,6 +148,23 @@ const NEWS_QUERY_POOL = [
   'pastry school training competition young baker',
 ];
 
+// News source domains
+const NEWS_SEARCH_DOMAINS = [
+  'bakingbusiness.com',
+  'bakemag.com',
+  'britishbaker.co.uk',
+  'pastryartsmag.com',
+  'iddba.org',
+  'americanbakers.org',
+  'retailbakersofamerica.org',
+  'iba-tradefair.com',
+  'sigep.it',
+  'sirhafood.com',
+  'cmpatisserie.com',
+  'mastersdelaboulangerie.com',
+  'bakingexpo.com',
+];
+
 // Recipe cuisine angles — 7 cuisines, no Cantonese or SE Asian
 const RECIPE_ANGLES = [
   { cuisine: 'Korean',   query: 'Korean bento cake chiffon cream cheese trending recipe' },
@@ -157,6 +174,19 @@ const RECIPE_ANGLES = [
   { cuisine: 'Modern',   query: 'matcha brown butter salted caramel trending cake recipe' },
   { cuisine: 'Italian',  query: 'Italian tiramisu cannoli panna cotta authentic recipe' },
   { cuisine: 'American', query: 'American layer cake banana bread carrot cake classic recipe' },
+];
+
+// Recipe source domains
+const RECIPE_SEARCH_DOMAINS = [
+  'kingarthurbaking.com',
+  'seriouseats.com',
+  'theperfectloaf.com',
+  'bakefromscratch.com',
+  'valrhona.com',
+  'callebaut.com',
+  'chocolate-academy.com',
+  'sosa.cat',
+  'les-vergers-boiron.com',
 ];
 
 // Blog topics — 18 entries, sampled without replacement
@@ -346,14 +376,19 @@ function getMonthLabel(monthsAgo) {
 
 // ─── Tavily search ────────────────────────────────────────────────────────────
 
-async function tavilySearch(query) {
+async function tavilySearch(query, domains = []) {
+  const body = {
+    api_key: TAVILY_API_KEY,
+    query,
+    search_depth: 'basic',
+    max_results: 4,
+    include_answer: false,
+  };
+  if (domains.length) body.include_domains = domains;
   const res = await fetch('https://api.tavily.com/search', {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({
-      api_key: TAVILY_API_KEY, query,
-      search_depth: 'basic', max_results: 4, include_answer: false,
-    }),
+    body:    JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`Tavily ${res.status}: ${await res.text()}`);
   const data = await res.json();
@@ -393,7 +428,7 @@ async function generateNews(monthLabel, publishedDate, memory, usedQueries) {
 
   let context = null;
   for (const q of [`${baseQuery} ${monthLabel}`, `${baseQuery} 2025 2026`, baseQuery]) {
-    try { context = await tavilySearch(q); if (context) break; }
+    try { context = await tavilySearch(q, NEWS_SEARCH_DOMAINS); if (context) break; }
     catch (e) { console.warn(`  [news] search failed: ${e.message}`); }
     await sleep(1000);
   }
@@ -448,7 +483,7 @@ async function generateRecipe(monthLabel, publishedDate, memory, usedAngles) {
 
   let context = null;
   for (const q of [`${angle.query} ${monthLabel}`, angle.query]) {
-    try { context = await tavilySearch(q); if (context) break; }
+    try { context = await tavilySearch(q, RECIPE_SEARCH_DOMAINS); if (context) break; }
     catch (e) { console.warn(`  [recipe] search failed: ${e.message}`); }
     await sleep(1000);
   }
