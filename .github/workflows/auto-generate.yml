@@ -51,6 +51,7 @@ jobs:
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           GEMINI_API_KEY:   ${{ secrets.GEMINI_API_KEY }}
+          CLAUDE_API_KEY:   ${{ secrets.CLAUDE_API_KEY }}
           TAVILY_API_KEY:   ${{ secrets.TAVILY_API_KEY }}
           BEIAI_API_URL:    ${{ secrets.BEIAI_API_URL }}
           CRON_SECRET:      ${{ secrets.CRON_SECRET }}
@@ -63,6 +64,7 @@ jobs:
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           GEMINI_API_KEY:   ${{ secrets.GEMINI_API_KEY }}
+          CLAUDE_API_KEY:   ${{ secrets.CLAUDE_API_KEY }}
           TAVILY_API_KEY:   ${{ secrets.TAVILY_API_KEY }}
           BEIAI_API_URL:    ${{ secrets.BEIAI_API_URL }}
           CRON_SECRET:      ${{ secrets.CRON_SECRET }}
