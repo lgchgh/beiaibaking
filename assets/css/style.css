@@ -553,6 +553,13 @@ body.nav-hide-social-insta .nav-social .social-icon.insta {
   color: #8b3b24;
 }
 
+/* Gallery tabs are crawlable links as well as JS-enhanced tabs. */
+.category-tabs a.category-tab {
+  display: block;
+  box-sizing: border-box;
+  text-decoration: none;
+}
+
 /* 第一块保留左边框，最后一块保留右边框 */
 .category-tab:first-child,
 .category-tabs .category-tab-wrap:first-child .category-tab {

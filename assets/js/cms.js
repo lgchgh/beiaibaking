@@ -107,7 +107,7 @@
       });
     }
     function tryOnce(i) {
-      return fetch(url, { cache: 'no-store', credentials: 'same-origin' })
+      return fetch(url, { credentials: 'same-origin' })
         .then(function (r) {
           if (!r.ok) throw new Error('gallery http ' + r.status);
           return r.json();
@@ -249,7 +249,7 @@
       });
     }
     function tryOnce(i) {
-      return fetch(url, { cache: 'no-store', credentials: 'same-origin' })
+      return fetch(url, { credentials: 'same-origin' })
         .then(function (r) {
           if (!r.ok) throw new Error('gallery home http ' + r.status);
           return r.json();
@@ -449,7 +449,7 @@
         '&category=' +
         encodeURIComponent(cat);
       if (sub) apiUrl += '&sub=' + encodeURIComponent(sub);
-      fetch(apiUrl, { cache: 'no-store', credentials: 'same-origin' })
+      fetch(apiUrl, { credentials: 'same-origin' })
         .then(function (r) {
           return r.ok ? r.json() : null;
         })

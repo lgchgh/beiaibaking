@@ -4,6 +4,7 @@ const { canonicalCategorySubcategory } = require('../lib/galleryCanonical');
 const { sql } = require('../lib/db');
 
 const HOME_CATEGORIES = ['decorated', 'fondant', 'french', 'cookies'];
+const PUBLIC_CACHE_CONTROL = 'public, max-age=0, s-maxage=60, stale-while-revalidate=30';
 
 /** 法式马卡龙：库内可能为 macarons / macaron，查询时一并匹配 */
 function isFrenchMacaronSubFilter(category, sub) {
@@ -112,19 +113,9 @@ async function handleGet(req, res) {
       res.status(200).json(rows);
       return;
     }
-    await sql`
-      UPDATE gallery_images
-      SET category = 'french', subcategory = 'macarons'
-      WHERE LOWER(TRIM(category::text)) = 'fondant'
-        AND (
-          LOWER(TRIM(subcategory::text)) IN ('macarons', 'macaron', 'macaroons')
-          OR LOWER(TRIM(COALESCE(caption::text, ''))) IN ('macaron', 'macarons', '马卡龙')
-          OR LOWER(TRIM(COALESCE(alt::text, ''))) IN ('macaron', 'macarons', '马卡龙')
-        )
-    `;
     if (home === '1' || home === 'true') {
       const out = await queryHomeGalleryBundle();
-      res.setHeader('Cache-Control', 'private, no-store, max-age=0');
+      res.setHeader('Cache-Control', PUBLIC_CACHE_CONTROL);
       res.status(200).json(out);
       return;
     }
@@ -196,7 +187,7 @@ async function handleGet(req, res) {
           LIMIT ${limit} OFFSET ${offset}
         `;
       }
-      res.setHeader('Cache-Control', 'private, no-store, max-age=0');
+      res.setHeader('Cache-Control', PUBLIC_CACHE_CONTROL);
       res.status(200).json({
         items: rowsR.rows || [],
         total,
@@ -231,7 +222,7 @@ async function handleGet(req, res) {
     } else {
       result = await sql`SELECT * FROM gallery_images ORDER BY category, subcategory, sort_order, id`;
     }
-    res.setHeader('Cache-Control', 'private, no-store, max-age=0');
+    res.setHeader('Cache-Control', PUBLIC_CACHE_CONTROL);
     res.status(200).json(result.rows || []);
   } catch (e) {
     console.error(e);

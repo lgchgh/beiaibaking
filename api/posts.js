@@ -7,6 +7,7 @@ const { ensurePostsSchema } = require('../lib/ensurePostsSchema');
 const { clearOtherPinnedPosts } = require('../lib/uniquePinned');
 
 const POSTS_MAX_PAGE_SIZE = 100;
+const PUBLIC_CACHE_CONTROL = 'public, max-age=0, s-maxage=60, stale-while-revalidate=30';
 
 async function handleGet(req, res) {
   const published = req.query?.published;
@@ -52,6 +53,7 @@ async function handleGet(req, res) {
             LIMIT ${limit} OFFSET ${offset}
           `;
         }
+        res.setHeader('Cache-Control', PUBLIC_CACHE_CONTROL);
         res.status(200).json({
           items: rowsR.rows || [],
           total,
@@ -74,6 +76,7 @@ async function handleGet(req, res) {
       }
       result = await sql`SELECT * FROM posts ORDER BY COALESCE(pinned, false) DESC, created_at DESC`;
     }
+    res.setHeader('Cache-Control', published === 'true' ? PUBLIC_CACHE_CONTROL : 'private, no-store, max-age=0');
     res.status(200).json(result.rows || []);
   } catch (e) {
     console.error(e);

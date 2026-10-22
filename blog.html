@@ -52,7 +52,7 @@
     .share-hero-banner { margin-top: 14px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
     .share-hero-banner img { display: block; width: 100%; height: 220px; object-fit: cover; }
     .share-tabs { display: flex; flex-wrap: wrap; gap: 0; margin: 2rem 0 8px; justify-content: space-between; }
-    .share-tab { flex: 1 1 0; padding: 10px 0; border-radius: 0; font-size: 0.95rem; font-family: var(--font-heading); font-weight: 600; text-align: center; color: var(--text-dark); border: 1px solid var(--border); border-left-width: 0; background-color: #fff; cursor: pointer; transition: var(--transition); }
+    .share-tab { flex: 1 1 0; padding: 10px 0; border-radius: 0; font-size: 0.95rem; font-family: var(--font-heading); font-weight: 600; text-align: center; color: var(--text-dark); border: 1px solid var(--border); border-left-width: 0; background-color: #fff; cursor: pointer; transition: var(--transition); display: block; box-sizing: border-box; text-decoration: none; }
     .share-tab:first-child { border-left-width: 1px; border-top-left-radius: var(--radius); border-bottom-left-radius: var(--radius); }
     .share-tab:last-child { border-top-right-radius: var(--radius); border-bottom-right-radius: var(--radius); }
     .share-tab:hover, .share-tab.active { border-color: var(--primary-color); background-color: #fff3ec; color: #8b3b24; }
@@ -168,9 +168,9 @@
           <img id="shareBannerImg" decoding="async" src="assets/images/share-hero.jpg" alt="Three pale green sugar flowers on a rustic wooden board" onerror="this.style.display='none'" />
         </div>
         <div class="share-tabs">
-        <button type="button" class="share-tab active" data-type="news">News</button>
-        <button type="button" class="share-tab" data-type="recipe">Recipes</button>
-        <button type="button" class="share-tab" data-type="blog">Blog</button>
+        <a class="share-tab active" href="blog.html?type=news" data-type="news">News</a>
+        <a class="share-tab" href="blog.html?type=recipe" data-type="recipe">Recipes</a>
+        <a class="share-tab" href="blog.html?type=blog" data-type="blog">Blog</a>
         </div>
       </div>
     </section>
@@ -291,7 +291,7 @@
         '&page=' +
         encodeURIComponent(String(listPage));
       if (type) url += '&type=' + encodeURIComponent(type);
-      fetch(url, { cache: 'no-store', credentials: 'same-origin' })
+      fetch(url, { credentials: 'same-origin' })
         .then(function (r) {
           return r.ok ? r.json() : null;
         })
@@ -371,7 +371,8 @@
     }
 
     tabs.forEach(function (tab) {
-      tab.addEventListener('click', function () {
+      tab.addEventListener('click', function (event) {
+        event.preventDefault();
         var type = tab.getAttribute('data-type');
         var url =
           window.location.pathname + '?type=' + encodeURIComponent(type);
