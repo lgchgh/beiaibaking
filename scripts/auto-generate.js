@@ -137,20 +137,19 @@ function buildEchoLine(memory) {
 
 // ─── Content pools ────────────────────────────────────────────────────────────
 
+// Tone directions only; never imply that a real event or personal memory occurred.
 const NOVA_MOODS = [
-  { label: 'just back from an exhibition, thoughts buzzing' },
-  { label: 'squeezed this in between two orders — keeping it short and direct' },
-  { label: 'something has been annoying me about this topic and I need to say it' },
-  { label: 'just nailed a technique I\'ve been chasing for months' },
-  { label: 'quiet morning, reflective mood' },
-  { label: 'saw something at a supplier yesterday that got me thinking' },
+  { label: 'clear-eyed and analytical about technique trade-offs' },
+  { label: 'curious about a small process detail' },
+  { label: 'a little skeptical of common baking shortcuts' },
+  { label: 'focused on texture and visual cues' },
+  { label: 'practical about time and tool constraints' },
+  { label: 'thoughtful about teaching a tricky skill' },
 ];
-
 const FORMATTING_MODES = [
-  'Meticulous: clear paragraph breaks, deliberate punctuation.',
-  'Stream-of-consciousness: minimal breaks, em-dashes over commas, write fast.',
+  'Clear short paragraphs with a few varied sentence lengths.',
+  'Conversational paragraphs with an occasional very short sentence; keep HTML paragraph breaks.',
 ];
-
 const BANNED_WORDS = [
   'delightful','exquisite','masterful','artisanal','elevate','journey',
   'it is worth noting','in conclusion','to summarize','in summary',
@@ -246,26 +245,26 @@ const RECIPE_SEARCH_DOMAINS = [
   'kmb.or.kr',
 ];
 
-// Blog topics — 18 entries, sampled without replacement
+// Blog topics — technique-based, no invented biography, clients, awards or travel.
 const BLOG_TOPICS_MASTER = [
-  'The one thing nobody tells you about bean paste piping — and what I learned from it',
-  'Why I switched away from Swiss meringue buttercream in summer (and found something better)',
-  'The Korean cake trend: what I genuinely love about it, and one honest reservation',
-  'That time my fondant cracked in front of a client — and why it made me a better baker',
-  'The underrated skill that separates decent bakers from really good ones',
-  'My Paris stage was the hardest thing I\'ve done. Here\'s what I came back with.',
-  'Why ingredient quality changes everything — a chocolate story',
-  'The temperature obsession: why I think it\'s worth it',
-  'What baking competitions are really like — and why I think everyone should try one',
-  'A tool I\'ve used for 8 years that changed how I work',
-  'Why "beginner-friendly" recipes often do beginners a disservice',
-  'Why I keep returning to French technique — it never lets me down',
-  'Baking through a brutal summer: the lessons that stuck',
-  'How a wet season taught me things about dough I couldn\'t have learned any other way',
-  'Why autumn is my favourite time to work with sugar',
-  'What I wish someone had told me before I opened my home bakery',
-  'The fondant-in-August story: what went wrong and what I\'d do differently',
-  'Why I reformulated my buttercream — and how much better it got',
+  'Why humidity changes the way buttercream behaves during piping',
+  'The real trade-off between smooth fondant and crisp decorative detail',
+  'What makes bean-paste flowers hold a convincing petal shape',
+  'Why a cake can look level before frosting and uneven afterward',
+  'Common causes of broken buttercream edges and how to diagnose them',
+  'How to decide when to stop mixing a delicate sponge batter',
+  'Why professional-looking cake borders depend on rhythm, not speed',
+  'The small differences between stable and unstable chocolate ganache',
+  'When precise temperatures matter more than extra mixing time',
+  'How to choose a piping tip for realistic flowers',
+  'A practical way to evaluate cake-decoration trends without copying them',
+  'Why many beginner baking tutorials skip the most useful visual cues',
+  'The surprising effect of cake temperature on crumb coating',
+  'How to spot overworking when shaping sugar-paste decorations',
+  'Why decorative balance matters more than adding another ornament',
+  'What pastry students should observe before copying a technique',
+  'How to compare filling stability without making untested claims',
+  'The difference between a repeatable process and a lucky baking result',
 ];
 
 function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
@@ -336,89 +335,59 @@ function randomDateInMonth(monthsAgo, index, total) {
 // ─── System prompts ───────────────────────────────────────────────────────────
 
 function buildNewsSystemPrompt() {
-  return `You are a professional editor writing for Beiai Baking, a premium baking and pastry website.
+  return `You are the factual, independent editorial writer of Beiai Baking.
 
-Your role for NEWS articles:
-- Current format: Industry Note, not a hard news report.
-- Write only when the source material supports a clear industry signal: event, trend, product category, competition, training, or market movement.
-- Do not pretend to have original reporting. Attribute carefully with phrases like "industry reports indicate" or "organisers announced" when the source context supports it.
-- Avoid repeating the same event or competition angle in multiple posts. If sources mostly discuss a familiar event, choose a different angle or make the article narrower.
-- The useful part is what changed and why it matters to bakers, cake decorators, pastry students, or small bakery owners.
-- Write in a formal, objective, journalistic style — like a trade publication (Baking Business, Pastry Arts Magazine)
-- Global perspective: cover international events, competitions, industry trends worldwide
-- No personal opinions, no "I", no casual language
-- Cite specific facts: event names, dates, locations, results, statistics when available
-- Neutral and informative tone throughout
+Write NEWS as a narrowly scoped industry note, not invented breaking news.
+- Treat every search excerpt as an unverified summary, not evidence of independent reporting.
+- Anchor important event names, dates, results, quotes, awards and figures to the supplied SOURCE entries. If the evidence is insufficient, omit that claim rather than guessing.
+- Explicitly attribute notable statements to the named organisations or publications in the supplied sources.
+- Distinguish announcement date, event date and article date. Do not turn a historical event into recent news.
+- Never claim interviews, attendance, exclusive reporting, firsthand testing, or direct quotations without a source.
+- Focus on what changed and the practical implications for bakers, decorators or training, without made-up forecasts or sales claims.
+- If sources disagree, report only the narrower supportable observation.
+- No first-person stories, sales pitch, forced conclusions or generic summary paragraph.
 
 BANNED WORDS: ${BANNED_WORDS.join(', ')}
 
-STRUCTURE RULES:
-- Lead paragraph must contain the most important fact (who/what/where/when)
-- No "总-分-总" structure — news articles open with the news, not background
-- No concluding paragraph that summarises or calls to action
-- Vary sentence length for readability
-
-LANGUAGE: English only. Return ONLY valid JSON. No markdown, no explanation.`;
+FORMAT: Content must be simple HTML, using ONLY <p>, <h2>, <h3>, <strong>, <em>, <ul>, <ol> and <li>; NO attributes, hyperlinks, CSS, Markdown, scripts or code fences. HTML text must be escaped where necessary.
+Use short readable paragraphs, a factual lead, then concrete impact or background. Do not add a sources section yourself; links are attached after generation.
+LANGUAGE: US English. Return ONLY valid JSON.`;
 }
 
 function buildRecipeSystemPrompt(cuisine) {
-  return `You are a professional recipe writer for Beiai Baking, a premium baking and pastry website.
+  return `You write useful, evidence-conscious recipes and technique notes for Beiai Baking.
 
-Your role for RECIPE articles:
-- Current format: Recipe / Technique Note with practical baking guidance.
-- Avoid first-person testing claims such as "we tested" or "I tried"; do not add a disclaimer about not testing.
-- Make the article useful by explaining ratios, temperatures, texture cues, common failure points, and one practical adjustment.
-- Avoid repeating common internet recipe summaries. Choose a specific technique angle for the dish.
-- Write in a formal, authoritative style — like a professional baking magazine (Bon Appétit, Saveur, Pastry Arts)
-- International focus: this is ${cuisine} cuisine, treat it with respect and accuracy
-- Use precise baking terminology: temperatures in both Celsius and Fahrenheit, weights in grams
-- Professional but accessible — a serious home baker or pastry student should find it useful
-- No casual asides, no "I tried this" — this is editorial recipe writing
+This is ${cuisine} baking. Be precise and culturally respectful, but do not invent an origin story.
+CRITICAL: Source snippets are not complete, tested recipes. Never make up ingredient weights, precise ratios, yields, temperatures, bake times or personal testing claims.
+- If source evidence explicitly includes a complete workable formula, write a RECIPE with an Ingredients list and numbered Method. Reproduce only the supported measurements in original wording; do not imply Beiai Baking tested it.
+- Otherwise write an explicitly titled TECHNIQUE NOTE, not a complete recipe: focus on one technique, the sequence, sensory cues, common failure causes, and one useful adjustment. Omit unsupported numbers and omit a fabricated ingredients list.
+- Both formats must give a clearly ordered method and what the baker should observe at each step.
+- Use Celsius and Fahrenheit equivalents only when an actual, sourced temperature is available.
+- No generic praise, invented provenance, unsupported food-safety/storage claims, or filler.
 
 BANNED WORDS: ${BANNED_WORDS.join(', ')}
 
-STRUCTURE RULES:
-- Open with a brief authoritative introduction to the dish (origin, what makes it distinctive)
-- Ingredients woven into prose — NOT a bullet list
-- Method in clear, precise natural language — NOT numbered steps
-- Close with a professional tip (technique, storage, variation) — not "enjoy!"
-- No cheerful wrap-up
-
-LANGUAGE: English only. Return ONLY valid JSON. No markdown, no explanation.`;
+FORMAT: Content must be simple HTML using ONLY <p>, <h2>, <h3>, <strong>, <em>, <ul>, <ol>, <li>; NO attributes, hyperlinks, CSS, Markdown or scripts.
+Use <h2> headings, an <ol> numbered procedure and <li> steps; use <ul> for ingredients ONLY when a complete, evidenced formula exists. No sources section; trusted source links are appended by software.
+LANGUAGE: US English. Return ONLY valid JSON.`;
 }
 
-function buildBlogSystemPrompt(mood, formattingMode, season) {
-  return `You are Nova — a professional baker with 10 years of experience. You write personal blog posts for Beiai Baking.
+function buildBlogSystemPrompt(mood, formattingMode) {
+  return `You write an editorial blog in Nova's approachable, technically curious voice for Beiai Baking.
 
-Nova persona baseline:
-- Nova is practical, observant, and craft-focused.
-- She notices texture, humidity, timing, tools, client expectations, and tiny process mistakes.
-- She is not inspirational, not poetic, and not trying to sound like a marketing writer.
-- She can admit uncertainty, change her mind, or leave a thought unfinished.
-- She never says she is an AI and never writes generic life lessons.
+Nova is a writing persona, not a license to invent autobiography.
+- Write useful baking opinions and thought experiments based on general technique. Personal opinions ("I prefer ...", "I think ...") are fine.
+- Do NOT invent memories, clients, students, orders, exhibitions, travel, credentials, competitions, awards, classes, years of experience, or claims that Nova personally tested something.
+- Do not describe a specific city, home, workshop, customer, season or weather as lived experience.
+- Describe practical sensory cues as possibilities ("A batter that looks ... may indicate ..."), never as fabricated eyewitness details.
+- Be candid and distinct, but not promotional or preachy. Focus on one teachable insight and a counterpoint or trade-off.
+- Mood: ${mood.label}
+- Formatting: ${formattingMode}
 
-IMPORTANT LOCATION NOTE: You are based in a warm, humid southern Chinese city. Current season: ${season}. Use this only to ensure logical consistency (e.g. do not write about snow in summer, do not describe cold winters). Do NOT mention the city name or make weather a focus.
+BANNED WORDS: ${BANNED_WORDS.join(', ')}
 
-YOUR VOICE:
-- Warm, enthusiastic, genuinely passionate about baking — this is your life's work and you love it
-- Encouraging without being saccharine — you celebrate the craft and the people in it
-- Occasionally blunt or self-deprecating (about 20% of the time) — a dry observation, a minor frustration, a moment of honesty
-- The overall feeling should be: someone who loves what they do and wants others to love it too
-- Current mood: ${mood.label}
-
-WRITING RULES:
-1. BANNED WORDS: ${BANNED_WORDS.join(', ')}
-2. NO sequence markers: firstly / secondly / in conclusion / to summarize
-3. Start mid-thought — a scene, a reaction, a memory. No background intro.
-4. Mix short sentences (3–6 words) with longer ones. Never three consecutive similar lengths.
-5. Use ellipsis (...) when trailing, em dash (—) for shifts.
-6. FORMATTING: ${formattingMode}
-7. End abruptly on a detail or open question. No wrap-up, no advice, no "I hope this helps."
-8. At least one concrete detail: a temperature, tool name, a client situation.
-9. Opinionated — Nova has a take, not just information.
-10. Industry terms used naturally: proofing, lamination, ganache ratio, bench rest, crumb structure.
-
-LANGUAGE: English only. Return ONLY valid JSON. No markdown, no explanation.`;
+FORMAT: Content must be simple HTML using ONLY <p>, <h2>, <h3>, <strong>, <em>, <ul>, <ol>, <li>; NO attributes, hyperlinks, Markdown, CSS or scripts. Use clear paragraph breaks, without fabricated scenes.
+LANGUAGE: US English. Return ONLY valid JSON.`;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -556,7 +525,33 @@ function validateGeneratedPost(post, type, publishedDate) {
   if (typeof post.content !== 'string' || post.content.trim().split(/\s+/).length < 120) errors.push('content too short');
   if (post.type !== type) errors.push(`wrong type (expected ${type})`);
   if (post.published_date !== publishedDate) errors.push('published_date differs from scheduled date');
+  if (typeof post.content === 'string') {
+    const content = post.content;
+    const tags = content.match(/<[^>]*>/g) || [];
+    const allowed = /^<\/?(?:p|h2|h3|strong|em|ul|ol|li)>$/i;
+    if (!/<p>/i.test(content) || tags.some(tag => !allowed.test(tag)) || /<!--|<!\w|<\?/i.test(content)) {
+      errors.push('content must use simple HTML paragraphs and allowed tags only');
+    }
+    if (type === 'recipe' && (!/<h2>/i.test(content) || !/<ol>/i.test(content) || !/<li>/i.test(content))) {
+      errors.push('recipe/technique note requires a heading and numbered steps');
+    }
+    if (type === 'blog' && /\b(?:my clients?|my students?|at my bakery|my paris stage|when i was in paris|i taught a class|i attended the competition|my customer|when i opened my bakery)\b/i.test(content)) {
+      errors.push('blog contains unsupported personal-experience claim');
+    }
+  }
   return errors;
+}
+
+// Source links are rendered from collected URLs, never invented by an AI model.
+function escapeHtml(text) {
+  return String(text ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function attachReferenceLinks(post, sources) {
+  const refs = (sources || []).slice(0, 3);
+  if (!refs.length) return;
+  const links = refs.map(s => `<li><a href="${escapeHtml(s.url)}" rel="noopener noreferrer">${escapeHtml(s.title)}</a>${s.published_date ? ` (${escapeHtml(s.published_date)})` : ''}</li>`);
+  post.content = String(post.content || '').trim() + '\n<h2>Source material</h2><ul>' + links.join('') + '</ul>';
 }
 
 // ─── Generators ───────────────────────────────────────────────────────────────
@@ -586,8 +581,6 @@ async function generateNews(monthLabel, publishedDate, memory, usedQueries) {
   }
   if (!research) { console.warn(`  [news] no attributable sources, skipping`); return null; }
 
-  const echoLine = (Math.random() < 0.3 && memory) ? buildEchoLine(memory) : '';
-
   const userPrompt = `
 Baking industry sources from around ${monthLabel}:
 
@@ -598,25 +591,20 @@ statistic, event date or quote. Prefer claims directly supported by a named SOUR
 attribute specific claims to that source. If publication dates are absent, do not imply
 that an event happened recently merely because the query contains the current year.
 
-${echoLine ? `You may weave this reference in naturally if relevant: "${echoLine}"` : ''}
-
-Write an industry note for Beiai Baking. Requirements:
-- Do not present this as original reporting by Beiai Baking
-- Focus on one clear angle from the sources, not a roundup of everything found
-- Explain why this matters for professional baking, cake decorating, pastry training, or bakery operations
-- If this is about a recurring event, make the angle specific enough that it does not duplicate previous coverage
-- Lead with the most newsworthy fact: event name, date, location, or result
-- Use specific names from the sources: competitions, venues, organisations, cities
-- Global perspective — do not localise to any single country unless the news itself is local
-- If facts seem contradictory or unclear, report what is confirmed
-- 220–300 words
-- No conclusion paragraph, no call to action
+Write one focused industry note for Beiai Baking. Requirements:
+- Attribute specific claims to the supplied named SOURCES. If excerpts cannot establish a dated fact, write a cautious general observation or skip the assertion.
+- Explain consequences or practical takeaways for bakers without inventing data.
+- Keep an objective headline reflecting only the evidence in the excerpts.
+- Never invent dates, winners, statistics, quotes, future predictions or first-person reporting.
+- 220–300 words of content in HTML <p> paragraphs, with optional <h2> heading.
+- Do not include source links yourself; these will be attached from the research list.
+- No formulaic summary or call to action.
 
 Return exactly this JSON:
 {
   "title": "specific industry note headline under 80 chars",
   "excerpt": "1–2 factual sentences under 180 chars",
-  "content": "full industry note in English",
+  "content": "original HTML paragraphs and optional h2 heading in English",
   "type": "news",
   "published_date": "${publishedDate}"
 }`;
@@ -629,6 +617,7 @@ Return exactly this JSON:
   if (post) {
     const errors = validateGeneratedPost(post, 'news', publishedDate);
     if (errors.length) throw new Error(`News draft rejected: ${errors.join(', ')}`);
+    attachReferenceLinks(post, research.sources);
     rememberSources(post, 'news', research.query, research.sources);
     saveMemory(post);
   }
@@ -656,27 +645,21 @@ ${angle.cuisine} baking sources from around ${monthLabel}:
 
 ${research.context}
 
-Evidence rules: Do not invent historical origin, measured results or claimed testing.
-Use the provided sources as reference only; their snippets are not a substitute for
-independent verification of exact ratios or temperatures.
+Evidence rules: Search snippets are not a verified formula and do not establish exact ratios, quantities, temperatures or testing. If insufficient to justify a complete recipe, explicitly create a TECHNIQUE NOTE, not a pretend formula.
 
-Write a ${angle.cuisine} recipe / technique note for Beiai Baking. Requirements:
-- Avoid first-person testing claims; do not write a disclaimer about whether it was tested
-- Treat source material as research context, then write an original practical technique note
-- Pick one technique angle: texture, mixing, baking temperature, filling stability, storage, or failure prevention
-- Brief authoritative introduction: what this dish is, where it comes from, what makes it worth making
-- Ingredients woven into prose — NOT a bullet list
-- Method in precise natural language — NOT numbered steps
-- Temperatures in Celsius (with Fahrenheit in brackets)
-- Weights in grams where relevant
-- Close with one professional tip: technique, variation, or storage advice
-- 280–360 words
+Write a useful ${angle.cuisine} recipe or technique note for Beiai Baking:
+- Choose one specific dish and one practical objective (texture, mixing, stability, failure prevention).
+- If a complete formula is unambiguously supported by the supplied material: use <h2>Ingredients</h2><ul><li>...</li></ul> followed by <h2>Method</h2><ol><li>...</li></ol>.
+- Otherwise call the article a Technique Note in its title, omit specific unsourced quantities and give <h2>Technique Steps</h2><ol><li>...</li></ol>, <h2>What to Watch For</h2> and troubleshooting.
+- Describe visual or texture cues in every step, keeping the process actionable.
+- Do not invent storage advice, yields or any claims that Beiai Baking tested the process.
+- 260–350 words, HTML body with headings and numbered steps; no links (they are added later).
 
 Return exactly this JSON:
 {
   "title": "precise recipe or technique title under 80 chars",
   "excerpt": "1–2 authoritative sentences under 180 chars",
-  "content": "full recipe / technique note in English",
+  "content": "HTML technique note or evidenced recipe with h2, ol and li tags",
   "type": "recipe",
   "published_date": "${publishedDate}"
 }`;
@@ -689,6 +672,7 @@ Return exactly this JSON:
   if (post) {
     const errors = validateGeneratedPost(post, 'recipe', publishedDate);
     if (errors.length) throw new Error(`Recipe draft rejected: ${errors.join(', ')}`);
+    attachReferenceLinks(post, research.sources);
     rememberSources(post, 'recipe', research.query, research.sources);
     saveMemory(post);
   }
@@ -704,38 +688,28 @@ async function generateBlog(monthLabel, publishedDate, memory, availableTopics) 
   const topic  = availableTopics.splice(idx, 1)[0];
   const mood   = pickRandom(NOVA_MOODS);
   const fmt    = pickRandom(FORMATTING_MODES);
-  const season = getGuangzhouSeason(monthLabel);
-  const echo   = (Math.random() < 0.3 && memory) ? buildEchoLine(memory) : '';
 
   const userPrompt = `
 Write a personal blog post for Beiai Baking as Nova.
 Topic: "${topic}"
 Time context: ${monthLabel}
 Voice direction:
-- Keep Nova's voice practical and specific, like a baker making notes after real work.
-- Avoid generic motivation, broad advice, or polished essay structure.
-- Include one sensory or process detail: texture, smell, timing, bowl temperature, bench condition, tool behaviour, or customer constraint.
-
-${echo ? `Weave this in naturally near the opening if it fits: "${echo}"` : ''}
-
-Requirements:
-- Start mid-thought: a scene, a reaction, a specific memory — no background intro
-- At least one concrete detail: a temperature, a tool name, a client situation
-- One unexpected shift in thought — like a real person who just remembered something
-- Opinionated throughout
-- 260–340 words
-- End abruptly on a detail or question. No wrap-up. No advice to the reader.
+- Keep Nova's recognizable practical, warm, opinionated style, without fabricating biography or personal events.
+- Explore a technique trade-off and at least two observable cues (texture, timing, appearance, tool choice).
+- Use hypothetical examples clearly labelled as such; do not claim to have experienced them.
+- No customer anecdotes, teaching or Paris memories, invented testing, credentials or dates.
+- 250–330 words of simple HTML paragraphs; end with a useful concrete distinction, not motivational filler.
 
 Return exactly this JSON:
 {
   "title": "English title that sounds like a real person wrote it — under 80 chars",
   "excerpt": "an English line that makes someone want to read on, under 180 chars",
-  "content": "full blog post in English",
+  "content": "original HTML paragraphs with concrete technical observations",
   "type": "blog",
   "published_date": "${publishedDate}"
 }`;
 
-  const post = await aiGenerate(buildBlogSystemPrompt(mood, fmt, season), userPrompt, {
+  const post = await aiGenerate(buildBlogSystemPrompt(mood, fmt), userPrompt, {
     client: claudeClient,
     model: CLAUDE_MODEL,
     jsonMode: false,
