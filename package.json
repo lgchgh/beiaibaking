@@ -16,6 +16,7 @@
     "dotenv": "^16.0.0"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1155.0",
     "@vercel/blob": "^0.23.0",
     "bcryptjs": "^2.4.3",
     "cookie": "^0.6.0",
