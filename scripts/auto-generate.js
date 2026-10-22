@@ -23,6 +23,7 @@
 const OpenAI  = require('openai');
 const fs      = require('fs');
 const path    = require('path');
+const { discoverTrendingPastries, supportedName } = require('./trending-pastries');
 
 // ─── Environment & model selection ───────────────────────────────────────────
 
@@ -95,14 +96,44 @@ const claudeClient = new OpenAI({
   baseURL: CLAUDE_BASE_URL,
 });
 
-// ─── Nova location — for logical consistency only ─────────────────────────────
+// ─── Seasonal editorial context (private; not an article location) ─────────────
+// Guangzhou is used ONLY as a baseline for practical baking conditions.
+// Month comes from the planned PUBLISH date, not the machine time or writing date.
+// These are normal climate tendencies, NOT a forecast or guaranteed temperatures.
+function getLocalSeasonContext(publishedDate) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(publishedDate || ''));
+  if (!match) throw new Error(`Invalid planned publication date: ${publishedDate}`);
+  const month = Number(match[2]);
+  if (month < 1 || month > 12) throw new Error(`Invalid planned publication month: ${month}`);
+  const descriptions = {
+    1: 'Generally mild to cool, with occasional chilly or damp spells; no typical snow or hard freeze.',
+    2: 'Variable cool-to-mild conditions, with possible damp or humid days as spring approaches.',
+    3: 'Warming and often very humid; damp indoor conditions can affect drying and decoration.',
+    4: 'Warm, humid, and increasingly rainy; slow drying can matter for sugar and frosting work.',
+    5: 'Warm to hot, humid, with frequent rain; consider room warmth and moisture when relevant.',
+    6: 'Hot, humid, and rainy; buttercream, chocolate, and delicate decorations may soften faster.',
+    7: 'Typically hot and humid, often with strong showers; focus on temperature-sensitive techniques.',
+    8: 'Typically hot and humid, with rain and warm indoor conditions often affecting texture.',
+    9: 'Often still hot and humid; do not assume that cool autumn weather has arrived.',
+    10: 'Usually warm to mild, with generally less rain; avoid cold or snowy autumn assumptions.',
+    11: 'Generally milder, with less rain than summer; cold-weather conditions are not a default.',
+    12: 'Usually mild to cool and relatively less rainy; avoid snow, frozen kitchens, or severe winter.',
+  };
+  return {
+    month,
+    description: descriptions[month],
+  };
+}
 
-function getGuangzhouSeason(monthLabel) {
-  const month = new Date(monthLabel + ' 1').getMonth() + 1;
-  if (month >= 12 || month <= 2) return 'cool dry winter (10–15°C, no snow)';
-  if (month >= 3 && month <= 5)  return 'humid spring, plum rain season (20–28°C, very high humidity)';
-  if (month >= 6 && month <= 9)  return 'hot humid summer (33–38°C, extreme heat)';
-  return 'comfortable dry autumn (22–28°C, low humidity)';
+function localSeasonEditorialRules(publishedDate) {
+  const season = getLocalSeasonContext(publishedDate);
+  return `Private climate guidance for planned publication date ${publishedDate}: ${season.description}
+- This is a general humid-subtropical baking environment, NOT today's weather forecast.
+- Use this context only when weather, temperature, humidity or seasonal ingredients actually affect the topic; evergreen technique articles do not need seasonal language.
+- Never mention the writer's location, city, region, country, relocation or climate baseline in the article.
+- Do not invent exact outdoor or kitchen temperatures, storms, forecasts, ingredients being in season, or personal weather observations.
+- Avoid snowy/freezing winter scenes and northern-temperate seasonal assumptions. Do not present hot summer conditions as current during cooler months, or cold winter conditions as current in warm months.
+- Discuss working temperature, humidity and texture as conditional technique advice, not as a claim about present-day conditions.`;
 }
 
 // ─── Cross-article memory ─────────────────────────────────────────────────────
@@ -144,7 +175,7 @@ const NOVA_MOODS = [
   { label: 'a little skeptical of common baking shortcuts' },
   { label: 'focused on texture and visual cues' },
   { label: 'practical about time and tool constraints' },
-  { label: 'thoughtful about teaching a tricky skill' },
+  { label: 'clear about explaining a tricky technique' },
 ];
 const FORMATTING_MODES = [
   'Clear short paragraphs with a few varied sentence lengths.',
@@ -262,10 +293,27 @@ const BLOG_TOPICS_MASTER = [
   'The surprising effect of cake temperature on crumb coating',
   'How to spot overworking when shaping sugar-paste decorations',
   'Why decorative balance matters more than adding another ornament',
-  'What pastry students should observe before copying a technique',
+  'What bakers should observe before copying a pastry technique',
   'How to compare filling stability without making untested claims',
   'The difference between a repeatable process and a lucky baking result',
 ];
+
+// Optional seasonal topics: chosen ONLY in matching planned publication months.
+// Evergreen topics above remain available year-round. No biography or city-specific titles.
+const BLOG_SEASONAL_TOPICS = [
+  { topic: 'Why buttercream needs more patience in a cooler kitchen', months: [12, 1, 2] },
+  { topic: 'How to recognize slow-drying sugar decorations on damp days', months: [2, 3, 4] },
+  { topic: 'Keeping piped decorations crisp when rainy-season humidity rises', months: [4, 5, 6] },
+  { topic: 'How warmer workrooms change the pace of buttercream piping', months: [5, 6, 7, 8, 9] },
+  { topic: 'The trade-off between softness and stability in warm-weather ganache', months: [6, 7, 8, 9] },
+  { topic: 'Why sugar-paste decorations may still dry slowly in early autumn', months: [9, 10] },
+  { topic: 'Which frosting cues matter as room temperatures become milder', months: [10, 11, 12] },
+];
+
+function isBlogTopicEligible(topic, publishedDate) {
+  const seasonal = BLOG_SEASONAL_TOPICS.find(item => item.topic === topic);
+  return !seasonal || seasonal.months.includes(getLocalSeasonContext(publishedDate).month);
+}
 
 function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
@@ -378,7 +426,9 @@ function buildBlogSystemPrompt(mood, formattingMode) {
 Nova is a writing persona, not a license to invent autobiography.
 - Write useful baking opinions and thought experiments based on general technique. Personal opinions ("I prefer ...", "I think ...") are fine.
 - Do NOT invent memories, clients, students, orders, exhibitions, travel, credentials, competitions, awards, classes, years of experience, or claims that Nova personally tested something.
-- Do not describe a specific city, home, workshop, customer, season or weather as lived experience.
+- Past travel, internships or teaching experiences are background only, never spontaneous story topics or current lived events. Do not imply a present-day residence, overseas internship, travel or teaching role.
+- Do not describe any city, home, workshop, customer, season or weather as a firsthand memory or observation.
+- Make season-sensitive baking advice consistent with the private local-climate guidance supplied in the user prompt, without revealing that reference location.
 - Describe practical sensory cues as possibilities ("A batter that looks ... may indicate ..."), never as fabricated eyewitness details.
 - Be candid and distinct, but not promotional or preachy. Focus on one teachable insight and a counterpoint or trade-off.
 - Mood: ${mood.label}
@@ -476,6 +526,35 @@ async function tavilySearch(query, domains = []) {
   return { context, sources, query };
 }
 
+// Recent coverage is used only to propose products. This is not a Google Trends API.
+async function searchRecentPastries(query) {
+  return fetchSearchWithRetry({
+    api_key: TAVILY_API_KEY, query, topic: 'general', search_depth: 'basic',
+    time_range: 'month', include_published_date: true,
+    filter_by_published_date: true, max_results: 8, include_answer: false,
+  });
+}
+
+async function weeklyPastryCandidates(publishDate) {
+  try {
+    const result = await discoverTrendingPastries({
+      search: searchRecentPastries,
+      generate: (systemPrompt, userPrompt) => aiGenerate(systemPrompt, userPrompt, {
+        client: deepseekClient, model: deepseekModel, jsonMode: true, maxTokens: 1100,
+      }),
+      now: new Date(), publishDate,
+    });
+    // Save sources of each selected candidate for audit, not unsupported search-volume estimates.
+    report.trend_discovery = result;
+    console.log(`[trend] ${result.status}: ${result.candidates.length} products; ${result.reason}`);
+    return result.status === 'discovered' ? result.candidates : [];
+  } catch(e) {
+    report.trend_discovery = { status:'fallback', reason: e.message, candidates:[] };
+    console.warn(`[trend] fallback: ${e.message}`);
+    return [];
+  }
+}
+
 // ─── AI generate ──────────────────────────────────────────────────────────────
 
 function parseAiJson(text) {
@@ -554,6 +633,14 @@ function attachReferenceLinks(post, sources) {
   post.content = String(post.content || '').trim() + '\n<h2>Source material</h2><ul>' + links.join('') + '</ul>';
 }
 
+function productNamedInPost(post, product) {
+  // Defensive editorial constraint: prevent AI from switching to an unrelated cake.
+  const normalized = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const title = normalized(post.title);
+  const tokens = normalized(product).split(' ').filter(w => w.length >= 4 && !['cake','pastry','recipe','cookies','cookie','filled'].includes(w));
+  return tokens.length > 0 && tokens.some(w => title.includes(w));
+}
+
 // ─── Generators ───────────────────────────────────────────────────────────────
 
 async function generateNews(monthLabel, publishedDate, memory, usedQueries) {
@@ -624,19 +711,31 @@ Return exactly this JSON:
   return post;
 }
 
-async function generateRecipe(monthLabel, publishedDate, memory, usedAngles) {
+async function generateRecipe(monthLabel, publishedDate, memory, usedAngles, trend = null) {
   console.log(`  [recipe] ${monthLabel}...`);
 
-  const available = RECIPE_ANGLES.filter(a => !usedAngles.has(a.cuisine));
-  const pool      = available.length > 0 ? available : RECIPE_ANGLES;
-  const angle     = pickRandom(pool);
-  usedAngles.add(angle.cuisine);
-
   let research = null;
-  for (const q of [`${angle.query} ${monthLabel}`, angle.query]) {
-    try { research = await tavilySearch(q, RECIPE_SEARCH_DOMAINS); if (research) break; }
-    catch (e) { console.warn(`  [recipe] search failed: ${e.message}`); }
-    await sleep(1000);
+  let chosenTrend = trend;
+  if (chosenTrend) {
+    try {
+      research = await tavilySearch(`${chosenTrend.product} recipe baking how to make`, RECIPE_SEARCH_DOMAINS);
+    } catch(e) { console.warn(`  [recipe] trend supporting search failed: ${e.message}`); }
+    if (research && !research.sources.some(s => supportedName(chosenTrend.product, s))) research = null;
+    if (!research) {
+      console.warn('  [recipe] no reliable method sources for trend candidate; use evergreen fallback');
+      chosenTrend = null;
+    }
+  }
+  const available = RECIPE_ANGLES.filter(a => !usedAngles.has(a.cuisine));
+  const pool = available.length > 0 ? available : RECIPE_ANGLES;
+  const angle = chosenTrend ? { cuisine:'pastry', query:chosenTrend.product } : pickRandom(pool);
+  if (!chosenTrend) {
+    usedAngles.add(angle.cuisine);
+    for (const q of [`${angle.query} ${monthLabel}`, angle.query]) {
+      try { research = await tavilySearch(q, RECIPE_SEARCH_DOMAINS); if (research) break; }
+      catch (e) { console.warn(`  [recipe] search failed: ${e.message}`); }
+      await sleep(1000);
+    }
   }
   if (!research) { console.warn(`  [recipe] no attributable sources, skipping`); return null; }
 
@@ -645,7 +744,11 @@ ${angle.cuisine} baking sources from around ${monthLabel}:
 
 ${research.context}
 
+${chosenTrend ? `Chosen product: ${chosenTrend.product}. The title and article must specifically be about this product. Coverage is a topic-discovery hint, NOT proof of rising Google searches. Do not describe it as viral, #1, or a breakout trend without direct source evidence.` : ''}
+
 Evidence rules: Search snippets are not a verified formula and do not establish exact ratios, quantities, temperatures or testing. If insufficient to justify a complete recipe, explicitly create a TECHNIQUE NOTE, not a pretend formula.
+
+${localSeasonEditorialRules(publishedDate)}
 
 Write a useful ${angle.cuisine} recipe or technique note for Beiai Baking:
 - Choose one specific dish and one practical objective (texture, mixing, stability, failure prevention).
@@ -653,6 +756,7 @@ Write a useful ${angle.cuisine} recipe or technique note for Beiai Baking:
 - Otherwise call the article a Technique Note in its title, omit specific unsourced quantities and give <h2>Technique Steps</h2><ol><li>...</li></ol>, <h2>What to Watch For</h2> and troubleshooting.
 - Describe visual or texture cues in every step, keeping the process actionable.
 - Do not invent storage advice, yields or any claims that Beiai Baking tested the process.
+- Do not force a seasonal hook into an evergreen dish, and never make unverified seasonal availability claims.
 - 260–350 words, HTML body with headings and numbered steps; no links (they are added later).
 
 Return exactly this JSON:
@@ -672,32 +776,52 @@ Return exactly this JSON:
   if (post) {
     const errors = validateGeneratedPost(post, 'recipe', publishedDate);
     if (errors.length) throw new Error(`Recipe draft rejected: ${errors.join(', ')}`);
+    if (chosenTrend && !productNamedInPost(post, chosenTrend.product)) {
+      throw new Error(`Trend recipe did not focus on requested pastry: ${chosenTrend.product}`);
+    }
     attachReferenceLinks(post, research.sources);
     rememberSources(post, 'recipe', research.query, research.sources);
+    if (chosenTrend) report.trend_discovery.used_recipe = chosenTrend.product;
     saveMemory(post);
   }
   return post;
 }
 
-async function generateBlog(monthLabel, publishedDate, memory, availableTopics) {
+async function generateBlog(monthLabel, publishedDate, memory, availableTopics, trend = null) {
   console.log(`  [blog] ${monthLabel}...`);
-
-  if (availableTopics.length === 0) { console.warn('  [blog] topics exhausted, skipping'); return null; }
-
-  const idx    = Math.floor(Math.random() * availableTopics.length);
-  const topic  = availableTopics.splice(idx, 1)[0];
-  const mood   = pickRandom(NOVA_MOODS);
-  const fmt    = pickRandom(FORMATTING_MODES);
+  let research = null;
+  let chosenTrend = trend;
+  if (chosenTrend) {
+    try {
+      research = await tavilySearch(`${chosenTrend.product} baking technique troubleshooting ${chosenTrend.blog_question}`, RECIPE_SEARCH_DOMAINS);
+    } catch(e) { console.warn(`  [blog] trend source search failed: ${e.message}`); }
+    if (research && !research.sources.some(s => supportedName(chosenTrend.product, s))) research = null;
+    if (!research) { chosenTrend = null; console.warn('  [blog] insufficient technique sources; using evergreen topic'); }
+  }
+  const eligible = availableTopics.filter(topic => isBlogTopicEligible(topic, publishedDate));
+  if (!chosenTrend && eligible.length === 0) { console.warn('  [blog] no evergreen topics remain, skipping'); return null; }
+  const topic = chosenTrend ? chosenTrend.blog_question : pickRandom(eligible);
+  if (!chosenTrend) availableTopics.splice(availableTopics.indexOf(topic), 1);
+  const mood = pickRandom(NOVA_MOODS);
+  const fmt = pickRandom(FORMATTING_MODES);
 
   const userPrompt = `
-Write a personal blog post for Beiai Baking as Nova.
+Write an editorial blog post for Beiai Baking in Nova's recognizable voice.
 Topic: "${topic}"
-Time context: ${monthLabel}
+${chosenTrend ? `Required focus pastry: ${chosenTrend.product}. Discuss a concrete technique or failure mode for this pastry, not a broad generic trend recap. Never claim verified search volume or that it is the hottest product.
+Supporting technique excerpts (unverified, do not fabricate facts):
+${research.context}` : ''}
+Scheduled publication: ${publishedDate} (${monthLabel})
+
+${localSeasonEditorialRules(publishedDate)}
+
 Voice direction:
 - Keep Nova's recognizable practical, warm, opinionated style, without fabricating biography or personal events.
 - Explore a technique trade-off and at least two observable cues (texture, timing, appearance, tool choice).
 - Use hypothetical examples clearly labelled as such; do not claim to have experienced them.
-- No customer anecdotes, teaching or Paris memories, invented testing, credentials or dates.
+- Past travel or internships are private background information, not article material. Never present them as present-day life or invent autobiography.
+- No customer anecdotes, teaching memories, travel memories, invented testing, credentials or fabricated dates.
+- An all-season topic should remain all-season unless temperature or humidity genuinely matters.
 - 250–330 words of simple HTML paragraphs; end with a useful concrete distinction, not motivational filler.
 
 Return exactly this JSON:
@@ -717,6 +841,14 @@ Return exactly this JSON:
   if (post) {
     const errors = validateGeneratedPost(post, 'blog', publishedDate);
     if (errors.length) throw new Error(`Blog draft rejected: ${errors.join(', ')}`);
+    if (chosenTrend) {
+      if (!productNamedInPost(post, chosenTrend.product)) {
+        throw new Error(`Trend blog did not focus on requested pastry: ${chosenTrend.product}`);
+      }
+      attachReferenceLinks(post, research.sources);
+      rememberSources(post, 'blog', research.query, research.sources);
+      report.trend_discovery.used_blog = chosenTrend.product;
+    }
     saveMemory(post);
   }
   return post;
@@ -793,7 +925,11 @@ async function runWeekly() {
   const failures = [];
   const usedQ  = new Set();
   const usedA  = new Set();
-  const topics = [...BLOG_TOPICS_MASTER];
+  const topics = [...BLOG_TOPICS_MASTER, ...BLOG_SEASONAL_TOPICS.map(item => item.topic)];
+  // Search once per weekly batch. The two article types use different products.
+  const trends = await weeklyPastryCandidates(plan[0].ymd);
+  const recipeTrend = trends[0] || null;
+  const blogTrend = trends.find(c => c.product !== recipeTrend?.product) || null;
 
   for (const p of plan) {
     await sleep(2000);
@@ -806,14 +942,14 @@ async function runWeekly() {
           posts.push(post);
         }
       } else if (p.type === 'recipe') {
-        const post = await generateRecipe(p.month, p.ymd, memory, usedA);
+        const post = await generateRecipe(p.month, p.ymd, memory, usedA, recipeTrend);
         if (post) {
           post.published = false;
           post.scheduled_publish_at = p.slot.toISOString();
           posts.push(post);
         }
       } else {
-        const post = await generateBlog(p.month, p.ymd, memory, topics);
+        const post = await generateBlog(p.month, p.ymd, memory, topics, blogTrend);
         if (post) {
           post.published = false;
           post.scheduled_publish_at = p.slot.toISOString();
@@ -840,7 +976,7 @@ async function runBulk() {
 
   const usedQ  = new Set();
   const usedA  = new Set();
-  const topics = [...BLOG_TOPICS_MASTER];
+  const topics = [...BLOG_TOPICS_MASTER, ...BLOG_SEASONAL_TOPICS.map(item => item.topic)];
   const failures = [];
 
   for (let ago = 11; ago >= 0; ago--) {
