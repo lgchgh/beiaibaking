@@ -35,6 +35,36 @@ const BEIAI_API_URL    = String(process.env.BEIAI_API_URL || '').trim();
 const CRON_SECRET      = String(process.env.CRON_SECRET || '').trim();
 
 const isBulk     = process.argv.includes('--bulk');
+const REPORT_PATH = process.env.AUTO_GENERATE_REPORT || path.join(__dirname, 'auto-generate-report.json');
+const report = {
+  generated_at: new Date().toISOString(),
+  mode: isBulk ? 'bulk' : 'weekly',
+  sources: [],
+  batches: [],
+  warnings: [],
+};
+
+function saveReport() {
+  try {
+    fs.mkdirSync(path.dirname(REPORT_PATH), { recursive: true });
+    fs.writeFileSync(REPORT_PATH, JSON.stringify(report, null, 2) + '\n', 'utf8');
+    console.log(`[report] saved: ${REPORT_PATH}`);
+  } catch (e) {
+    console.error(`[report] failed to write: ${e.message}`);
+    process.exitCode = 1;
+  }
+}
+
+function rememberSources(post, kind, query, sources) {
+  if (!post) return;
+  report.sources.push({
+    type: kind,
+    title: String(post.title || ''),
+    search_query: query,
+    sources: sources.map(s => ({ title: s.title, url: s.url, published_date: s.published_date })),
+  });
+}
+
 const deepseekModel = String(process.env.DEEPSEEK_MODEL || 'deepseek-v4-pro').trim();
 
 // Validate required env vars
@@ -403,6 +433,62 @@ function getMonthLabel(monthsAgo) {
 
 // ─── Tavily search ────────────────────────────────────────────────────────────
 
+// Only the material returned by the search is used. Do not treat snippets as verified facts.
+function collectSources(results, allowedDomains = []) {
+  const seen = new Set();
+  const allowed = allowedDomains.map(s => s.toLowerCase());
+  const out = [];
+  for (const item of results || []) {
+    let url;
+    try {
+      const u = new URL(String(item.url || ''));
+      if (u.protocol !== 'https:' && u.protocol !== 'http:') continue;
+      if (u.username || u.password) continue;
+      if (allowed.length && !allowed.some(d => u.hostname.toLowerCase() === d || u.hostname.toLowerCase().endsWith('.' + d))) continue;
+      u.hash = '';
+      url = u.toString();
+    } catch { continue; }
+    if (seen.has(url)) continue;
+    const title = String(item.title || '').replace(/\s+/g, ' ').trim();
+    const content = String(item.content || '').replace(/\s+/g, ' ').trim();
+    if (!title || content.length < 40) continue;
+    seen.add(url);
+    const rawDate = String(item.published_date || '').trim();
+    const published_date = /^\d{4}-\d{2}-\d{2}/.test(rawDate) && !Number.isNaN(Date.parse(rawDate))
+      ? rawDate.slice(0, 10) : null;
+    if (published_date && Date.parse(published_date) > Date.now() + 86400000) continue;
+    out.push({ title: title.slice(0, 200), url, published_date, content: content.slice(0, 650) });
+    if (out.length >= 4) break;
+  }
+  return out;
+}
+
+async function fetchSearchWithRetry(body) {
+  let lastError;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch('https://api.tavily.com/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(25000),
+      });
+      if (!res.ok) {
+        const detail = (await res.text()).slice(0, 250);
+        const err = new Error(`Tavily ${res.status}: ${detail}`);
+        if (![408, 429, 500, 502, 503, 504].includes(res.status)) throw Object.assign(err, { permanent: true });
+        throw err;
+      }
+      return await res.json();
+    } catch (err) {
+      lastError = err;
+      if (err.permanent || attempt === 2) break;
+      await sleep(1500 * (attempt + 1));
+    }
+  }
+  throw lastError;
+}
+
 async function tavilySearch(query, domains = []) {
   const body = {
     api_key: TAVILY_API_KEY,
@@ -412,16 +498,13 @@ async function tavilySearch(query, domains = []) {
     include_answer: false,
   };
   if (domains.length) body.include_domains = domains;
-  const res = await fetch('https://api.tavily.com/search', {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(`Tavily ${res.status}: ${await res.text()}`);
-  const data = await res.json();
-  const results = data.results || [];
-  if (results.length === 0) return null;
-  return results.map(r => `SOURCE: ${r.title}\n${r.content}`).join('\n\n---\n\n').slice(0, 3000);
+  const data = await fetchSearchWithRetry(body);
+  const sources = collectSources(data.results, domains);
+  if (!sources.length) return null;
+  const context = sources.map((r, i) =>
+    `[SOURCE ${i + 1}] ${r.title}\nURL: ${r.url}\nPublished: ${r.published_date || 'not provided'}\nSnippet (unverified search excerpt): ${r.content}`
+  ).join('\n\n---\n\n');
+  return { context, sources, query };
 }
 
 // ─── AI generate ──────────────────────────────────────────────────────────────
@@ -465,6 +548,17 @@ async function aiGenerate(systemPrompt, userPrompt, options = {}) {
   throw new Error(`AI returned invalid JSON: ${text.slice(0, 200)}`);
 }
 
+function validateGeneratedPost(post, type, publishedDate) {
+  const errors = [];
+  if (!post || typeof post !== 'object' || Array.isArray(post)) return ['AI response must be a JSON object'];
+  if (typeof post.title !== 'string' || !post.title.trim() || post.title.length > 80) errors.push('invalid title');
+  if (typeof post.excerpt !== 'string' || !post.excerpt.trim() || post.excerpt.length > 180) errors.push('invalid excerpt');
+  if (typeof post.content !== 'string' || post.content.trim().split(/\s+/).length < 120) errors.push('content too short');
+  if (post.type !== type) errors.push(`wrong type (expected ${type})`);
+  if (post.published_date !== publishedDate) errors.push('published_date differs from scheduled date');
+  return errors;
+}
+
 // ─── Generators ───────────────────────────────────────────────────────────────
 
 async function generateNews(monthLabel, publishedDate, memory, usedQueries) {
@@ -477,27 +571,32 @@ async function generateNews(monthLabel, publishedDate, memory, usedQueries) {
 
   const searchQueries = [
     `${baseQuery} ${monthLabel}`,
-    `${baseQuery} 2025 2026`,
+    `${baseQuery} ${new Date().getUTCFullYear() - 1} ${new Date().getUTCFullYear()}`,
     baseQuery,
-    'baking industry news professional bakers 2026',
-    'pastry competition bakery trade news 2026',
-    'bakery association training competition pastry 2026',
+    `baking industry news professional bakers ${new Date().getUTCFullYear()}`,
+    `pastry competition bakery trade news ${new Date().getUTCFullYear()}`,
+    `bakery association training competition pastry ${new Date().getUTCFullYear()}`,
   ];
 
-  let context = null;
+  let research = null;
   for (const q of searchQueries) {
-    try { context = await tavilySearch(q, NEWS_SEARCH_DOMAINS); if (context) break; }
+    try { research = await tavilySearch(q, NEWS_SEARCH_DOMAINS); if (research) break; }
     catch (e) { console.warn(`  [news] search failed: ${e.message}`); }
     await sleep(1000);
   }
-  if (!context) { console.warn(`  [news] no results, skipping`); return null; }
+  if (!research) { console.warn(`  [news] no attributable sources, skipping`); return null; }
 
   const echoLine = (Math.random() < 0.3 && memory) ? buildEchoLine(memory) : '';
 
   const userPrompt = `
 Baking industry sources from around ${monthLabel}:
 
-${context}
+${research.context}
+
+Evidence rules: Search snippets are not independently verified. Never invent a result, award,
+statistic, event date or quote. Prefer claims directly supported by a named SOURCE above;
+attribute specific claims to that source. If publication dates are absent, do not imply
+that an event happened recently merely because the query contains the current year.
 
 ${echoLine ? `You may weave this reference in naturally if relevant: "${echoLine}"` : ''}
 
@@ -527,7 +626,12 @@ Return exactly this JSON:
     model: deepseekModel,
     jsonMode: true,
   });
-  if (post) saveMemory(post);
+  if (post) {
+    const errors = validateGeneratedPost(post, 'news', publishedDate);
+    if (errors.length) throw new Error(`News draft rejected: ${errors.join(', ')}`);
+    rememberSources(post, 'news', research.query, research.sources);
+    saveMemory(post);
+  }
   return post;
 }
 
@@ -539,18 +643,22 @@ async function generateRecipe(monthLabel, publishedDate, memory, usedAngles) {
   const angle     = pickRandom(pool);
   usedAngles.add(angle.cuisine);
 
-  let context = null;
+  let research = null;
   for (const q of [`${angle.query} ${monthLabel}`, angle.query]) {
-    try { context = await tavilySearch(q, RECIPE_SEARCH_DOMAINS); if (context) break; }
+    try { research = await tavilySearch(q, RECIPE_SEARCH_DOMAINS); if (research) break; }
     catch (e) { console.warn(`  [recipe] search failed: ${e.message}`); }
     await sleep(1000);
   }
-  if (!context) { console.warn(`  [recipe] no results, skipping`); return null; }
+  if (!research) { console.warn(`  [recipe] no attributable sources, skipping`); return null; }
 
   const userPrompt = `
 ${angle.cuisine} baking sources from around ${monthLabel}:
 
-${context}
+${research.context}
+
+Evidence rules: Do not invent historical origin, measured results or claimed testing.
+Use the provided sources as reference only; their snippets are not a substitute for
+independent verification of exact ratios or temperatures.
 
 Write a ${angle.cuisine} recipe / technique note for Beiai Baking. Requirements:
 - Avoid first-person testing claims; do not write a disclaimer about whether it was tested
@@ -578,7 +686,12 @@ Return exactly this JSON:
     model: deepseekModel,
     jsonMode: true,
   });
-  if (post) saveMemory(post);
+  if (post) {
+    const errors = validateGeneratedPost(post, 'recipe', publishedDate);
+    if (errors.length) throw new Error(`Recipe draft rejected: ${errors.join(', ')}`);
+    rememberSources(post, 'recipe', research.query, research.sources);
+    saveMemory(post);
+  }
   return post;
 }
 
@@ -627,7 +740,11 @@ Return exactly this JSON:
     model: CLAUDE_MODEL,
     jsonMode: false,
   });
-  if (post) saveMemory(post);
+  if (post) {
+    const errors = validateGeneratedPost(post, 'blog', publishedDate);
+    if (errors.length) throw new Error(`Blog draft rejected: ${errors.join(', ')}`);
+    saveMemory(post);
+  }
   return post;
 }
 
@@ -635,10 +752,10 @@ Return exactly this JSON:
 
 async function sendToReceiver(posts) {
   const valid = posts.filter(Boolean);
-  if (valid.length === 0) { console.log('  [send] nothing to send'); return; }
+  if (!valid.length) throw new Error('No generated posts to submit');
   console.log(`  [send] sending ${valid.length} posts...`);
   let lastErr;
-  for (let wave = 0; wave < 3; wave++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const res = await fetch(BEIAI_API_URL, {
         method: 'POST',
@@ -648,33 +765,36 @@ async function sendToReceiver(posts) {
           Authorization: `Bearer ${CRON_SECRET}`,
         },
         body: JSON.stringify(valid),
+        signal: AbortSignal.timeout(35000),
       });
       const text = await res.text();
       let result;
-      try {
-        result = text ? JSON.parse(text) : {};
-      } catch {
-        result = { raw: text };
-      }
+      try { result = JSON.parse(text); }
+      catch { result = { error: text.slice(0, 250) }; }
       if (!res.ok) {
-        const hint =
-          res.status === 401
-            ? ' Check GitHub / Vercel CRON_SECRET match (no extra spaces).'
-            : res.status === 503
-              ? ' Set CRON_SECRET on Vercel (Production) and redeploy.'
-              : '';
-        throw new Error(`Receiver ${res.status}: ${JSON.stringify(result)}${hint}`);
+        const err = new Error(`Receiver ${res.status}: ${JSON.stringify(result).slice(0, 350)}`);
+        if (![408, 429, 500, 502, 503, 504].includes(res.status)) err.permanent = true;
+        throw err;
       }
-      console.log(`  [send] inserted: ${result.inserted}, skipped: ${result.skipped}`);
-      (result.errors || []).forEach(e => console.warn(`  [send] skipped "${e.title}": ${e.reasons.join(', ')}`));
-      return;
+      const inserted = result?.inserted;
+      const skipped = result?.skipped;
+      if (!Number.isInteger(inserted) || !Number.isInteger(skipped) || inserted + skipped !== valid.length) {
+        throw Object.assign(new Error(`Receiver gave inconsistent counts: ${JSON.stringify(result).slice(0, 350)}`), { permanent: true });
+      }
+      report.batches.push({ attempted: valid.length, inserted, skipped, errors: result.errors || [] });
+      console.log(`  [send] inserted: ${inserted}, skipped: ${skipped}`);
+      (result.errors || []).forEach(e => console.warn(`  [send] skipped "${e.title}": ${(e.reasons || []).join(', ')}`));
+      if (skipped || inserted === 0) {
+        // HTTP 200 with skips must not be reported as a successful generation run.
+        throw Object.assign(new Error(`Receiver rejected/skipped ${skipped} of ${valid.length} posts`), { permanent: true });
+      }
+      return { inserted, skipped };
     } catch (e) {
       lastErr = e;
-      if (wave < 2) {
-        const wait = 4000 * (wave + 1);
-        console.warn(`  [send] retry in ${wait}ms: ${e.message}`);
-        await sleep(wait);
-      }
+      if (e.permanent || attempt === 2) break;
+      const wait = 4000 * (attempt + 1);
+      console.warn(`  [send] retry in ${wait}ms: ${e.message}`);
+      await sleep(wait);
     }
   }
   throw lastErr;
@@ -696,6 +816,7 @@ async function runWeekly() {
 
   const memory = loadMemory();
   const posts  = [];
+  const failures = [];
   const usedQ  = new Set();
   const usedA  = new Set();
   const topics = [...BLOG_TOPICS_MASTER];
@@ -726,11 +847,16 @@ async function runWeekly() {
         }
       }
     } catch (e) {
+      failures.push(`${p.type}: ${e.message}`);
       console.error(`  [${p.type}] ${e.message}`);
     }
   }
 
-  await sendToReceiver(posts);
+  if (posts.length !== plan.length) failures.push(`generated ${posts.length}/${plan.length} planned drafts`);
+  try { await sendToReceiver(posts); }
+  catch (e) { failures.push(`submission: ${e.message}`); }
+  report.warnings.push(...failures);
+  if (failures.length) throw new Error(`Weekly run incomplete: ${failures.join(' | ')}`);
   console.log('[auto-generate] Weekly run complete.');
 }
 
@@ -741,6 +867,7 @@ async function runBulk() {
   const usedQ  = new Set();
   const usedA  = new Set();
   const topics = [...BLOG_TOPICS_MASTER];
+  const failures = [];
 
   for (let ago = 11; ago >= 0; ago--) {
     const month  = getMonthLabel(ago);
@@ -752,30 +879,34 @@ async function runBulk() {
 
     const posts  = [];
     const memory = loadMemory();
+    let generatedCount = 0;
     let   slot   = 0;
 
     for (let i = 0; i < nNews; i++) {
-      try { posts.push(await generateNews(month, randomDateInMonth(ago, slot++, total), memory, usedQ)); }
-      catch (e) { console.error(`  [news ${i+1}] ${e.message}`); }
+      try { const p = await generateNews(month, randomDateInMonth(ago, slot++, total), memory, usedQ); if (p) { posts.push(p); generatedCount++; } }
+      catch (e) { failures.push(`${month} news ${i+1}: ${e.message}`); console.error(`  [news ${i+1}] ${e.message}`); }
       await sleep(3000);
     }
     for (let i = 0; i < nRec; i++) {
-      try { posts.push(await generateRecipe(month, randomDateInMonth(ago, slot++, total), memory, usedA)); }
-      catch (e) { console.error(`  [recipe ${i+1}] ${e.message}`); }
+      try { const p = await generateRecipe(month, randomDateInMonth(ago, slot++, total), memory, usedA); if (p) { posts.push(p); generatedCount++; } }
+      catch (e) { failures.push(`${month} recipe ${i+1}: ${e.message}`); console.error(`  [recipe ${i+1}] ${e.message}`); }
       await sleep(3000);
     }
     for (let i = 0; i < nBlog; i++) {
-      try { posts.push(await generateBlog(month, randomDateInMonth(ago, slot++, total), memory, topics)); }
-      catch (e) { console.error(`  [blog ${i+1}] ${e.message}`); }
+      try { const p = await generateBlog(month, randomDateInMonth(ago, slot++, total), memory, topics); if (p) { posts.push(p); generatedCount++; } }
+      catch (e) { failures.push(`${month} blog ${i+1}: ${e.message}`); console.error(`  [blog ${i+1}] ${e.message}`); }
       await sleep(3000);
     }
 
+    if (generatedCount !== total) failures.push(`${month}: generated ${generatedCount}/${total} planned drafts`);
     try { await sendToReceiver(posts); }
-    catch (e) { console.error(`  [send] ${e.message}`); }
+    catch (e) { failures.push(`${month} submission: ${e.message}`); console.error(`  [send] ${e.message}`); }
 
     if (ago > 0) { console.log('  pausing 10s...'); await sleep(10000); }
   }
 
+  report.warnings.push(...failures);
+  if (failures.length) throw new Error(`Bulk run incomplete (${failures.length} issue(s)); see report`);
   console.log('\n[auto-generate] Bulk run complete.');
 }
 
@@ -784,9 +915,11 @@ async function runBulk() {
 (async () => {
   try {
     if (isBulk) { await runBulk(); } else { await runWeekly(); }
-    process.exit(0);
   } catch (e) {
+    report.warnings.push(e.message || String(e));
     console.error('[auto-generate] Fatal:', e);
-    process.exit(1);
+    process.exitCode = 1;
+  } finally {
+    saveReport();
   }
 })();

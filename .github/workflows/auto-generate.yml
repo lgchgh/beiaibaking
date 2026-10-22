@@ -8,21 +8,13 @@ on:
   workflow_dispatch:
     inputs:
       bulk:
-        description: 'Generate 6 months of historical posts?'
+        description: 'Generate 12 months of historical posts?'
         required: false
         default: 'false'
         type: choice
         options:
           - 'false'
           - 'true'
-      model:
-        description: 'AI model to use'
-        required: false
-        default: 'deepseek'
-        type: choice
-        options:
-          - deepseek
-          - gemini
 
 concurrency:
   group: auto-generate
@@ -44,30 +36,37 @@ jobs:
           node-version: '24'
 
       - name: Install dependencies
-        run: npm install openai --no-package-lock
+        run: npm ci
 
       - name: Run weekly generation
         if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.bulk != 'true')
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          GEMINI_API_KEY:   ${{ secrets.GEMINI_API_KEY }}
           CLAUDE_API_KEY:   ${{ secrets.CLAUDE_API_KEY }}
           TAVILY_API_KEY:   ${{ secrets.TAVILY_API_KEY }}
           BEIAI_API_URL:    ${{ secrets.BEIAI_API_URL }}
           CRON_SECRET:      ${{ secrets.CRON_SECRET }}
-          AI_MODEL:         ${{ github.event_name == 'workflow_dispatch' && inputs.model || 'deepseek' }}
+          AUTO_GENERATE_REPORT: ${{ runner.temp }}/beiai-source-report.json
         run: |
-          node scripts/auto-generate.js --model=$AI_MODEL
+          node scripts/auto-generate.js
 
       - name: Run bulk historical generation
         if: github.event_name == 'workflow_dispatch' && inputs.bulk == 'true'
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          GEMINI_API_KEY:   ${{ secrets.GEMINI_API_KEY }}
           CLAUDE_API_KEY:   ${{ secrets.CLAUDE_API_KEY }}
           TAVILY_API_KEY:   ${{ secrets.TAVILY_API_KEY }}
           BEIAI_API_URL:    ${{ secrets.BEIAI_API_URL }}
           CRON_SECRET:      ${{ secrets.CRON_SECRET }}
-          AI_MODEL:         ${{ inputs.model || 'deepseek' }}
+          AUTO_GENERATE_REPORT: ${{ runner.temp }}/beiai-source-report.json
         run: |
-          node scripts/auto-generate.js --bulk --model=$AI_MODEL
+          node scripts/auto-generate.js --bulk
+
+      - name: Save source and delivery report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: beiai-generation-report-${{ github.run_id }}
+          path: ${{ runner.temp }}/beiai-source-report.json
+          if-no-files-found: warn
+          retention-days: 30
